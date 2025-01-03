@@ -1,0 +1,7 @@
+#
+# core stuff
+#
+
+bin
+clang
+.builder
