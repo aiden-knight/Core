@@ -13,9 +13,9 @@ Proprietary and confidential.
 
 #ifdef _WIN64
 
-#include "../debug.h"
-#include "../core_types.h"
-//#include "../string_helpers.h"
+#include <debug.h>
+#include <core_types.h>
+//#include <string_helpers.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -26,7 +26,7 @@ Proprietary and confidential.
 #include <stdlib.h>	// malloc, free
 #include <malloc.h>	// alloca
 
-#include "../string_helpers.h"
+#include <string_helpers.h>
 
 /*
 ================================================================================================

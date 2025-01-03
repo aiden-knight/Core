@@ -21,7 +21,8 @@ Proprietary and confidential.
 	#error Unrecognised platform.
 #endif
 
-#include "array.inl"
+#include <array.inl>
+#include <ring.inl>
 #include "allocation_context.cpp"
 #include "allocator_generic.cpp"
 #include "allocator_linear.cpp"
@@ -29,7 +30,6 @@ Proprietary and confidential.
 #include "hashmap.cpp"
 #include "math.cpp"
 #include "random.cpp"
-#include "ring.inl"
 #include "string_helpers.cpp"
 #include "string_builder.cpp"
 #include "temp_storage.cpp"

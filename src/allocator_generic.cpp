@@ -11,11 +11,11 @@ Proprietary and confidential.
 ===========================================================================
 */
 
-#include "allocator_generic.h"
+#include <allocator_generic.h>
 
-#include "core_types.h"
-#include "memory_units.h"
-#include "debug.h"
+#include <core_types.h>
+#include <memory_units.h>
+#include <debug.h>
 
 #include <stdlib.h>	// malloc, free
 #include <string.h>	// strlen file names

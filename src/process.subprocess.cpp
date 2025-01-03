@@ -11,11 +11,11 @@ Proprietary and confidential.
 ===========================================================================
 */
 
-#include "process.h"
-#include "debug.h"
-#include "allocation_context.h"
-#include "defer.h"
-#include "array.inl"
+#include <process.h>
+#include <debug.h>
+#include <allocation_context.h>
+#include <defer.h>
+#include <array.inl>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"

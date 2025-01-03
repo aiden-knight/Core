@@ -13,11 +13,11 @@ Proprietary and confidential.
 
 #ifdef _WIN64
 
-#include "../file.h"
-#include "../debug.h"
-#include "../allocation_context.h"
-#include "../defer.h"
-#include "../temp_storage.h"
+#include <file.h>
+#include <debug.h>
+#include <allocation_context.h>
+#include <defer.h>
+#include <temp_storage.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>

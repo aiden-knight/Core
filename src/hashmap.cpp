@@ -11,11 +11,11 @@ Proprietary and confidential.
 ===========================================================================
 */
 
-#include "hashmap32.h"
-#include "hashmap64.h"
+#include <hashmap32.h>
+#include <hashmap64.h>
 
-#include "debug.h"
-#include "allocation_context.h"
+#include <debug.h>
+#include <allocation_context.h>
 
 #include <memory.h>	// memset
 

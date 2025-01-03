@@ -11,8 +11,8 @@ Proprietary and confidential.
 ===========================================================================
 */
 
-#include "profiler.h"
-#include "core_types.h"
+#include <profiler.h>
+#include <core_types.h>
 
 void profiler_frame_marker_internal() {
 }

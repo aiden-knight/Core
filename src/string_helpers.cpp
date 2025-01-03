@@ -11,9 +11,9 @@ Proprietary and confidential.
 ===========================================================================
 */
 
-#include "string_helpers.h"
-#include "debug.h"
-#include "temp_storage.h"
+#include <string_helpers.h>
+#include <debug.h>
+#include <temp_storage.h>
 
 #include <string.h>
 #include <stdarg.h>

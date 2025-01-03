@@ -13,7 +13,7 @@ Proprietary and confidential.
 
 #ifdef _WIN64
 
-#include "../timer.h"
+#include <timer.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>

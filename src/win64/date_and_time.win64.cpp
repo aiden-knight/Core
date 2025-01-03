@@ -13,8 +13,8 @@ Proprietary and confidential.
 
 #ifdef _WIN64
 
-#include "../date_and_time.h"
-#include "../debug.h"
+#include <date_and_time.h>
+#include <debug.h>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>

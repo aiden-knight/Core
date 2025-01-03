@@ -11,10 +11,11 @@ Proprietary and confidential.
 ===========================================================================
 */
 
-#include "allocation_context.h"
-#include "allocator_generic.h"
-#include "debug.h"
-#include "cmd_line_args.h"
+#include <allocation_context.h>
+#include <allocator_generic.h>
+#include <debug.h>
+#include <cmd_line_args.h>
+
 #include "core_local.h"
 
 #include <memory.h>	// memcpy

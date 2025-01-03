@@ -19,7 +19,7 @@ Proprietary and confidential.
 
 #include "debug.h"
 #include "allocation_context.h"
-#include "math.h"
+#include "core_math.h"
 
 #include <memory.h>
 
@@ -117,7 +117,7 @@ void Array<T>::resize( const u64 num_items ) {
 template<class T>
 void Array<T>::reserve( const u64 bytes ) {
 	if ( bytes > alloced ) {
-		alloced = next_po2_up( bytes );
+		alloced = next_multiple_of_4_up( bytes );
 		data = cast( T* ) mem_realloc( data, alloced * sizeof( T ) );
 	}
 }

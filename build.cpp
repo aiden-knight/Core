@@ -2,11 +2,12 @@
 
 BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	BuildConfig tests_common = {
-		.source_files		= { "tests/tests.cpp" },
-		.defines			= { "_CRT_SECURE_NO_WARNINGS" },
-		.additional_libs	= { "DbgHelp.lib", "Shlwapi.lib" },
-		.ignore_warnings	= { "-Wno-switch-default" },
-		.warnings_as_errors	= true
+		.source_files			= { "tests/tests.cpp" },
+		.defines				= { "_CRT_SECURE_NO_WARNINGS" },
+		.additional_includes	= { "include" },
+		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
+		.ignore_warnings		= { "-Wno-switch-default" },
+		.warnings_as_errors		= true
 	};
 
 	BuildConfig tests_common_non_suc = tests_common;

@@ -14,31 +14,31 @@ Proprietary and confidential.
 #ifdef CORE_SUC
 #include "../src/core.suc.cpp"
 #else
-#include "../src/allocation_context.h"
-#include "../src/allocator_generic.h"
-#include "../src/allocator_linear.h"
-#include "../src/array.inl"
-#include "../src/cmd_line_args.h"
-#include "../src/core_types.h"
-#include "../src/date_and_time.h"
-#include "../src/debug.h"
-#include "../src/defer.h"
-#include "../src/file.h"
-#include "../src/hash.h"
-#include "../src/hashmap32.h"
-#include "../src/hashmap64.h"
-#include "../src/library.h"
-#include "../src/math.h"
-#include "../src/memory_units.h"
-#include "../src/paths.h"
-#include "../src/process.h"
-#include "../src/profiler.h"
-#include "../src/random.h"
-#include "../src/ring.inl"
-#include "../src/string_builder.h"
-#include "../src/string_helpers.h"
-#include "../src/temp_storage.h"
-#include "../src/timer.h"
+#include <allocation_context.h>
+#include <allocator_generic.h>
+#include <allocator_linear.h>
+#include <array.inl>
+#include <cmd_line_args.h>
+#include <core_types.h>
+#include <date_and_time.h>
+#include <debug.h>
+#include <defer.h>
+#include <file.h>
+#include <hash.h>
+#include <hashmap32.h>
+#include <hashmap64.h>
+#include <library.h>
+#include <math.h>
+#include <memory_units.h>
+#include <paths.h>
+#include <process.h>
+#include <profiler.h>
+#include <random.h>
+#include <ring.inl>
+#include <string_builder.h>
+#include <string_helpers.h>
+#include <temp_storage.h>
+#include <timer.h>
 #endif
 
 #define TEMPER_IMPLEMENTATION
@@ -171,7 +171,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthco
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "." );
 
 TEMPER_TEST_PARAMETRIC( test_string_substring, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 start, const u64 count, const char* expected_substring ) {
-	char* actual_susbtring = cast( char* ) alloca( count * sizeof( char ) );
+	char* actual_susbtring = cast( char* ) mem_temp_alloc( count * sizeof( char ) );
 
 	string_substring( string, start, count, actual_susbtring );
 
@@ -530,7 +530,7 @@ TEMPER_TEST_PARAMETRIC( test_array_resize, TEMPER_FLAG_SHOULD_RUN, Array<s32>* a
 
 	u64 new_alloced = 0;
 	if ( new_count >= old_alloced ) {
-		new_alloced = next_po2_up( new_count );
+		new_alloced = next_multiple_of_4_up( new_count );
 	} else {
 		new_alloced = old_alloced;
 	}
@@ -548,7 +548,7 @@ TEMPER_TEST_PARAMETRIC( test_array_reserve, TEMPER_FLAG_SHOULD_RUN, Array<s32>* 
 	TEMPER_CHECK_TRUE( array->count == old_count );
 
 	if ( new_count > old_alloced ) {
-		TEMPER_CHECK_TRUE( array->alloced == next_po2_up( new_count ) );
+		TEMPER_CHECK_TRUE( array->alloced == next_multiple_of_4_up( new_count ) );
 	} else {
 		TEMPER_CHECK_TRUE( array->alloced == old_alloced );
 	}
@@ -558,7 +558,7 @@ TEMPER_TEST_PARAMETRIC( test_array_copy, TEMPER_FLAG_SHOULD_RUN, Array<s32>* ori
 	new_array->copy( original_array );
 
 	TEMPER_CHECK_TRUE( new_array->count == original_array->count );
-	TEMPER_CHECK_TRUE( new_array->alloced == next_po2_up( new_array->count ) );
+	TEMPER_CHECK_TRUE( new_array->alloced == next_multiple_of_4_up( new_array->count ) );
 
 	For ( u64, i, 0, new_array->count ) {
 		TEMPER_CHECK_TRUE_M( (*new_array)[i] == (*original_array)[i], "new_array[%llu] != original_array[%llu] when it should!", i, i );
