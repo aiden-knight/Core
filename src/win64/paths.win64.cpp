@@ -136,13 +136,14 @@ bool8 paths_is_path_absolute( const char* path ) {
 const char* paths_canonicalise_path( const char* path ) {
 	const char* path_copy = paths_fix_slashes( path );
 
-	u64 max_path_length = strlen( path_copy ) * sizeof( char );
+	u64 max_path_length = ( strlen( path_copy ) + 1 ) * sizeof( char );
 
 	char* result = cast( char* ) mem_temp_alloc( max_path_length );
-	memset( result, 0, max_path_length );
 
 	BOOL success = PathCanonicalizeA( result, path_copy );
 	assert( success );
+
+	result[max_path_length - 1] = 0;
 
 	if ( *result == '/' ) {
 		result++;
