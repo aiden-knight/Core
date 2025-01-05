@@ -146,7 +146,7 @@ s32					TruncS64ToS32( const s64 x );
 s16					TruncS64ToS16( const s64 x );
 s8					TruncS64ToS8( const s64 x );
 s16					TruncS32ToS16( const s32 x );
-s16					TruncS32ToS8( const s32 x );
+s8					TruncS32ToS8( const s32 x );
 s8					TruncS16ToS8( const s16 x );
 u32					TruncU64ToU32( const u64 x );
 u16					TruncU64ToU16( const u64 x );
