@@ -82,7 +82,7 @@ u32 hashmap_get_value( const Hashmap* map, const u64 key ) {
 
 	// Note(Tom): I think this is a legit use of const cast since it's purely for telemetry
 	const_cast<Hashmap*>(map)->last_linear_probe = 0U;
-	while ( map->keys[i] != key && map->keys[i] != HASHMAP_UNUSED_BUCKET  && map->last_linear_probe < map->capacity) {
+	while ( map->keys[i] != key && map->keys[i] != HASHMAP_UNUSED_BUCKET && map->last_linear_probe < map->capacity) {
 		i = ( i + 1 ) % map->capacity;
 		const_cast<Hashmap*>(map)->last_linear_probe++;
 	}
@@ -99,7 +99,8 @@ u32 hashmap_get_value( const Hashmap* map, const u64 key ) {
 void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 	u32 i = key % map->capacity;
 	map->last_linear_probe = 0;
-	while ( map->keys[i] != key && map->keys[i] != HASHMAP_UNUSED_BUCKET  && map->last_linear_probe < map->capacity) {
+
+	while ( map->keys[i] != key && map->keys[i] != HASHMAP_UNUSED_BUCKET && map->last_linear_probe < map->capacity) {
 		i = ( i + 1 ) % map->capacity;
 		map->last_linear_probe++;
 	}
@@ -109,6 +110,11 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 		warning("SET: Key %d or empty space not found in hashmap\n", key);
 		return;
 	}
+
+	if (map->keys[i] == HASHMAP_UNUSED_BUCKET)
+	{
+		map->usage_count++;
+	}	
 
 	map->keys[i] = key;
 	map->values[i] = value;
@@ -150,4 +156,5 @@ void hashmap_remove_key( Hashmap* map, const u64 key ){
             i = (i - 1) % map->capacity;
         }
 	}
+	map->usage_count--;
 }

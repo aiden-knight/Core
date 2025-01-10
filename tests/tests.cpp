@@ -721,6 +721,104 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == third_key);
 }
 
+TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation)
+{
+	Hashmap* hashmap = hashmap_create(number_of_buckets);
+	u64 hash_seed = 0x9E3779B97F4A7C15;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-int-float-conversion"
+	u32 intended_fill = static_cast<u32>(number_of_buckets * utilisation);
+#pragma GCC diagnostic pop
+
+	auto get_hash_at_sequence = [&](u32 sequence) -> u64
+	{
+		assert(sequence < hashmap->usage_count);
+		u32 running_hash_count = -1U;
+		u64 hash = HASHMAP_TOMBSTONE_BUCKET;
+		For(u32, key_index, 0, hashmap->capacity)
+		{
+			if(hashmap->keys[key_index] != HASHMAP_UNUSED_BUCKET && hashmap->keys[key_index] != HASHMAP_TOMBSTONE_BUCKET)
+			{
+				running_hash_count++;
+				if(running_hash_count == sequence)
+				{
+					hash = hashmap->keys[key_index];
+					break;
+				}
+			}
+		}
+		return hash;
+	};
+
+	//Setup test by bringing the utilisation up to utilitsation
+	{
+		u64 i = 0U;
+		while (hashmap->usage_count + hashmap->tombstone_count < intended_fill)
+		{
+			if (i % 3 != 2)
+			{
+				// Two adds for one remove
+				constexpr u32 LENGTH_OF_RANDOM_FLOATS = 16u;
+				float random_data[LENGTH_OF_RANDOM_FLOATS];
+
+				For(u32, float_index, 0, LENGTH_OF_RANDOM_FLOATS)
+				{
+					random_data[float_index] = random_float32(0.f, 1.f);
+				}
+
+				u64 hash = hash64(random_data, sizeof(float) * LENGTH_OF_RANDOM_FLOATS, hash_seed);
+
+				hashmap_set_value(hashmap, hash, 69);
+			}
+			else
+			{
+				u32 to_remove = (u32)random_float32(0, (float32)hashmap->usage_count);
+				u64 hash = get_hash_at_sequence(to_remove);
+
+				hashmap_remove_key(hashmap, hash);
+			}
+
+			i++;
+		}
+	}
+
+	// get a bunch of random hashes and grab the results
+	Array<u32> linear_probe_length;
+	linear_probe_length.reserve(intended_fill);
+	For(u32, i, 0, hashmap->capacity)
+	{
+		u64 hash = hashmap->keys[i];
+		if(hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET)
+		{
+			continue;
+		}
+		hashmap_get_value(hashmap, hash);
+		linear_probe_length.add(hashmap->last_linear_probe);
+	}
+
+	// Analyze 
+	u32 biggest = 0U;
+	float mean = 0.f;
+
+	For(u32, i, 0, linear_probe_length.count)
+	{
+		u32 probe = linear_probe_length[i];
+		if(probe > biggest)
+		{
+			biggest = probe;
+		}
+
+		mean += (float32)probe;
+		//warning("%d", probe);
+	}
+
+	mean = mean / (float32)linear_probe_length.count;
+
+	warning("\n===\nPROBE RESULTS for %f pc utilization: average probe length was %f, biggest was %d\n===\n", utilisation * 100.f, mean, biggest);
+
+	hashmap_destroy(hashmap);
+}
+
 static Hashmap* g_hashmap = NULL;
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_create, &g_hashmap, 10 );
@@ -734,6 +832,12 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Grand
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.3f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
+
 /*
 ================================================================================================
 
