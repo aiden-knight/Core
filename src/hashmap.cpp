@@ -46,7 +46,9 @@ Hashmap32* hashmap32_create( const u32 count ) {
 	assert( count );
 
 	Hashmap32* map = cast( Hashmap32* ) mem_alloc( sizeof( Hashmap32 ) );
-	map->count = count;
+	map->capacity = count;
+	map->usage_count = 0U;
+	map->tombstone_count = 0U;
 	map->keys = cast( u32* ) mem_alloc( count * sizeof( u32 ) );
 	map->values = cast( u32* ) mem_alloc( count * sizeof( u32 ) );
 
@@ -69,31 +71,87 @@ void hashmap32_destroy( Hashmap32* map ) {
 }
 
 void hashmap32_reset( Hashmap32* map ) {
-	memset( map->keys, 0xff, map->count * sizeof( u32 ) );
-	memset( map->values, 0xff, map->count * sizeof( u32 ) );
+	memset( map->keys, HASHMAP32_UNUSED, map->capacity * sizeof( u32 ) );
+	memset( map->values, HASHMAP32_UNUSED, map->capacity * sizeof( u32 ) );
 }
 
 u32 hashmap32_get_value( const Hashmap32* map, const u32 key ) {
-	u32 i = key % map->count;
+	assertf(key != HASHMAP32_UNUSED, "Key cannot equal empty bucket value (0u)");
+	assertf(key != HASHMAP32_TOMBSTONE, "Key cannot equal Tombstone (u32 MAX)");
 
-	while ( map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED ) {
-		i = ( i + 1 ) % map->count;
+	u32 i = key % map->capacity;
+
+	// Note(Tom): I think this is a legit use of const cast since it's purely for telemetry
+	const_cast<Hashmap32*>(map)->last_linear_probe = 0U;
+	while ( map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED  && map->last_linear_probe < map->capacity) {
+		i = ( i + 1 ) % map->capacity;
+		const_cast<Hashmap32*>(map)->last_linear_probe++;
 	}
 
-	return map->values[i] == HASHMAP32_UNUSED ? 0 : map->values[i];
+	if(map->keys[i] != key)
+	{
+		warning("GET: Key %d not found in hashmap\n", key);
+		return HASHMAP32_INVALID_VALUE;
+	}
+
+	return map->values[i];
 }
 
 void hashmap32_set_value( Hashmap32* map, const u32 key, const u32 value ) {
-	u32 i = key % map->count;
+	u32 i = key % map->capacity;
+	map->last_linear_probe = 0;
+	while ( map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED  && map->last_linear_probe < map->capacity) {
+		i = ( i + 1 ) % map->capacity;
+		map->last_linear_probe++;
+	}
 
-	while ( map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED ) {
-		i = ( i + 1 ) % map->count;
+	if(map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED)
+	{
+		warning("SET: Key %d or empty space not found in hashmap\n", key);
+		return;
 	}
 
 	map->keys[i] = key;
 	map->values[i] = value;
 }
 
+void hashmap32_remove_key( Hashmap32* map, const u32 key ){
+	assertf(key != HASHMAP32_UNUSED, "Key cannot equal empty bucket value (0u)");
+	assertf(key != HASHMAP32_TOMBSTONE, "Key cannot equal Tombstone (u32 MAX)");
+
+	u32 i = key % map->capacity;
+
+	map->last_linear_probe = 0U;
+	while ( map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED  && map->last_linear_probe < map->capacity) {
+		i = ( i + 1 ) % map->capacity;
+		map->last_linear_probe++;
+	}
+
+	if(map->keys[i] != key)
+	{
+		warning("REMOVE: Key %d not found in hashmap\n", key);
+		return;
+	}
+
+	u32 next = (i + 1) % map->capacity;
+	if(map->keys[next] != HASHMAP32_UNUSED)
+	{
+		map->keys[i] = HASHMAP32_TOMBSTONE;
+		map->tombstone_count++;
+	}
+	else
+	{
+		map->keys[i] = HASHMAP32_UNUSED;
+		i = (i - 1) % map->capacity;
+
+ 		while (map->keys[i] == HASHMAP32_TOMBSTONE)
+        {
+            map->keys[i] = HASHMAP32_UNUSED;
+			map->tombstone_count--;
+            i = (i - 1) % map->capacity;
+        }
+	}
+}
 
 /*
 ================================================================================================
@@ -130,8 +188,8 @@ void hashmap64_destroy( Hashmap64* map ) {
 }
 
 void hashmap64_reset( Hashmap64* map ) {
-	memset( map->keys, 0xff, map->count * sizeof( u64 ) );
-	memset( map->values, 0xff, map->count * sizeof( u64 ) );
+	memset( map->keys, HASHMAP32_UNUSED, map->count * sizeof( u64 ) );
+	memset( map->values, HASHMAP32_UNUSED, map->count * sizeof( u64 ) );
 }
 
 u64 hashmap64_get_value( const Hashmap64* map, const u64 key ) {
@@ -157,4 +215,37 @@ void hashmap64_set_value( Hashmap64* map, const u64 key, const u64 value ) {
 
 	map->keys[i] = key;
 	map->values[i] = value;
+}
+
+void hashmap64_remove_key( Hashmap64* map, const u64 key ){
+	assertf(key != HASHMAP64_UNUSED, "Key cannot equal empty bucket value (0u)");
+	assertf(key != HASHMAP64_TOMBSTONE, "Key cannot equal Tombstone (u64 MAX)");
+
+	u64 i = key % map->count;
+
+	while ( map->keys[i] != key && map->keys[i] != HASHMAP32_UNUSED ) {
+		i = ( i + 1 ) % map->count;
+	}
+
+	if(map->keys[i] != key)
+	{
+		warning("%s", "The provided key is not insde the hashmap");
+		return;
+	}
+
+	u64 next = (i + 1) % map->count;
+	if(map->keys[next] != HASHMAP32_UNUSED)
+	{
+		map->keys[i] = HASHMAP32_TOMBSTONE;
+	}
+	else
+	{
+ 		map->keys[i] = HASHMAP32_UNUSED;
+        u64 previous = (i - 1U) % map->count;
+        while (map->keys[previous] == HASHMAP32_TOMBSTONE)
+        {
+            map->keys[previous] = HASHMAP32_UNUSED;
+            previous = (previous - 1U) % map->count;
+        }
+	}
 }

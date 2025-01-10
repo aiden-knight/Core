@@ -30,10 +30,15 @@ SOFTWARE.
 
 #include "core_types.h"
 
-#define HASHMAP32_UNUSED 0xffffffffUL
+#define HASHMAP32_UNUSED 0U
+#define HASHMAP32_TOMBSTONE 0xffffffffU
+#define HASHMAP32_INVALID_VALUE 0xffffffffU
 
 struct Hashmap32 {
-	u32		count;
+	u32		capacity;
+	u32		usage_count;
+	u32 	tombstone_count;
+	u32		last_linear_probe;
 	u32*	keys;
 	u32*	values;
 };
@@ -47,3 +52,4 @@ void		hashmap32_reset( Hashmap32* map );
 u32			hashmap32_get_value( const Hashmap32* map, const u32 key );
 
 void		hashmap32_set_value( Hashmap32* map, const u32 key, const u32 value );
+void		hashmap32_remove_key( Hashmap32* map, const u32 key );

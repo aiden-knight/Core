@@ -70,4 +70,21 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	tests_win64_release_suc.binary_folder = tests_win64_release_non_suc.binary_folder;
 	tests_win64_release_suc.optimization_level = OPTIMIZATION_LEVEL_O3;
 	add_build_config( options, &tests_win64_release_suc );
+
+	// options->generate_solution = true;
+
+	// options->solution.name = "test-sln";
+	// options->solution.path = "../visual_studio";
+	// options->solution.platforms = { "win64" };
+	// options->solution.projects = {
+	// 	{
+	// 		.name = "core",
+	// 		.code_folders = { "/src", "/tests", "/include" },
+	// 		.file_extensions = { "cpp", "h", "inl" },
+	// 		.configs = {
+	// 			{ tests_win64_debug_suc,   { /* debugger arguments */ } },
+	// 			{ tests_win64_release_suc, { /* debugger arguments */ } },
+	// 		}
+	// 	}
+	// };
 }

@@ -30,7 +30,8 @@ SOFTWARE.
 
 #include "core_types.h"
 
-#define HASHMAP64_UNUSED 0xffffffffffffffffULL
+#define HASHMAP64_UNUSED 0ULL
+#define HASHMAP64_TOMBSTONE 0xffffffffffffffffULL
 
 struct Hashmap64 {
 	u64			count;
@@ -47,3 +48,4 @@ void			hashmap64_reset( Hashmap64* map );
 u64				hashmap64_get_value( const Hashmap64* map, const u64 key );
 
 void			hashmap64_set_value( Hashmap64* map, const u64 key, const u64 value );
+void			hashmap64_remove_key( Hashmap64* map, const u64 key );
