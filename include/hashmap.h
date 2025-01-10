@@ -31,7 +31,7 @@ SOFTWARE.
 #include "core_types.h"
 
 #define HASHMAP_UNUSED_BUCKET 0U
-#define HASHMAP_TOMBSTONE_BUCKET 0xffffffffU
+#define HASHMAP_TOMBSTONE_BUCKET 0xffffffffffffffffU
 #define HASHMAP_INVALID_VALUE 0xffffffffU
 
 struct Hashmap {

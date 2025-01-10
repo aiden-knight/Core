@@ -814,7 +814,8 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 
 	mean = mean / (float32)linear_probe_length.count;
 
-	warning("\n===\nPROBE RESULTS for %f pc utilization: average probe length was %f, biggest was %d\n===\n", utilisation * 100.f, mean, biggest);
+	warning("\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, biggest was %d\n Tombstone:Used: %d:%d\n",
+	number_of_buckets, utilisation * 100.f, mean, biggest, hashmap->tombstone_count, hashmap->usage_count);
 
 	hashmap_destroy(hashmap);
 }
