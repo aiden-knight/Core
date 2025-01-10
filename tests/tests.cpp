@@ -40,8 +40,7 @@ SOFTWARE.
 #include <defer.h>
 #include <file.h>
 #include <hash.h>
-#include <hashmap32.h>
-#include <hashmap64.h>
+#include <hashmap.h>
 #include <library.h>
 #include <math.h>
 #include <memory_units.h>
@@ -631,62 +630,62 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 /*
 ================================================================================================
 
-	Hashmap32
+	Hashmap
 
 ================================================================================================
 */
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_create, TEMPER_FLAG_SHOULD_RUN, Hashmap32** hashmap, const u32 count ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** hashmap, const u32 count ) {
 	TEMPER_CHECK_TRUE( hashmap );
 	TEMPER_CHECK_TRUE( !*hashmap );
 
 	TEMPER_CHECK_TRUE( count );
 
-	*hashmap = hashmap32_create( count );
+	*hashmap = hashmap_create( count );
 
 	TEMPER_CHECK_TRUE( ( *hashmap )->capacity == count );
 
 	For ( u64, i, 0, ( *hashmap )->capacity ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->keys[i] == HASHMAP32_UNUSED );
+		TEMPER_CHECK_TRUE_A( ( *hashmap )->keys[i] == HASHMAP_UNUSED_BUCKET );
 	}
 
 	For ( u64, i, 0, ( *hashmap )->capacity ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->values[i] == HASHMAP32_UNUSED );
+		TEMPER_CHECK_TRUE_A( ( *hashmap )->values[i] == HASHMAP_INVALID_VALUE );
 	}
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap32* hashmap, const char* name, const u32 age ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap, const char* name, const u32 age ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	const u32 name_hash = hash32( name, strlen( name ), 0 );
 
-	TEMPER_CHECK_TRUE( hashmap32_get_value( hashmap, name_hash ) == HASHMAP32_INVALID_VALUE );
+	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) == HASHMAP_INVALID_VALUE );
 
-	hashmap32_set_value( hashmap, name_hash, age );
+	hashmap_set_value( hashmap, name_hash, age );
 
-	TEMPER_CHECK_TRUE( hashmap32_get_value( hashmap, name_hash ) == age );
-	TEMPER_CHECK_TRUE( hashmap32_get_value( hashmap, name_hash ) != HASHMAP32_INVALID_VALUE );
+	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) == age );
+	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) != HASHMAP_INVALID_VALUE );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap32* hashmap ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	u32 old_count = hashmap->capacity;
 
-	hashmap32_reset( hashmap );
+	hashmap_reset( hashmap );
 
 	TEMPER_CHECK_TRUE( hashmap->capacity == old_count );
 
 	For ( u64, i, 0, hashmap->capacity ) {
-		TEMPER_CHECK_TRUE_A( hashmap->keys[i] == HASHMAP32_UNUSED );
+		TEMPER_CHECK_TRUE_A( hashmap->keys[i] == HASHMAP_UNUSED_BUCKET );
 	}
 
 	For ( u64, i, 0, hashmap->capacity ) {
-		TEMPER_CHECK_TRUE_A( hashmap->values[i] == HASHMAP32_UNUSED );
+		TEMPER_CHECK_TRUE_A( hashmap->values[i] == HASHMAP_INVALID_VALUE );
 	}
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap32* hashmap ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	u32 count = hashmap->capacity;
@@ -698,114 +697,43 @@ TEMPER_TEST_PARAMETRIC( test_hashmap32_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap32
 	u32 second_value = 70;
 	u32 third_value = 90;
 
-	hashmap32_set_value(hashmap, first_key, first_value); 	// Actual bucket pos 0
+	hashmap_set_value(hashmap, first_key, first_value); 	// Actual bucket pos 0
 	TEMPER_CHECK_TRUE_A(hashmap->keys[0] == first_key);
-	hashmap32_set_value(hashmap, second_key, second_value); // Actual bucket pos 1 (wanted 0)
+	hashmap_set_value(hashmap, second_key, second_value); // Actual bucket pos 1 (wanted 0)
 	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == second_key);
-	hashmap32_set_value(hashmap, third_key, third_value);	// Actual bucket pos 2 (wanted 1)
+	hashmap_set_value(hashmap, third_key, third_value);	// Actual bucket pos 2 (wanted 1)
 	TEMPER_CHECK_TRUE_A(hashmap->keys[2] == third_key);
 
-	hashmap32_remove_key(hashmap, second_key);
+	hashmap_remove_key(hashmap, second_key);
 
 	// Check the tombstone from the second value is in place to allow proper gets
-	TEMPER_CHECK_TRUE_A(hashmap32_get_value(hashmap, third_key) == third_value);
+	TEMPER_CHECK_TRUE_A(hashmap_get_value(hashmap, third_key) == third_value);
 
-	hashmap32_remove_key(hashmap, third_key);
+	hashmap_remove_key(hashmap, third_key);
 	// Check tombstones were removed
-	TEMPER_CHECK_TRUE_A(hashmap->keys[2] == HASHMAP32_UNUSED);
-	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == HASHMAP32_UNUSED);
+	TEMPER_CHECK_TRUE_A(hashmap->keys[2] == HASHMAP_UNUSED_BUCKET);
+	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == HASHMAP_UNUSED_BUCKET);
 
-	hashmap32_set_value(hashmap, third_key, third_value);
+	hashmap_set_value(hashmap, third_key, third_value);
 
 	// Check that add won't probe passed removed tombstone
-	TEMPER_CHECK_TRUE_A(hashmap32_get_value(hashmap, third_key) == third_value);
+	TEMPER_CHECK_TRUE_A(hashmap_get_value(hashmap, third_key) == third_value);
 	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == third_key);
 }
 
-static Hashmap32* g_hashmap32 = NULL;
+static Hashmap* g_hashmap = NULL;
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_create, &g_hashmap32, 10 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_create, &g_hashmap, 10 );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Dan",     27 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Mum",     53 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Dad",     62 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Grandad", 89 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dan",     27 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Tom",     27 ); //Don't forget your buddy :)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Mum",     53 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dad",     62 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Grandad", 89 );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_reset, g_hashmap32 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_remove, g_hashmap32 );
-
-
-/*
-================================================================================================
-
-	Hashmap64
-
-================================================================================================
-*/
-
-TEMPER_TEST_PARAMETRIC( test_hashmap64_create, TEMPER_FLAG_SHOULD_RUN, Hashmap64** hashmap, const u64 count ) {
-	TEMPER_CHECK_TRUE( hashmap );
-	TEMPER_CHECK_TRUE( !*hashmap );
-
-	TEMPER_CHECK_TRUE( count );
-
-	*hashmap = hashmap64_create( count );
-
-	TEMPER_CHECK_TRUE( ( *hashmap )->count == count );
-
-	For ( u64, i, 0, ( *hashmap )->count ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->keys[i] == HASHMAP64_UNUSED );
-	}
-
-	For ( u64, i, 0, ( *hashmap )->count ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->values[i] == HASHMAP64_UNUSED );
-	}
-}
-
-TEMPER_TEST_PARAMETRIC( test_hashmap64_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap64* hashmap, const char* name, const u64 age ) {
-	TEMPER_CHECK_TRUE( hashmap );
-
-	const u64 name_hash = hash64( name, strlen( name ), 0 );
-
-	TEMPER_CHECK_TRUE( hashmap64_get_value( hashmap, name_hash ) == 0 );
-
-	hashmap64_set_value( hashmap, name_hash, age );
-
-	TEMPER_CHECK_TRUE( hashmap64_get_value( hashmap, name_hash ) == age );
-	TEMPER_CHECK_TRUE( hashmap64_get_value( hashmap, name_hash ) != 0 );
-}
-
-TEMPER_TEST_PARAMETRIC( test_hashmap64_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap64* hashmap ) {
-	TEMPER_CHECK_TRUE( hashmap );
-
-	u64 old_count = hashmap->count;
-
-	hashmap64_reset( hashmap );
-
-	TEMPER_CHECK_TRUE( hashmap->count == old_count );
-
-	For ( u64, i, 0, hashmap->count ) {
-		TEMPER_CHECK_TRUE_A( hashmap->keys[i] == HASHMAP64_UNUSED );
-	}
-
-	For ( u64, i, 0, hashmap->count ) {
-		TEMPER_CHECK_TRUE_A( hashmap->values[i] == HASHMAP64_UNUSED );
-	}
-}
-
-static Hashmap64* g_hashmap64 = NULL;
-
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_create, &g_hashmap64, 10 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Dan",     27 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Mum",     53 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Dad",     62 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Grandad", 89 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_reset, g_hashmap64 );
-
-
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
 /*
 ================================================================================================
 

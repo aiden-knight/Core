@@ -30,22 +30,26 @@ SOFTWARE.
 
 #include "core_types.h"
 
-#define HASHMAP64_UNUSED 0ULL
-#define HASHMAP64_TOMBSTONE 0xffffffffffffffffULL
+#define HASHMAP_UNUSED_BUCKET 0U
+#define HASHMAP_TOMBSTONE_BUCKET 0xffffffffU
+#define HASHMAP_INVALID_VALUE 0xffffffffU
 
-struct Hashmap64 {
-	u64			count;
-	u64*		keys;
-	u64*		values;
+struct Hashmap {
+	u32		capacity;
+	u32		usage_count;
+	u32 	tombstone_count;
+	u32		last_linear_probe;
+	u64*	keys;
+	u32*	values;
 };
 
-Hashmap64*		hashmap64_create( u64 count );
-void			hashmap64_destroy( Hashmap64* map );
+Hashmap*	hashmap_create( u32 count );
+void		hashmap_destroy( Hashmap* map );
 
-void			hashmap64_reset( Hashmap64* map );
+void		hashmap_reset( Hashmap* map );
 
 // Returns the value associated with the key if the key has a value, otherwise returns 0.
-u64				hashmap64_get_value( const Hashmap64* map, const u64 key );
+u32			hashmap_get_value( const Hashmap* map, const u64 key );
 
-void			hashmap64_set_value( Hashmap64* map, const u64 key, const u64 value );
-void			hashmap64_remove_key( Hashmap64* map, const u64 key );
+void		hashmap_set_value( Hashmap* map, const u64 key, const u32 value );
+void		hashmap_remove_key( Hashmap* map, const u64 key );
