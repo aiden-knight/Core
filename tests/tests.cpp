@@ -800,6 +800,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	u32 biggest = 0U;
 	float mean = 0.f;
 
+	u32 num_zero_probes = 0;
 	For(u32, i, 0, linear_probe_length.count)
 	{
 		u32 probe = linear_probe_length[i];
@@ -808,14 +809,19 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 			biggest = probe;
 		}
 
+		if(probe == 0U)
+		{
+			num_zero_probes++;
+		}
+
 		mean += (float32)probe;
 		//warning("%d", probe);
 	}
 
 	mean = mean / (float32)linear_probe_length.count;
 
-	warning("\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, biggest was %d\n Tombstone:Used: %d:%d\n",
-	number_of_buckets, utilisation * 100.f, mean, biggest, hashmap->tombstone_count, hashmap->usage_count);
+	warning("\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, biggest was %d. Num that were zero: %d\n Tombstone:Used: %d:%d\n",
+	utilisation * 100.f,number_of_buckets, mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count);
 
 	hashmap_destroy(hashmap);
 }
@@ -834,10 +840,10 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
 
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.3f );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
 
 /*
 ================================================================================================
