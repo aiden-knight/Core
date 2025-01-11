@@ -635,6 +635,17 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 ================================================================================================
 */
 
+TEMPER_TEST(test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN)
+{
+	u32 lo_part = 0xFAFAFAFA;
+	u32 hi_part = 0xAFAFAFAF;
+
+	u64 combined = hashmap_combine(hi_part, lo_part);
+	TEMPER_CHECK_TRUE_A( combined == 0xFAFAFAFAAFAFAFAF);
+	TEMPER_CHECK_TRUE_A( hashmap_get_hi_part(combined) == hi_part);
+	TEMPER_CHECK_TRUE_A( hashmap_get_lo_part(combined) == lo_part);
+}
+
 TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** hashmap, const u32 count ) {
 	TEMPER_CHECK_TRUE( hashmap );
 	TEMPER_CHECK_TRUE( !*hashmap );
@@ -646,11 +657,9 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** h
 	TEMPER_CHECK_TRUE( ( *hashmap )->capacity == count );
 
 	For ( u64, i, 0, ( *hashmap )->capacity ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->keys[i] == HASHMAP_UNUSED_BUCKET );
-	}
-
-	For ( u64, i, 0, ( *hashmap )->capacity ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->values[i] == HASHMAP_INVALID_VALUE );
+		HashmapBucket& bucket = ( *hashmap )->buckets[i];
+		TEMPER_CHECK_TRUE_A( hashmap_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
+		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
 }
 
@@ -676,12 +685,10 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 
 	TEMPER_CHECK_TRUE( hashmap->capacity == old_count );
 
-	For ( u64, i, 0, hashmap->capacity ) {
-		TEMPER_CHECK_TRUE_A( hashmap->keys[i] == HASHMAP_UNUSED_BUCKET );
-	}
-
-	For ( u64, i, 0, hashmap->capacity ) {
-		TEMPER_CHECK_TRUE_A( hashmap->values[i] == HASHMAP_INVALID_VALUE );
+		For ( u64, i, 0, hashmap->capacity ) {
+		HashmapBucket& bucket = hashmap->buckets[i];
+		TEMPER_CHECK_TRUE_A( hashmap_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
+		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
 }
 
@@ -698,11 +705,11 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 	u32 third_value = 90;
 
 	hashmap_set_value(hashmap, first_key, first_value); 	// Actual bucket pos 0
-	TEMPER_CHECK_TRUE_A(hashmap->keys[0] == first_key);
+	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 0) == first_key);
 	hashmap_set_value(hashmap, second_key, second_value); // Actual bucket pos 1 (wanted 0)
-	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == second_key);
+	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 1) == second_key);
 	hashmap_set_value(hashmap, third_key, third_value);	// Actual bucket pos 2 (wanted 1)
-	TEMPER_CHECK_TRUE_A(hashmap->keys[2] == third_key);
+	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 2) == third_key);
 
 	hashmap_remove_key(hashmap, second_key);
 
@@ -711,14 +718,14 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 
 	hashmap_remove_key(hashmap, third_key);
 	// Check tombstones were removed
-	TEMPER_CHECK_TRUE_A(hashmap->keys[2] == HASHMAP_UNUSED_BUCKET);
-	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == HASHMAP_UNUSED_BUCKET);
+	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 2) == HASHMAP_UNUSED_BUCKET);
+	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 1) == HASHMAP_UNUSED_BUCKET);
 
 	hashmap_set_value(hashmap, third_key, third_value);
 
 	// Check that add won't probe passed removed tombstone
 	TEMPER_CHECK_TRUE_A(hashmap_get_value(hashmap, third_key) == third_value);
-	TEMPER_CHECK_TRUE_A(hashmap->keys[1] == third_key);
+	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 1) == third_key);
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation)
@@ -737,12 +744,13 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 		u64 hash = HASHMAP_TOMBSTONE_BUCKET;
 		For(u32, key_index, 0, hashmap->capacity)
 		{
-			if(hashmap->keys[key_index] != HASHMAP_UNUSED_BUCKET && hashmap->keys[key_index] != HASHMAP_TOMBSTONE_BUCKET)
+			u64 key_at_index = hashmap_combine_at_index(hashmap, key_index);
+			if(key_at_index != HASHMAP_UNUSED_BUCKET && key_at_index != HASHMAP_TOMBSTONE_BUCKET)
 			{
 				running_hash_count++;
 				if(running_hash_count == sequence)
 				{
-					hash = hashmap->keys[key_index];
+					hash = key_at_index;
 					break;
 				}
 			}
@@ -772,7 +780,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 			}
 			else
 			{
-				u32 to_remove = (u32)random_float32(0, (float32)hashmap->usage_count);
+				u32 to_remove = (u32)random_float32(0, (float32)(hashmap->usage_count -1));
 				u64 hash = get_hash_at_sequence(to_remove);
 
 				hashmap_remove_key(hashmap, hash);
@@ -787,7 +795,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	linear_probe_length.reserve(intended_fill);
 	For(u32, i, 0, hashmap->capacity)
 	{
-		u64 hash = hashmap->keys[i];
+		u64 hash = hashmap_combine_at_index(hashmap, i);
 		if(hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET)
 		{
 			continue;
@@ -800,7 +808,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	u32 biggest = 0U;
 	float mean = 0.f;
 
-	u32 num_zero_probes = 0;
+	u32 num_zero_probes = 0U;
 	For(u32, i, 0, linear_probe_length.count)
 	{
 		u32 probe = linear_probe_length[i];
