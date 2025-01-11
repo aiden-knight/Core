@@ -690,6 +690,30 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 		TEMPER_CHECK_TRUE_A( hashmap_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
 		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
+
+	TEMPER_CHECK_TRUE_A(hashmap->usage_count == 0U);
+	TEMPER_CHECK_TRUE_A(hashmap->tombstone_count == 0U);
+}
+
+TEMPER_TEST(test_growing, TEMPER_FLAG_SHOULD_RUN)
+{
+	Hashmap* map = hashmap_create(10, 0.5f, true);
+	u64 key = 10;
+	u32 value = 10;
+
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	// Should caust a regrow
+	hashmap_set_value(map, key++, value++);
+	TEMPER_CHECK_TRUE_A(map->capacity == 15);
+
+	// In the new map, 10 is a value bucket index
+	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 10) == 10);
+	// 15 isn't so it should wrap around
+	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 0) == 15);
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
@@ -705,11 +729,11 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 	u32 third_value = 90;
 
 	hashmap_set_value(hashmap, first_key, first_value); 	// Actual bucket pos 0
-	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 0) == first_key);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 0) == first_key);
 	hashmap_set_value(hashmap, second_key, second_value); // Actual bucket pos 1 (wanted 0)
-	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 1) == second_key);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == second_key);
 	hashmap_set_value(hashmap, third_key, third_value);	// Actual bucket pos 2 (wanted 1)
-	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 2) == third_key);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 2) == third_key);
 
 	hashmap_remove_key(hashmap, second_key);
 
@@ -718,19 +742,19 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 
 	hashmap_remove_key(hashmap, third_key);
 	// Check tombstones were removed
-	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 2) == HASHMAP_UNUSED_BUCKET);
-	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 1) == HASHMAP_UNUSED_BUCKET);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 2) == HASHMAP_UNUSED_BUCKET);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == HASHMAP_UNUSED_BUCKET);
 
 	hashmap_set_value(hashmap, third_key, third_value);
 
 	// Check that add won't probe passed removed tombstone
 	TEMPER_CHECK_TRUE_A(hashmap_get_value(hashmap, third_key) == third_value);
-	TEMPER_CHECK_TRUE_A(hashmap_combine_at_index(hashmap, 1) == third_key);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == third_key);
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation)
 {
-	Hashmap* hashmap = hashmap_create(number_of_buckets);
+	Hashmap* hashmap = hashmap_create(number_of_buckets, utilisation, false);
 	u64 hash_seed = 0x9E3779B97F4A7C15;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-int-float-conversion"
@@ -744,7 +768,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 		u64 hash = HASHMAP_TOMBSTONE_BUCKET;
 		For(u32, key_index, 0, hashmap->capacity)
 		{
-			u64 key_at_index = hashmap_combine_at_index(hashmap, key_index);
+			u64 key_at_index = hashmap_internal_combine_at_index(hashmap, key_index);
 			if(key_at_index != HASHMAP_UNUSED_BUCKET && key_at_index != HASHMAP_TOMBSTONE_BUCKET)
 			{
 				running_hash_count++;
@@ -795,7 +819,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	linear_probe_length.reserve(intended_fill);
 	For(u32, i, 0, hashmap->capacity)
 	{
-		u64 hash = hashmap_combine_at_index(hashmap, i);
+		u64 hash = hashmap_internal_combine_at_index(hashmap, i);
 		if(hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET)
 		{
 			continue;

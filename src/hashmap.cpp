@@ -41,14 +41,16 @@ SOFTWARE.
 ================================================================================================
 */
 
-Hashmap* hashmap_create( const u32 capacity ) {
-	assert( capacity );
+Hashmap* hashmap_create( const u32 starting_capacity, float32 normalized_max_utilisation, bool8 should_grow ) {
+	assert( starting_capacity );
+	assert( normalized_max_utilisation < 0.f );
+	assert( normalized_max_utilisation <= 1.f );
 
 	Hashmap* map = cast( Hashmap* ) mem_alloc( sizeof( Hashmap ) );
-	map->capacity = capacity;
-	map->usage_count = 0U;
-	map->tombstone_count = 0U;
-	map->buckets = cast( HashmapBucket*)mem_alloc(capacity * sizeof( HashmapBucket ) );
+	map->capacity = starting_capacity;
+	map->buckets = cast( HashmapBucket*)mem_alloc(starting_capacity * sizeof( HashmapBucket ) );
+	map->should_grow = should_grow;
+	map->max_utilisation = normalized_max_utilisation;
 
 	hashmap_reset( map );
 
@@ -78,6 +80,9 @@ void hashmap_reset( Hashmap* map ) {
 		set_key_at_index(map, i, HASHMAP_UNUSED_BUCKET);
 		map->buckets[i].value = HASHMAP_INVALID_VALUE;
 	}
+
+	map->usage_count = 0U;
+	map->tombstone_count = 0U;
 }
 
 inline u32 try_get_index_of_hash(const Hashmap* map, const u64 key)
@@ -86,10 +91,10 @@ inline u32 try_get_index_of_hash(const Hashmap* map, const u64 key)
 
 	// Note(Tom): I think this is a legit use of const cast since it's purely for telemetry
 	const_cast<Hashmap*>(map)->last_linear_probe = 0U;
-	u64 recombined_hash = hashmap_combine_at_index(map, i);
+	u64 recombined_hash = hashmap_internal_combine_at_index(map, i);
 	while ( recombined_hash != key && recombined_hash != HASHMAP_UNUSED_BUCKET && map->last_linear_probe < map->capacity) {
 		i = ( i + 1 ) % map->capacity;
-		recombined_hash = hashmap_combine_at_index(map, i);
+		recombined_hash = hashmap_internal_combine_at_index(map, i);
 		const_cast<Hashmap*>(map)->last_linear_probe++;
 	}
 
@@ -102,7 +107,7 @@ u32 hashmap_get_value( const Hashmap* map, const u64 key ) {
 
 	u32 i = try_get_index_of_hash(map, key);
 
-	if(hashmap_combine_at_index(map, i) != key)
+	if(hashmap_internal_combine_at_index(map, i) != key)
 	{
 		warning("GET: Key %llu not found in hashmap\n", key);
 		return HASHMAP_INVALID_VALUE;
@@ -113,7 +118,7 @@ u32 hashmap_get_value( const Hashmap* map, const u64 key ) {
 
 void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 	u32 i = try_get_index_of_hash(map, key);
-	u64 key_at_location = hashmap_combine_at_index(map, i);
+	u64 key_at_location = hashmap_internal_combine_at_index(map, i);
 
 	if(key_at_location != key && key_at_location != HASHMAP_UNUSED_BUCKET)
 	{
@@ -124,6 +129,42 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 	if (key_at_location == HASHMAP_UNUSED_BUCKET)
 	{
 		map->usage_count++;
+
+		float32 utilization = (float32)(map->usage_count + map->tombstone_count) / map->capacity;
+		if(utilization > map->max_utilisation)
+		{
+			if(map->should_grow)
+			{
+				HashmapBucket* old_buckets = map->buckets;
+				defer(mem_free(old_buckets));
+
+				u32 old_capacity = map->capacity;
+				map->capacity = cast(u32)(map->capacity * 1.5f);
+				map->buckets = cast(HashmapBucket*)mem_alloc(map->capacity * sizeof(HashmapBucket));
+				// Note(Tom): I don't love that this isn't a memset anymore. this isn's possible if we keep caring about values of unused buckets: unused value != empty bucket.
+				// I suggest we start leaving them untouched. Yes they have stale old data in them, but so long as people are using set that should never be an issue
+				// (we're testing this right?)
+				// Alternatively we could swap tombstone and unused values round and then unused value == empty bucket and zero the entire damn thing :)
+				hashmap_reset(map);
+
+				For(u32, old_bucket_index, 0U, old_capacity)
+				{
+					u64 key_in_bucket = hashmap_combine(old_buckets[old_bucket_index].key_hi, old_buckets[old_bucket_index].key_lo);
+					if(key_in_bucket != HASHMAP_UNUSED_BUCKET && key_in_bucket != HASHMAP_TOMBSTONE_BUCKET)
+					{
+						hashmap_set_value(map, key_in_bucket, old_buckets[old_bucket_index].value);
+					}
+				}
+
+				// Finally add this one
+				hashmap_set_value(map, key, value);
+				return;
+			}
+			else
+			{
+				warning("Hashmap is above utilization of %f with %u buckets", map->max_utilisation, map->capacity);
+			}
+		}
 	}	
 
 	set_key_at_index(map, i, key);
@@ -135,7 +176,7 @@ void hashmap_remove_key( Hashmap* map, const u64 key ){
 	assertf(key != HASHMAP_TOMBSTONE_BUCKET, "Key cannot equal Tombstone (u32 MAX)");
 
 	u32 i = try_get_index_of_hash(map, key);
-	u64 key_at_location = hashmap_combine_at_index(map, i);
+	u64 key_at_location = hashmap_internal_combine_at_index(map, i);
 
 	if(key_at_location != key)
 	{
@@ -154,7 +195,7 @@ void hashmap_remove_key( Hashmap* map, const u64 key ){
 		set_key_at_index(map, i, HASHMAP_UNUSED_BUCKET);
 		i = (i - 1) % map->capacity;
 
- 		while (hashmap_combine_at_index(map, i) == HASHMAP_TOMBSTONE_BUCKET)
+ 		while (hashmap_internal_combine_at_index(map, i) == HASHMAP_TOMBSTONE_BUCKET)
         {
             set_key_at_index(map, i, HASHMAP_UNUSED_BUCKET);
 			map->tombstone_count--;

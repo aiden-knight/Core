@@ -46,10 +46,12 @@ struct Hashmap {
 	u32				usage_count;
 	u32 			tombstone_count;
 	u32				last_linear_probe;
+	float32			max_utilisation;
+	bool8			should_grow;
 	HashmapBucket*	buckets;
 };
 
-Hashmap*	hashmap_create( u32 capacity);
+Hashmap*	hashmap_create( u32 starting_capacity, float32 normalized_max_utilisation = 0.5f, bool8 should_grow = true);
 void		hashmap_destroy( Hashmap* map );
 
 void		hashmap_reset( Hashmap* map );
@@ -65,7 +67,7 @@ constexpr inline u64 hashmap_combine(u32 hi, u32 lo)
 	return ((u64)lo << 32) | hi;
 }
 
-inline u64 hashmap_combine_at_index(const Hashmap* map, u32 index)
+inline u64 hashmap_internal_combine_at_index(const Hashmap* map, u32 index)
 {
 	return hashmap_combine(map->buckets[index].key_hi, map->buckets[index].key_lo);
 }
