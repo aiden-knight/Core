@@ -69,8 +69,8 @@ void hashmap_destroy( Hashmap* map ) {
 
 inline void set_key_at_index(Hashmap* map, u32 index, u64 key)
 {
-	map->buckets[index].key_hi = hashmap_get_hi_part(key);
-	map->buckets[index].key_lo = hashmap_get_lo_part(key);
+	map->buckets[index].key_hi = hashmap_internal_get_hi_part(key);
+	map->buckets[index].key_lo = hashmap_internal_get_lo_part(key);
 }
 
 void hashmap_reset( Hashmap* map ) {
@@ -139,7 +139,7 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 				defer(mem_free(old_buckets));
 
 				u32 old_capacity = map->capacity;
-				map->capacity = cast(u32)(map->capacity * 1.5f);
+				map->capacity = cast(u32)((float32)map->capacity * 1.5f);
 				map->buckets = cast(HashmapBucket*)mem_alloc(map->capacity * sizeof(HashmapBucket));
 				// Note(Tom): I don't love that this isn't a memset anymore. this isn's possible if we keep caring about values of unused buckets: unused value != empty bucket.
 				// I suggest we start leaving them untouched. Yes they have stale old data in them, but so long as people are using set that should never be an issue
@@ -149,7 +149,7 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 
 				For(u32, old_bucket_index, 0U, old_capacity)
 				{
-					u64 key_in_bucket = hashmap_combine(old_buckets[old_bucket_index].key_hi, old_buckets[old_bucket_index].key_lo);
+					u64 key_in_bucket = hashmap_internal_combine(old_buckets[old_bucket_index].key_hi, old_buckets[old_bucket_index].key_lo);
 					if(key_in_bucket != HASHMAP_UNUSED_BUCKET && key_in_bucket != HASHMAP_TOMBSTONE_BUCKET)
 					{
 						hashmap_set_value(map, key_in_bucket, old_buckets[old_bucket_index].value);
@@ -185,7 +185,7 @@ void hashmap_remove_key( Hashmap* map, const u64 key ){
 	}
 
 	u32 next = (i + 1) % map->capacity;
-	if(hashmap_combine(map->buckets[next].key_hi, map->buckets[next].key_lo) != HASHMAP_UNUSED_BUCKET)
+	if(hashmap_internal_combine_at_index(map, next) != HASHMAP_UNUSED_BUCKET)
 	{
 		set_key_at_index(map, i, HASHMAP_TOMBSTONE_BUCKET);
 		map->tombstone_count++;

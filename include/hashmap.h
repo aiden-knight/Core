@@ -62,22 +62,22 @@ u32			hashmap_get_value( const Hashmap* map, const u64 key );
 void		hashmap_set_value( Hashmap* map, const u64 key, const u32 value );
 void		hashmap_remove_key( Hashmap* map, const u64 key );
 
-constexpr inline u64 hashmap_combine(u32 hi, u32 lo)
+constexpr inline u64 hashmap_internal_combine(u32 hi, u32 lo)
 {
 	return ((u64)lo << 32) | hi;
 }
 
 inline u64 hashmap_internal_combine_at_index(const Hashmap* map, u32 index)
 {
-	return hashmap_combine(map->buckets[index].key_hi, map->buckets[index].key_lo);
+	return hashmap_internal_combine(map->buckets[index].key_hi, map->buckets[index].key_lo);
 }
 
-constexpr inline u32 hashmap_get_lo_part(u64 key)
+constexpr inline u32 hashmap_internal_get_lo_part(u64 key)
 {
 	return (u32)(key >> 32);
 }
 
-constexpr inline u32 hashmap_get_hi_part(u64 key)
+constexpr inline u32 hashmap_internal_get_hi_part(u64 key)
 {
 	return (u32)(key & 0xFFFFFFFF);
 }

@@ -640,10 +640,10 @@ TEMPER_TEST(test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN)
 	u32 lo_part = 0xFAFAFAFA;
 	u32 hi_part = 0xAFAFAFAF;
 
-	u64 combined = hashmap_combine(hi_part, lo_part);
+	u64 combined = hashmap_internal_combine(hi_part, lo_part);
 	TEMPER_CHECK_TRUE_A( combined == 0xFAFAFAFAAFAFAFAF);
-	TEMPER_CHECK_TRUE_A( hashmap_get_hi_part(combined) == hi_part);
-	TEMPER_CHECK_TRUE_A( hashmap_get_lo_part(combined) == lo_part);
+	TEMPER_CHECK_TRUE_A( hashmap_internal_get_hi_part(combined) == hi_part);
+	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part(combined) == lo_part);
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** hashmap, const u32 count ) {
@@ -658,7 +658,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** h
 
 	For ( u64, i, 0, ( *hashmap )->capacity ) {
 		HashmapBucket& bucket = ( *hashmap )->buckets[i];
-		TEMPER_CHECK_TRUE_A( hashmap_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
+		TEMPER_CHECK_TRUE_A( hashmap_internal_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
 		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
 }
@@ -687,7 +687,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 
 		For ( u64, i, 0, hashmap->capacity ) {
 		HashmapBucket& bucket = hashmap->buckets[i];
-		TEMPER_CHECK_TRUE_A( hashmap_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
+		TEMPER_CHECK_TRUE_A( hashmap_internal_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
 		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
 
@@ -695,29 +695,10 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 	TEMPER_CHECK_TRUE_A(hashmap->tombstone_count == 0U);
 }
 
-TEMPER_TEST(test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN)
-{
-	Hashmap* map = hashmap_create(10, 0.5f, true);
-	u64 key = 10;
-	u32 value = 10;
-
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	// Should caust a regrow
-	hashmap_set_value(map, key++, value++);
-	TEMPER_CHECK_TRUE_A(map->capacity == 15);
-
-	// In the new map, 10 is a value bucket index
-	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 10) == 10);
-	// 15 isn't so it should wrap around
-	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 0) == 15);
-}
-
 TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
+
+	hashmap_reset(hashmap);
 
 	u32 count = hashmap->capacity;
 	u32 first_key = count; 		// Bucket index % = 0
@@ -877,6 +858,27 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Grand
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
+
+TEMPER_TEST(test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN)
+{
+	Hashmap* map = hashmap_create(10, 0.5f, true);
+	u64 key = 10;
+	u32 value = 10;
+
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	hashmap_set_value(map, key++, value++);
+	// Should caust a regrow
+	hashmap_set_value(map, key++, value++);
+	TEMPER_CHECK_TRUE_A(map->capacity == 15);
+
+	// In the new map, 10 is a value bucket index
+	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 10) == 10);
+	// 15 isn't so it should wrap around
+	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 0) == 15);
+}
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f );
