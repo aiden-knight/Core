@@ -61,9 +61,9 @@ enum ConsoleColor{
 };
 
 //Note(Tom): Question for Dan: is this going to be a problem across lib divides like you found with core context?
-LogVerbosity g_current_verbosity = LOG_VERBOSITY_INFO;
+static LogVerbosity g_current_verbosity = LOG_VERBOSITY_INFO;
 
-static void log(LogVerbosity required_verbosity, ConsoleColor prefix_color, ConsoleColor message_color, const char* prefix, const char* fmt, va_list args)
+static void log(LogVerbosity required_verbosity, ConsoleColor prefix_color, ConsoleColor message_color, const char* prefix, const char* function, const char* fmt, va_list args)
 {
 	if(g_current_verbosity < required_verbosity)
 	{
@@ -74,7 +74,11 @@ static void log(LogVerbosity required_verbosity, ConsoleColor prefix_color, Cons
 
 	SetConsoleTextAttribute( handle, prefix_color );
 
-	printf( "\n%s", prefix );
+#ifdef LOG_SHOW_FUNCTIONS
+	printf( "\n%s(%s):  ", prefix, function );
+#else
+	printf( "\n%s:  ", prefix );
+#endif
 
 	SetConsoleTextAttribute( handle, message_color );
 
@@ -83,25 +87,25 @@ static void log(LogVerbosity required_verbosity, ConsoleColor prefix_color, Cons
 	SetConsoleTextAttribute( handle, CONSOLE_COLOR_DEFAULT );
 }
 
-void info(const char* fmt, ... )
+void info_internal(const char* function, const char* fmt, ... )
 {
 	va_list args;
 	va_start( args, fmt );
-	log(LOG_VERBOSITY_INFO, CONSOLE_COLOR_BRIGHT_BLUE, CONSOLE_COLOR_LIGHT_GRAY, "INFO: ", fmt, args);
+	log(LOG_VERBOSITY_INFO, CONSOLE_COLOR_BRIGHT_BLUE, CONSOLE_COLOR_LIGHT_GRAY, "INFO",function, fmt, args);
 	va_end( args );
 }
 
-void warning( const char* fmt, ... ) {
+void warning_internal(const char* function, const char* fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-	log(LOG_VERBOSITY_WARNING, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "WARNING: ", fmt, args);
+	log(LOG_VERBOSITY_WARNING, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "WARNING",function, fmt, args);
 	va_end( args );
 }
 
-void error( const char* fmt, ... ) {
+void error_internal(const char* function, const char* fmt, ... ) {
 	va_list args;
 	va_start(args, fmt );
-	log(LOG_VERBOSITY_ERROR, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "ERROR: ", fmt, args);
+	log(LOG_VERBOSITY_ERROR, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "ERROR", fmt, function, args);
 	va_end( args );
 }
 
