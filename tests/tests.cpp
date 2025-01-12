@@ -695,7 +695,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 	TEMPER_CHECK_TRUE_A(hashmap->tombstone_count == 0U);
 }
 
-TEMPER_TEST(test_growing, TEMPER_FLAG_SHOULD_RUN)
+TEMPER_TEST(test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN)
 {
 	Hashmap* map = hashmap_create(10, 0.5f, true);
 	u64 key = 10;
