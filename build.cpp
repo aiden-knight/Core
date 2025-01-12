@@ -31,7 +31,7 @@ SOFTWARE.
 BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	BuildConfig tests_common = {
 		.source_files			= { "tests/tests.cpp" },
-		.defines				= { "_CRT_SECURE_NO_WARNINGS" },
+		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS" },
 		.additional_includes	= { "include" },
 		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
 		.ignore_warnings		= { "-Wno-switch-default" },
@@ -75,15 +75,15 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 
 	// options->solution.name = "test-sln";
 	// options->solution.path = "../visual_studio";
-	// options->solution.platforms = { "win64" };
+	// options->solution.platforms = { "x64" };
 	// options->solution.projects = {
 	// 	{
 	// 		.name = "core",
 	// 		.code_folders = { "/src", "/tests", "/include" },
 	// 		.file_extensions = { "cpp", "h", "inl" },
 	// 		.configs = {
-	// 			{ tests_win64_debug_suc,   { /* debugger arguments */ } },
-	// 			{ tests_win64_release_suc, { /* debugger arguments */ } },
+	// 			{ "debug", tests_win64_debug_suc,   { /* debugger arguments */ } },
+	// 			{ "release", tests_win64_release_suc, { /* debugger arguments */ } },
 	// 		}
 	// 	}
 	// };
