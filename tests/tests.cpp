@@ -664,6 +664,10 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** h
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap, const char* name, const u32 age ) {
+	
+	LogVerbosity previous_log_verbosity = get_log_verbosity();
+	set_log_verbosity(LOG_VERBOSITY_ERROR); //Hiding warnings from getting values that don't exist as this is intentionally checking this behaviour
+	
 	TEMPER_CHECK_TRUE( hashmap );
 
 	const u32 name_hash = hash32( name, strlen( name ), 0 );
@@ -674,6 +678,8 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, 
 
 	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) == age );
 	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) != HASHMAP_INVALID_VALUE );
+
+	set_log_verbosity(previous_log_verbosity);
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
@@ -839,7 +845,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 
 	none_zero_mean = none_zero_mean / (float32)(linear_probe_length.count - num_zero_probes);
 
-	warning("\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, average of non zero was %f, biggest was %d. Num that were zero: %d\n Tombstone:Used: %d:%d\n",
+	info("\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, average of non zero was %f, biggest was %d. Num that were zero: %d\n Tombstone:Used: %d:%d\n",
 	utilisation * 100.f,number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count);
 
 	hashmap_destroy(hashmap);

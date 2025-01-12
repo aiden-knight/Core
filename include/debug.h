@@ -41,11 +41,20 @@ SOFTWARE.
 
 ================================================================================================
 */
-
+enum LogVerbosity : u8
+{
+	LOG_VERBOSITY_NONE = 0,
+	LOG_VERBOSITY_ERROR,
+	LOG_VERBOSITY_WARNING,
+	LOG_VERBOSITY_INFO
+};
 // logging
+void							info(const char* fmt, ...);
 void							warning( const char* fmt, ... );
 void							error( const char* fmt, ... );
 
+void							set_log_verbosity(LogVerbosity verbosity);
+LogVerbosity					get_log_verbosity();
 void							dump_callstack( void );
 
 // DO NOT CALL THESE FUNCTIONS DIRECTLY
