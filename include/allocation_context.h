@@ -60,14 +60,24 @@ struct Allocator {
 
 void allocator_intitialize(Allocator* allocator, u64 total_size);
 
+struct AllocatorRelationship
+{
+	Allocator* parent;
+	Allocator* child;
+};
+
 // implicit context
 constexpr u32 MAX_ALLOCATOR_STACK_SIZE = 32;
+constexpr u32 MAX_ALLOCATOR_RELATIONSHIPS = 32;
 struct CoreContext {
 	Allocator*									allocator_stack[MAX_ALLOCATOR_STACK_SIZE];
 	u32											current_stack_size;
 	Allocator									temp_storage;
 
 	Paths*										paths;
+
+	AllocatorRelationship						allocator_relationships[MAX_ALLOCATOR_RELATIONSHIPS];
+	u32 										num_allocator_relationships;
 };
 
 extern CoreContext*								g_core_ptr;
@@ -86,6 +96,9 @@ void*											mem_realloc_internal( void* ptr, const u64 size );
 void*											mem_realloc_aligned_internal( void* ptr, const u64 size, const MemoryAlignment alignment );
 void											mem_free_internal( void* ptr );
 
+void											mem_reset_allocator_internal(void);
+void											mem_shutdown_allocator_internal(void);
+
 void											mem_push_allocator(Allocator* allocator);
 void											mem_pop_allocator();
 
@@ -95,3 +108,8 @@ void											mem_pop_allocator();
 #define mem_realloc( ptr, size )					mem_realloc_internal( (ptr), (size) )
 #define mem_realloc_aligned( ptr, size, alignment )	mem_realloc_aligned_internal( (ptr), (size), cast( MemoryAlignment ) (alignment) )
 #define mem_free( ptr )								mem_free_internal( (ptr) )
+
+// Resets the current allocator
+#define mem_reset()									mem_reset_allocator_internal(bool YOLO)
+// Shuts down the current allocator
+#define mem_shutdown()								mem_shutdown_allocator_internal(bool YOLO)
