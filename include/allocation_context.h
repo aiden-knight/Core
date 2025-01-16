@@ -65,7 +65,7 @@ constexpr u32 MAX_ALLOCATOR_STACK_SIZE = 32;
 struct CoreContext {
 	Allocator*									allocator_stack[MAX_ALLOCATOR_STACK_SIZE];
 	u32											current_stack_size;
-	struct LinearAllocator*						temp_storage;
+	Allocator									temp_storage;
 
 	Paths*										paths;
 };

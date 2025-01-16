@@ -61,6 +61,7 @@ void allocator_intitialize(Allocator* allocator, u64 total_size){
 static Allocator get_bottom_allocator()
 {
 	Allocator malloc_allocator;
+	// Note(Tom): Unlike other allocators malloc is stateless and doesn't need initting
 	malloc_allocator_create_generic_interface(malloc_allocator);
 	return malloc_allocator;
 }
@@ -80,8 +81,8 @@ void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
 	static Allocator s_bottom_allocator = get_bottom_allocator();
 	mem_push_allocator(&s_bottom_allocator);
 
-	g_core_context.temp_storage = linear_allocator_create(temp_storage_size);
-
+	linear_allocator_create_generic_interface(g_core_context.temp_storage);
+	allocator_intitialize(&g_core_context.temp_storage, temp_storage_size);
 
 	core_init_platform();
 }
