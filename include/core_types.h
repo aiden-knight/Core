@@ -122,9 +122,10 @@ SOFTWARE.
 // reverse for loop helper macro
 #define RFor( T, it, start, count )	for ( T it = (count); it-- > (start); )
 
+// returns the amount of padding required to align x up to the next aligned address
+#define padding_up(x, alignment)	( (alignment) - 1 )  & ~( (alignment) - 1 )
 // returns the input 'x' that has been aligned up by 'alignment' to the next largest value, in bytes
-#define align_up( x, alignment )	( ( (x) + ( (alignment) - 1 ) ) & ~( (alignment) - 1 ) )
-
+#define align_up( x, alignment )	( (x) +  padding_up(x, alignment) )
 
 typedef int8_t		s8;
 typedef int16_t		s16;

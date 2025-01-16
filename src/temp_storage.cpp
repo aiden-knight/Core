@@ -30,6 +30,7 @@ SOFTWARE.
 #include <allocation_context.h>
 #include <allocator_linear.h>
 
+#include <debug.h>
 /*
 ================================================================================================
 
@@ -38,21 +39,27 @@ SOFTWARE.
 ================================================================================================
 */
 
-void* g_default_temp_storage_data = NULL;
+u64 mem_tell_temp_storage( void ){
+	assert(g_core_ptr);
+	return linear_allocator_tell(g_core_ptr->temp_storage);
+}
+void mem_rewind_temp_storage( const u64 position ){
+	assert(g_core_ptr);
+	linear_allocator_rewind(g_core_ptr->temp_storage, position );
 
-Allocator g_default_temp_storage = {
-	.init				= mem_create_linear,
-	.shutdown			= mem_destroy_linear,
-	.allocate			= mem_alloc_linear,
-	.allocate_aligned	= mem_alloc_linear_aligned,
-	.free				= mem_free_linear,
-	.reset				= mem_reset_linear,
-};
-
-void mem_reset_temp_storage() {
-	g_core_context.temp_storage->reset( g_core_context.temp_storage_data );
 }
 
-void* mem_temp_alloc_internal( const u64 size, const char* file, const int line ) {
-	return g_core_context.temp_storage->allocate( g_core_context.temp_storage_data, size, file, line );
+void mem_reset_temp_storage() {
+	assert(g_core_ptr);
+	linear_allocator_reset(g_core_ptr->temp_storage);
+}
+
+void* mem_temp_alloc_internal( const u64 size) {
+	assert(g_core_ptr);
+	return linear_allocator_alloc(g_core_ptr->temp_storage, size, DEFAULT_MEMORY_ALIGNMENT);
+}
+
+void* mem_temp_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ){
+	assert(g_core_ptr);
+	return linear_allocator_alloc(g_core_ptr->temp_storage, size, alignment);
 }

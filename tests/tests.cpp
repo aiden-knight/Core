@@ -30,7 +30,7 @@ SOFTWARE.
 #include "../src/core.suc.cpp"
 #else
 #include <allocation_context.h>
-#include <allocator_generic.h>
+#include <allocator_malloc.h>
 #include <allocator_linear.h>
 #include <array.inl>
 #include <cmd_line_args.h>
@@ -212,27 +212,23 @@ struct TestStruct {
 	const char*	string;
 };
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator, const u64 size_bytes ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator** allocator, const u64 size_bytes ) {
 	TEMPER_CHECK_TRUE( allocator );
 	TEMPER_CHECK_TRUE( !*allocator );
 
-	mem_create_linear( size_bytes, cast( void** ) allocator );
+	*allocator = linear_allocator_create( size_bytes );
 
 	TEMPER_CHECK_TRUE( ( *allocator )->offset == 0 );
 	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == size_bytes );
 }
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator, const u32 x, const char* string ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, LinearAllocator* allocator, const u32 x, const char* string ) {
 	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( *allocator );
 
-	u64 old_offset = ( *allocator )->offset;
-	u64 old_size = ( *allocator )->size_bytes;
+	u64 old_offset = allocator->offset;
+	u64 old_size = allocator->size_bytes;
 
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
-
-	TestStruct* test_struct = cast( TestStruct* ) mem_alloc_linear( *allocator, sizeof( TestStruct ), __FILE__, __LINE__ );
+	TestStruct* test_struct = cast( TestStruct* ) linear_allocator_alloc( allocator, sizeof( TestStruct ), MEMORY_ALIGNMENT_EIGHT);
 	test_struct->x = x;
 	test_struct->string = string;
 
@@ -240,248 +236,57 @@ TEMPER_TEST_PARAMETRIC( linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, Alloc
 	TEMPER_CHECK_TRUE( test_struct->x == x );
 	TEMPER_CHECK_TRUE( string_equals( test_struct->string, string ) );
 
-	u64 expected_new_offset = align_up( old_offset + sizeof( TestStruct ) + sizeof( LinearAllocatorHeader ), cast( u64 ) MEMORY_ALIGNMENT_EIGHT );
+	u64 padding = padding_up(old_offset,MEMORY_ALIGNMENT_EIGHT);
+	u64 expected_new_offset = old_offset + padding + sizeof(TestStruct);
 
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == expected_new_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->offset != old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
+	TEMPER_CHECK_TRUE( allocator->offset == expected_new_offset );
+	TEMPER_CHECK_TRUE( allocator->offset != old_offset );
+	TEMPER_CHECK_TRUE( allocator->size_bytes == old_size );
 }
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, LinearAllocator* allocator ) {
 	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( *allocator );
 
-	u64 old_offset = ( *allocator )->offset;
-	u64 old_size = ( *allocator )->size_bytes;
+	u64 old_offset 	= allocator->offset;
+	u64 old_size 	= allocator->size_bytes;
 
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
+	linear_allocator_reset( allocator );
 
-	mem_reset_linear( *allocator );
-
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == 0 );
-	TEMPER_CHECK_TRUE( ( *allocator )->offset != old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
+	TEMPER_CHECK_TRUE( allocator->offset == 0 );
+	TEMPER_CHECK_TRUE( allocator->offset != old_offset );
+	TEMPER_CHECK_TRUE( allocator->size_bytes == old_size );
 }
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator* allocator ) {
 	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( *allocator );
 
-	mem_destroy_linear( *allocator );
+	linear_allocator_destroy( allocator );
 	allocator = NULL;
 
 	TEMPER_CHECK_TRUE( !allocator );
 }
 
-static AllocatorLinearData* g_allocator = NULL;
+static LinearAllocator* g_allocator = NULL;
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_create, &g_allocator, MEM_KILOBYTES( 1 ) );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_create, &g_allocator, MEM_KILOBYTES( 1 ) );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 100, "this is a test string" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 200, "this is another test string" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 300, "and another one" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 400, "one last time" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 500, "ok im done now" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 100, "this is a test string" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 200, "this is another test string" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 300, "and another one" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 400, "one last time" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 500, "ok im done now" );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_reset, &g_allocator );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_reset, g_allocator );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 555, "should be starting from the beginning again now" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 666, "your message here" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 777, "dont look directly into the bugs" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 888, "rzcore is great" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 999, "Ross Kemp" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 555, "should be starting from the beginning again now" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 666, "your message here" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 777, "dont look directly into the bugs" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 888, "rzcore is great" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 888, "rzcore? great throwback Dan" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 999, "Ross Kemp" );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_destroy, &g_allocator );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, g_allocator );
 
-
-/*
-================================================================================================
-
-	AllocatorGeneric
-
-================================================================================================
-*/
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-but-set-parameter"
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_create, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, const u64 size ) {
-	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( !*allocator );
-
-	mem_create_generic( size, cast( void** ) allocator );
-
-	TEMPER_CHECK_TRUE( ( *allocator )->tail == NULL );
-}
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator ) {
-	TEMPER_CHECK_TRUE( ( *allocator )->tail == NULL );
-
-	mem_destroy_generic( *allocator );
-	( *allocator ) = NULL;
-
-	TEMPER_CHECK_TRUE( !*allocator );
-}
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, const TestStruct thing, TestStruct** out_thing ) {
-	GenericAllocationHeader* previous_tail = ( *allocator )->tail;
-
-	// DM: 23/12/2022: obviously this is imperfect
-	// but idk how else to elegantly automate getting the line that the TestStruct got allocated at
-	const u64 alloc_line = __LINE__ + 2;
-
-	TestStruct* alloced_thing = cast( TestStruct* ) mem_alloc_generic( ( *allocator ), sizeof( TestStruct ), __FILE__, __LINE__ );
-	alloced_thing->x = thing.x;
-	alloced_thing->string = thing.string;
-
-	*out_thing = alloced_thing;
-
-	TEMPER_CHECK_TRUE( alloced_thing != NULL );
-	TEMPER_CHECK_TRUE( alloced_thing->x == thing.x );
-	TEMPER_CHECK_TRUE( string_equals( alloced_thing->string, thing.string ) );
-
-	// check header
-	{
-		u8* ptr = cast( u8* ) alloced_thing;
-
-		TEMPER_CHECK_TRUE( ( *allocator )->tail == cast( GenericAllocationHeader* ) ptr - 1 );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->next == NULL );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->prev == previous_tail );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->ptr == alloced_thing );
-		TEMPER_CHECK_TRUE( memcmp( ( *allocator )->tail->ptr, alloced_thing, sizeof( TestStruct ) ) == 0 );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->size == sizeof( TestStruct ) );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->line == alloc_line );
-		TEMPER_CHECK_TRUE( string_equals( ( *allocator )->tail->file, __FILE__ ) );
-	}
-}
-
-#pragma clang diagnostic pop
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_free, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, TestStruct* thing, const bool8 freeing_tail, const bool8 all_things_are_free ) {
-	GenericAllocationHeader* old_tail = ( *allocator )->tail;
-	GenericAllocationHeader* old_tail_prev = ( *allocator )->tail->prev;
-
-	TestStruct thing_copy = {
-		.x		= thing->x,
-		.string	= thing->string
-	};
-
-	mem_free_generic( ( *allocator ), thing, __FILE__, __LINE__ );
-
-	TEMPER_CHECK_TRUE( thing->x != thing_copy.x );
-	TEMPER_CHECK_TRUE( thing->string != thing_copy.string );
-
-	thing = NULL;
-
-	if ( freeing_tail ) {
-		TEMPER_CHECK_TRUE( ( *allocator )->tail != old_tail );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail == old_tail_prev );
-	}
-
-	// are all things free?
-	{
-		const bool8 actual_answer = ( *allocator )->tail == NULL;
-
-		TEMPER_CHECK_TRUE( actual_answer == all_things_are_free );
-	}
-}
-
-static AllocatorGeneric* g_allocator_generic = NULL;
-
-static TestStruct* g_thing0 = NULL;
-static TestStruct* g_thing1 = NULL;
-static TestStruct* g_thing2 = NULL;
-static TestStruct* g_thing3 = NULL;
-static TestStruct* g_thing4 = NULL;
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_create, &g_allocator_generic, MEM_KILOBYTES( 1 ) );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_destroy, &g_allocator_generic );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_create, &g_allocator_generic, MEM_KILOBYTES( 1 ) );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 5,  "This is a string"       }, &g_thing0 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 6,  "This is another string" }, &g_thing1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 9,  "Did this get malloced?" }, &g_thing2 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 14, "What about this one?"   }, &g_thing3 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 19, "Did it really though?"  }, &g_thing4 );
-
-// first test the ideal use-case of free-ing in reverse order
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing4, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing3, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing2, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing1, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing0, true, true );
-
-// now test out of order freeing
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 1,  "one"     }, &g_thing0 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 2,  "two"     }, &g_thing1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 4,  "four"    }, &g_thing2 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 8,  "eight"   }, &g_thing3 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 16, "sixteen" }, &g_thing4 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing0, false, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing1, false, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing3, false, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing4, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing2, true, true );
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_realloc, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, TestStruct** out_things_array, u64* out_things_array_count, const u64 num_things_to_add ) {
-	TEMPER_CHECK_TRUE( out_things_array_count );
-
-	// cache things before realloc call
-	u64 old_count = ( *out_things_array_count );
-	u8* old_ptr = cast( u8* ) *out_things_array;
-	GenericAllocationHeader* old_header = old_ptr ? ( cast( GenericAllocationHeader* ) old_ptr - 1 ) : NULL;
-	GenericAllocationHeader* old_prev = old_header ? old_header->prev : NULL;
-	GenericAllocationHeader* old_next = old_header ? old_header->next : NULL;
-
-	*out_things_array_count += num_things_to_add;
-
-	u64 new_realloc_size = ( *out_things_array_count ) * sizeof( TestStruct );
-
-	u64 alloc_line = __LINE__ + 2;
-
-	*out_things_array = cast( TestStruct* ) mem_realloc_generic( *allocator, *out_things_array, new_realloc_size, __FILE__, __LINE__ );
-
-	// get new values after realloc call
-	u8* ptr = cast( u8* ) *out_things_array;
-	GenericAllocationHeader* header = cast( GenericAllocationHeader* ) ptr - 1;
-
-	TEMPER_CHECK_TRUE( ( *out_things_array ) != NULL );
-	TEMPER_CHECK_TRUE( ( *out_things_array_count ) == old_count + num_things_to_add );
-
-	// check header
-	{
-		TEMPER_CHECK_TRUE( header->ptr == ( *out_things_array ) );
-		TEMPER_CHECK_TRUE( header->size == new_realloc_size );
-		TEMPER_CHECK_TRUE( string_equals( header->file, __FILE__ ) );
-		TEMPER_CHECK_TRUE( header->line == alloc_line );
-		TEMPER_CHECK_TRUE( header->prev == old_prev );
-		TEMPER_CHECK_TRUE( header->next == old_next );
-
-		if ( header->prev ) {
-			TEMPER_CHECK_TRUE( header->prev->next == header );
-		}
-
-		if ( header->next ) {
-			TEMPER_CHECK_TRUE( header->next->prev == header );
-		}
-	}
-}
-
-static u64 things_array_count = 0;
-static TestStruct* things_array = NULL;
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, things_array, true, true );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_destroy, &g_allocator_generic );
 
 
 /*

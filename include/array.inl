@@ -131,8 +131,16 @@ void Array<T>::resize( const u64 num_items ) {
 template<class T>
 void Array<T>::reserve( const u64 bytes ) {
 	if ( bytes > alloced ) {
+		u64 previous_alloced = alloced;
 		alloced = next_multiple_of_4_up( bytes );
-		data = cast( T* ) mem_realloc( data, alloced * sizeof( T ) );
+		if (previous_alloced > 0)
+		{
+			data = cast(T*) mem_realloc(data, alloced * sizeof(T));
+		}
+		else
+		{
+			data = cast(T*) mem_alloc(alloced * sizeof(T));
+		}
 	}
 }
 

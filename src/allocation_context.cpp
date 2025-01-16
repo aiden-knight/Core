@@ -27,7 +27,8 @@ SOFTWARE.
 */
 
 #include <allocation_context.h>
-#include <allocator_generic.h>
+#include <allocator_malloc.h>
+#include <allocator_linear.h>
 #include <debug.h>
 #include <cmd_line_args.h>
 
@@ -46,86 +47,101 @@ SOFTWARE.
 extern void core_init_platform();
 extern void core_shutdown_platform();
 
-void* g_default_allocator_data = NULL;
-
-Allocator g_default_allocator = {
-	.init				= mem_create_generic,
-	.shutdown			= mem_destroy_generic,
-	.allocate			= mem_alloc_generic,
-	.allocate_aligned	= mem_alloc_generic_aligned,
-	.reallocate			= mem_realloc_generic,
-	.free				= mem_free_generic,
-	.reset				= mem_reset_generic
-};
-
 // implicit context
 // TODO(DM): 19/1/2023: this should be one per thread
-CoreContext g_core_context = {
-	.allocator			= &g_default_allocator,
-	.temp_storage		= &g_default_temp_storage
-};
+static CoreContext g_core_context = {};
+CoreContext* g_core_ptr = nullptr;
+
+void allocator_intitialize(Allocator* allocator, u64 total_size){
+	assert(!allocator->data);
+
+	allocator->data = allocator->init(total_size);
+}
+
+static Allocator get_bottom_allocator()
+{
+	Allocator malloc_allocator;
+	malloc_allocator_create_generic_interface(malloc_allocator);
+	return malloc_allocator;
+}
 
 void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
 	assert( allocator_size );
 	assert( temp_storage_size );
+	//Note(TOM) unused for now. My thoughts are that perhaps you configure your programs element 1 allocator youself
+	unused(allocator_size);
+	g_core_ptr = &g_core_context;
 
-	// init default allocators
-	{
-		// TODO(DM): 11/2/2023: still not sure if letting users specify the total allocator size is the right answer
-		// or if we want to just let users specify the size of a page and then we make as many as we need etc
-		g_default_allocator.init( allocator_size, cast( void** ) &g_default_allocator_data );
-		g_default_temp_storage.init( temp_storage_size, cast( void** ) &g_default_temp_storage_data );
-
-		g_core_context.allocator_data = g_default_allocator_data;
-		g_core_context.temp_storage_data = g_default_temp_storage_data;
+	g_core_context.current_stack_size = 0U;
+	For(u32, i, 0U, MAX_ALLOCATOR_STACK_SIZE){
+		g_core_context.allocator_stack[i] = nullptr;
 	}
+
+	static Allocator s_bottom_allocator = get_bottom_allocator();
+	mem_push_allocator(&s_bottom_allocator);
+
+	g_core_context.temp_storage = linear_allocator_create(temp_storage_size);
+
 
 	core_init_platform();
 }
 
+void mem_push_allocator(Allocator* allocator){
+	assert(g_core_ptr);
+
+	assert(g_core_ptr->current_stack_size + 1 < MAX_ALLOCATOR_STACK_SIZE);
+
+	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size++] = allocator;
+}
+void mem_pop_allocator(){
+	assert(g_core_ptr);
+	assertf(g_core_ptr->current_stack_size > 1, "Cannot pop passed the bottom allocator");
+	g_core_ptr->current_stack_size--;
+	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size] = nullptr;
+}
+
 void core_shutdown() {
+	assert(g_core_ptr);
 	core_shutdown_platform();
 
 	// shutdown default allocators
 	{
-		g_default_temp_storage.shutdown( g_default_temp_storage_data );
-		g_default_allocator.shutdown( g_default_allocator_data );
 
-		g_default_temp_storage_data = NULL;
-		g_default_allocator_data = NULL;
 	}
 }
 
 void core_hook( CoreContext* context ) {
 	assert( context );
 
-	memcpy( &g_core_context, context, sizeof( CoreContext ) );
-
-	g_default_allocator_data = context->allocator_data;
-	g_default_temp_storage_data = context->temp_storage_data;
+	g_core_ptr = context;
 }
 
-void mem_set_allocator( Allocator* allocator, void* allocator_data ) {
-	assert( allocator );
-	assert( allocator->allocate );
-	assert( allocator->allocate_aligned );
-
-	g_core_context.allocator = allocator;
-	g_core_context.allocator_data = allocator_data;
+void* mem_alloc_internal( const u64 size ) {
+	assert(g_core_ptr);
+	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
+	return current->allocate(current->data, size);
 }
 
-void* mem_alloc_internal( const u64 size, const char* file, const int line ) {
-	return g_core_context.allocator->allocate( g_core_context.allocator_data, size, file, line );
+void* mem_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ) {
+	assert(g_core_ptr);
+	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size-1];
+	return current->allocate_aligned(current->data, size, alignment);
 }
 
-void* mem_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment, const char* file, const int line ) {
-	return g_core_context.allocator->allocate_aligned( g_core_context.allocator_data, size, alignment, file, line );
+void* mem_realloc_internal( void* ptr, const u64 size ) {
+	assert(g_core_ptr);
+	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
+	return current->reallocate(current->data, ptr, size);
 }
 
-void* mem_realloc_internal( void* ptr, const u64 size, const char* file, const int line ) {
-	return g_core_context.allocator->reallocate( g_core_context.allocator_data, ptr, size, file, line );
+void* mem_realloc_aligned_internal( void* ptr, const u64 size, const MemoryAlignment alignment ){
+	assert(g_core_ptr);
+	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
+	return current->reallocate_aligned(current->data, ptr, size, alignment);
 }
 
-void mem_free_internal( void* ptr, const char* file, const int line ) {
-	g_core_context.allocator->free( g_core_context.allocator_data, ptr, file, line );
+void mem_free_internal( void* ptr ) {
+	assert(g_core_ptr);
+	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
+	return current->free(current->data, ptr);
 }

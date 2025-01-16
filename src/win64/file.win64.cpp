@@ -145,11 +145,11 @@ bool8 file_rename( const char* old_filename, const char* new_filename ) {
 }
 
 void file_free_buffer( char** buffer ) {
-	Allocator* old_allocator = g_core_context.allocator;
-	void* old_allocator_data = g_core_context.allocator_data;
+	//TODO(TOM): Figure out how to configure the file IO allocator
+	Allocator* platform_allocator = g_core_ptr->allocator_stack[0];
 
-	mem_set_allocator( &g_default_allocator, g_default_allocator_data );
-	defer( mem_set_allocator( old_allocator, old_allocator_data ) );
+	mem_push_allocator( platform_allocator );
+	defer( mem_pop_allocator() );
 
 	mem_free( *buffer );
 	*buffer = NULL;
@@ -159,11 +159,11 @@ bool8 file_read_entire( const char* filename, char** outBuffer, u64* out_file_le
 	assertf( filename, "Specified file name to read from cannot be null." );
 	assertf( !*outBuffer, "Specified out-buffer MUST be null because this function news it." );
 
-	Allocator* old_allocator = g_core_context.allocator;
-	void* old_allocator_data = g_core_context.allocator_data;
+	//TODO(TOM): Figure out how to configure the file IO allocator
+	Allocator* platform_allocator = g_core_ptr->allocator_stack[0];
 
-	mem_set_allocator( &g_default_allocator, g_default_allocator_data );
-	defer( mem_set_allocator( old_allocator, old_allocator_data ) );
+	mem_push_allocator( platform_allocator );
+	defer( mem_pop_allocator() );
 
 	File file = file_open( filename );
 

@@ -34,41 +34,22 @@ SOFTWARE.
 /*
 ================================================================================================
 
-	Generic Allocator
+	Generic Malloc Allocator
 
-	Generic malloc/free tracker used to help identify which allocations are being made where
-	and which ones aren't being cleaned up.
+	Wrap of malloc/free, this allocator is used as the first allocator on the stack of CoreContext
 
 ================================================================================================
 */
 
-struct GenericAllocationHeader {
-	struct GenericAllocationHeader*	prev;
-	struct GenericAllocationHeader*	next;
+void*	malloc_allocator_create( const u64 size );
+void	malloc_allocator_destroy( void* allocator_data );
 
-	void*							ptr;
-	u64								size;
-	u64								line;
-	//char							file[1024];
-	const char*						file;
-};
+void*	malloc_allocator_alloc( void* allocator_data, const u64 size, const MemoryAlignment alignment );
+void*	malloc_allocator_realloc( void* allocator_data, void* ptr, const u64 new_size, const MemoryAlignment alignment );
 
-struct AllocatorGeneric {
-	GenericAllocationHeader*		tail;
-	u64								total_alloced_bytes;
-};
-
-void	mem_create_generic( const u64 size, void** out_allocator_data );
-void	mem_destroy_generic( void* allocator_data );
-
-void*	mem_alloc_generic( void* allocator_data, const u64 size, const char* file, const int line );
-void*	mem_alloc_generic_aligned( void* allocator_data, const u64 size, const MemoryAlignment alignment, const char* file, const int line );
-
-void*	mem_realloc_generic( void* allocator_data, void* ptr, const u64 size, const char* file, const int line );
-
-void	mem_free_generic( void* allocator_data, void* ptr, const char* file, const int line );
+void	malloc_allocator_free( void* allocator_data, void* ptr );
 
 // Not allowed.
-void	mem_reset_generic( void* allocator_data );
+void	malloc_allocator_reset( void* allocator_data );
 
-void	mem_generic_check_leaks( AllocatorGeneric* allocator );
+void 	malloc_allocator_create_generic_interface(struct Allocator& out_interface);
