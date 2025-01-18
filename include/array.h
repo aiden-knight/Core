@@ -64,6 +64,7 @@ struct Array {
 	void		add_range( const T* ptr, const u64 count );
 
 	void		remove_at( const u64 index );
+	void		swap_remove_at(const u64 index);
 
 	void		resize( const u64 count );
 	void		reserve( const u64 count );

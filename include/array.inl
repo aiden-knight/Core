@@ -123,6 +123,13 @@ inline void Array<T>::remove_at( const u64 index ) {
 }
 
 template<class T>
+inline void	Array<T>::swap_remove_at(const u64 index){
+	assert( index < count );
+	data[index] = data[count-1];
+	count--;
+}
+
+template<class T>
 void Array<T>::resize( const u64 num_items ) {
 	reserve( num_items );
 	count = num_items;
