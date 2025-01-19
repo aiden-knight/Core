@@ -35,6 +35,8 @@ SOFTWARE.
 #include "core_local.h"
 
 #include <memory.h>	// memcpy
+#include <array.h>
+#include <hashmap.h>
 
 /*
 ================================================================================================
@@ -52,17 +54,21 @@ extern void core_shutdown_platform();
 static CoreContext g_core_context = {};
 CoreContext* g_core_ptr = nullptr;
 
-void allocator_intitialize(Allocator* allocator, u64 total_size){
+
+#ifdef CORE_MEMORY_TRACKING
+	static MemoryTracking* init_memory_tracking();
+	static void start_tracking_allocator(Allocator* allocator); 
+#endif
+
+void mem_allocator_intitialize(Allocator* allocator, u64 total_size){
 	assert(!allocator->data);
 
 	allocator->data = allocator->init(total_size);
 
-	assert(g_core_ptr->num_allocator_relationships -1 < MAX_ALLOCATOR_RELATIONSHIPS);
-	Allocator* parent = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size-1];
-
-	g_core_ptr->allocator_relationships[g_core_ptr->num_allocator_relationships++] = {parent, allocator};
+#ifdef CORE_MEMORY_TRACKING
+	start_tracking_allocator(allocator);
+#endif
 }
-
 static Allocator get_bottom_allocator()
 {
 	Allocator malloc_allocator;
@@ -86,10 +92,12 @@ void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
 	static Allocator s_bottom_allocator = get_bottom_allocator();
 	mem_push_allocator(&s_bottom_allocator);
 
-	g_core_context.num_allocator_relationships = 0U;
-
 	linear_allocator_create_generic_interface(g_core_context.temp_storage);
-	allocator_intitialize(&g_core_context.temp_storage, temp_storage_size);
+	mem_allocator_intitialize(&g_core_context.temp_storage, temp_storage_size);
+
+#ifdef CORE_MEMORY_TRACKING
+	g_core_context.memory_tracking = init_memory_tracking();
+#endif
 
 	core_init_platform();
 }
@@ -199,18 +207,129 @@ Maybe that's the simplest solution to this limb remover. This would mean we woul
 
 */
 
-static void check_wipe_safety(Allocator* allocator){
-	//TODO: Check relationships recusively to see about safety of
-}
-
-void mem_reset_allocator_internal(bool YOLO){
+void mem_reset_allocator_internal(){
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
 	current->reset(current->data);
-	check_wipe_safety(current);
 }
 
-void mem_shutdown_allocator_internal(bool YOLO){
+void mem_shutdown_allocator_internal(){
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
 	current->shutdown(current->data);
-	check_wipe_safety(current);
 }
+
+#ifdef CORE_MEMORY_TRACKING
+
+enum MemoryTrackingFlag
+{
+	MTF_IGNORE = 1,
+	MTF_IS_ALLOCATOR = 2,
+	MTF_ALLOW_ALLOCATOR_NUKING = 4
+};
+
+struct Allocation
+{
+	const char* function;
+	u32 line;
+	void* ptr;
+	bool is_allocator;
+};
+
+struct AllocatorTrackingData
+{
+	Array<Allocation> allocations;
+	Hashmap* allocation_lookup;
+};
+
+struct MemoryTracking
+{
+	Array<AllocatorTrackingData> allocator_tracking_data;
+	Hashmap* allocator_tracking_lookup;
+	u32 flags;
+};
+
+static MemoryTracking* init_memory_tracking(){
+	g_core_ptr->memory_tracking = cast(MemoryTracking*)mem_alloc_internal(sizeof(MemoryTracking));
+
+	g_core_ptr->memory_tracking->allocator_tracking_lookup = hashmap_create(32U);
+	g_core_ptr->memory_tracking->allocator_tracking_data = Array<AllocatorTrackingData>();
+}
+
+static void set_memeory_tracking_flag(MemoryTrackingFlag flag, bool active){
+	if(active)
+	{
+		g_core_ptr->memory_tracking->flags |= flag;
+	}
+	else
+	{
+		g_core_ptr->memory_tracking->flags &= ~flag;
+	}
+}
+
+static bool is_memeory_tracking_flag_active(MemoryTrackingFlag flag){
+	return (g_core_ptr->memory_tracking->flags & flag) != 0;
+}
+
+static void start_tracking_allocator(Allocator* allocator){
+	
+	MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
+	assert(hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64)allocator) == HASHMAP_INVALID_VALUE);
+
+	AllocatorTrackingData tracking;
+	tracking.allocations = Array<Allocation>();
+	tracking.allocation_lookup = hashmap_create(64U);
+
+	memory_tracking->allocator_tracking_data.add(tracking);
+	u32 index = memory_tracking->allocator_tracking_data.count-1;
+	hashmap_set_value(memory_tracking->allocator_tracking_lookup, cast(u64)allocator, index);
+}
+
+static AllocatorTrackingData* get_current_tracking_data()
+{
+	MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
+	Allocator* current_allocator = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size-1];
+	u32 index = hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64)current_allocator);
+	assert(index != HASHMAP_INVALID_VALUE);
+	return &memory_tracking->allocator_tracking_data[index];
+}
+
+void* track_allocation_internal(void* allocation, char* function, u32 line_number){
+	
+	AllocatorTrackingData* allocator_data = get_current_tracking_data();
+	
+	assert(hashmap_get_value(allocator_data->allocation_lookup, cast(u64)allocation) == HASHMAP_INVALID_VALUE);
+
+	Allocation allocation_data = {function, line_number, allocation, is_memeory_tracking_flag_active(MTF_IS_ALLOCATOR)};
+
+	allocator_data->allocations.add(allocation_data);
+	u32 index = allocator_data->allocations.count -1U;
+
+	hashmap_set_value(allocator_data->allocation_lookup, cast(u64)allocation, index);
+}
+
+void track_free_internal(void* free){
+
+	AllocatorTrackingData* allocator_data = get_current_tracking_data();
+	u32 index = hashmap_get_value(allocator_data->allocation_lookup, cast(u64)free);
+	assertf(index != HASHMAP_INVALID_VALUE, "Pointer freed was never allocated in the first place");
+	
+	if(allocator_data->allocations[index].is_allocator)
+	{
+		// TODO(Tom):Check safety
+	}
+
+	allocator_data->allocations.swap_remove_at(index);
+	
+	// Patch up the allocators lookup info that got swaped into index's place
+	if(index < allocator_data->allocations.count){
+		hashmap_set_value(allocator_data->allocation_lookup, cast(u64)allocator_data->allocations[index].ptr, index );
+	}
+}
+
+void mem_allow_allocator_nuking(bool allow){
+	set_memeory_tracking_flag(MTF_ALLOW_ALLOCATOR_NUKING, allow);
+}
+
+void track_free_whole_allocator_internal(bool stop_tracking){
+	unused(stop_tracking);
+}
+#endif
