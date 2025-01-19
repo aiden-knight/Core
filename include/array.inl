@@ -94,7 +94,7 @@ Array<T>::~Array() {
 
 template<class T>
 Array<T>::Array( const Array<T>& other ) {
-	copy( this, other );
+	copy( other );
 }
 
 template<class T>
@@ -163,7 +163,7 @@ void Array<T>::zero() {
 
 template<class T>
 Array<T>& Array<T>::operator=( const Array<T>& other ) {
-	copy( this, &other );
+	copy( &other );
 	return *this;
 }
 
