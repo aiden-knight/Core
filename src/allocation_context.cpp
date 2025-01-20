@@ -238,6 +238,7 @@ struct AllocatorTrackingData
 {
 	Array<Allocation> allocations;
 	Hashmap* allocation_lookup;
+	Allocator* allocator;
 };
 
 struct MemoryTracking
@@ -277,6 +278,7 @@ static void start_tracking_allocator(Allocator* allocator){
 	AllocatorTrackingData tracking;
 	tracking.allocations = Array<Allocation>();
 	tracking.allocation_lookup = hashmap_create(64U);
+	tracking.allocator = allocator;
 
 	memory_tracking->allocator_tracking_data.add(tracking);
 	u32 index = memory_tracking->allocator_tracking_data.count-1;
@@ -306,15 +308,38 @@ void* track_allocation_internal(void* allocation, char* function, u32 line_numbe
 	hashmap_set_value(allocator_data->allocation_lookup, cast(u64)allocation, index);
 }
 
-void track_free_internal(void* free){
-
-	AllocatorTrackingData* allocator_data = get_current_tracking_data();
-	u32 index = hashmap_get_value(allocator_data->allocation_lookup, cast(u64)free);
+static void recursively_track_frees(AllocatorTrackingData* allocator_data, void* allocation){
+	u32 index = hashmap_get_value(allocator_data->allocation_lookup, cast(u64)allocation);
 	assertf(index != HASHMAP_INVALID_VALUE, "Pointer freed was never allocated in the first place");
 	
 	if(allocator_data->allocations[index].is_allocator)
 	{
-		// TODO(Tom):Check safety
+		MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
+		Allocator* allocator = cast(Allocator*)allocator_data->allocations[index].ptr;
+		bool allocator_found = false;
+		For(u32, i, 0, memory_tracking->allocator_tracking_data.count){
+			if(memory_tracking->allocator_tracking_data[i].allocator == allocator)
+			{
+				assertf(is_memeory_tracking_flag_active(MTF_ALLOW_ALLOCATOR_NUKING), "Not safe to remove this allocator: you need to call mem_allow_allocator_nuking if you're sure you're not leaving dangling allocators");
+				allocator_found= true;
+				For(u32, i, 0u, g_core_ptr->current_stack_size){
+					assertf(g_core_ptr->allocator_stack[i] != allocator, "Even if you mem_allow_allocator_nuking you can't leave allocators dangling on the stack.");
+				}
+				
+				AllocatorTrackingData* allocator_data_from_child_allocation = &memory_tracking->allocator_tracking_data[i];
+				//Recursively check all the allocators allocations
+				For(u32, allocation_index, 0u, allocator_data_from_child_allocation->allocations.count){
+					recursively_track_frees(allocator_data_from_child_allocation, allocator_data_from_child_allocation->allocations[allocation_index].ptr);
+				}
+
+				memory_tracking->allocator_tracking_data.swap_remove_at(i);
+				hashmap_remove_key(memory_tracking->allocator_tracking_lookup, cast(u64)allocator);
+				
+				break;
+			}
+		}
+
+		assert(allocator_found);
 	}
 
 	allocator_data->allocations.swap_remove_at(index);
@@ -325,11 +350,29 @@ void track_free_internal(void* free){
 	}
 }
 
+void track_free_internal(void* free){
+
+	AllocatorTrackingData* allocator_data = get_current_tracking_data();
+	recursively_track_frees(allocator_data, free);
+}
+
 void mem_allow_allocator_nuking(bool allow){
 	set_memeory_tracking_flag(MTF_ALLOW_ALLOCATOR_NUKING, allow);
 }
 
 void track_free_whole_allocator_internal(bool stop_tracking){
 	unused(stop_tracking);
+	AllocatorTrackingData* allocator_data = get_current_tracking_data();
+	assert(allocator_data);
+	For(u32, i, 0, allocator_data->allocations.count){
+		recursively_track_frees(allocator_data, allocator_data->allocations[i].ptr);
+	}
+
+	if(stop_tracking){
+		MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
+		u32 index = hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64)allocator_data->allocator);
+		memory_tracking->allocator_tracking_data.swap_remove_at(index);
+		hashmap_remove_key(memory_tracking->allocator_tracking_lookup, cast(u64)allocator_data->allocator);
+	}
 }
 #endif

@@ -111,7 +111,7 @@ void											track_free_whole_allocator_internal(bool stop_tracking);
 #define mem_alloc_aligned( size, alignment )		track_allocation_internal(mem_alloc_aligned_internal( (size), cast( MemoryAlignment ) (alignment) ), __FUNCTION__, __LINE__)
 #define mem_realloc( ptr, size )					track_allocation_internal(mem_realloc_internal( (ptr), (size) ), __FUNCTION__, __LINE__); track_free_internal((ptr))
 #define mem_realloc_aligned( ptr, size, alignment )	track_allocation_internal(mem_realloc_aligned_internal( (ptr), (size), cast( MemoryAlignment ) (alignment) ), __FUNCTION__, __LINE__); track_free_internal((ptr))
-#define mem_free( ptr )								mem_free_internal( (ptr) ); track_free_internal((ptr))
+#define mem_free( ptr )								mem_free_internal( (ptr) ); track_free_internal((ptr)); ptr = nullptr
 
 // Resets the current allocator
 #define mem_reset()									mem_reset_allocator_internal();track_free_whole_allocator_internal(/*stop_tracking*/false)
@@ -126,7 +126,7 @@ void 												mem_allow_allocator_nuking(bool allow);
 #define mem_alloc_aligned( size, alignment )		mem_alloc_aligned_internal( (size), cast( MemoryAlignment ) (alignment) )
 #define mem_realloc( ptr, size )					mem_realloc_internal( (ptr), (size) )
 #define mem_realloc_aligned( ptr, size, alignment )	mem_realloc_aligned_internal( (ptr), (size), cast( MemoryAlignment ) (alignment) )
-#define mem_free( ptr )								mem_free_internal( (ptr) )
+#define mem_free( ptr )								mem_free_internal( (ptr) ); ptr = nullptr
 
 // Resets the current allocator
 #define mem_reset()									mem_reset_allocator_internal()
