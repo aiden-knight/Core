@@ -35,7 +35,6 @@ SOFTWARE.
 #include "core_local.h"
 
 #include <memory.h>	// memcpy
-#include <array.h>
 #include <hashmap.h>
 
 #include <type_traits>
@@ -118,9 +117,11 @@ void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
 void mem_push_allocator(Allocator* allocator){
 	assert(g_core_ptr);
 
-	assert(g_core_ptr->current_stack_size + 1 < MAX_ALLOCATOR_STACK_SIZE);
-
-	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size++] = allocator;
+	if(mem_get_current_allocator() != allocator)
+	{
+		assert(g_core_ptr->current_stack_size + 1 < MAX_ALLOCATOR_STACK_SIZE);
+		g_core_ptr->allocator_stack[g_core_ptr->current_stack_size++] = allocator;
+	}	
 }
 void mem_pop_allocator(){
 	assert(g_core_ptr);
