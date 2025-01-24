@@ -39,6 +39,7 @@ SOFTWARE.
 #include <array.inl>
 #include <ring.inl>
 #include "allocation_context.cpp"
+#include "memory_tracking.cpp"
 #include "allocator_malloc.cpp"
 #include "allocator_linear.cpp"
 #include "cmd_line_args.cpp"

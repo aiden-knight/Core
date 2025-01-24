@@ -38,6 +38,10 @@ SOFTWARE.
 #include <array.h>
 #include <hashmap.h>
 
+#include <type_traits>
+
+#include <allocator.h>
+
 /*
 ================================================================================================
 
@@ -54,16 +58,23 @@ extern void core_shutdown_platform();
 static CoreContext g_core_context = {};
 CoreContext* g_core_ptr = nullptr;
 
+void mem_allocator_intitialize(Allocator* allocator, u64 total_size){
+	//TODO(Tom): Base allocator doesn't have data, it writes nullptr in INIT, so it could have init run many times, so perhaps a specific flag for initted
+	assert(!allocator->data);
+	{
+		/*Big Note(TOM): This tracking assumes two things. One reasonable, one maybe not so
+			- There's only one allocation made to create an allocator; the entire mem space is allocated in one continous block
+				- I feel like for complex allocators that feature different strategies for different sizes this may not be true.
+			- The data returned from init is also the location of the allocation. What I mean by this is there's no sneaky header at the beginning like
+			a stb array. x[header]*[arena] where x is the allocation but * is the thing returned to the user. I can't think of a good reason with our interface that would make sense
+		*/ 
+
 
 #ifdef CORE_MEMORY_TRACKING
-	static MemoryTracking* init_memory_tracking();
-	static void start_tracking_allocator(Allocator* allocator); 
+		ScopedFlags scoped_flags(MTF_IS_ALLOCATOR);
 #endif
-
-void mem_allocator_intitialize(Allocator* allocator, u64 total_size){
-	assert(!allocator->data);
-
-	allocator->data = allocator->init(total_size);
+		allocator->data = allocator->init(total_size);
+	}
 
 #ifdef CORE_MEMORY_TRACKING
 	start_tracking_allocator(allocator);
@@ -91,13 +102,15 @@ void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
 
 	static Allocator s_bottom_allocator = get_bottom_allocator();
 	mem_push_allocator(&s_bottom_allocator);
+	
+#ifdef CORE_MEMORY_TRACKING
+	init_memory_tracking();
+#endif
+
+	mem_allocator_intitialize(&s_bottom_allocator, 0U);
 
 	linear_allocator_create_generic_interface(g_core_context.temp_storage);
 	mem_allocator_intitialize(&g_core_context.temp_storage, temp_storage_size);
-
-#ifdef CORE_MEMORY_TRACKING
-	g_core_context.memory_tracking = init_memory_tracking();
-#endif
 
 	core_init_platform();
 }
@@ -162,51 +175,6 @@ void mem_free_internal( void* ptr ) {
 	return current->free(current->data, ptr);
 }
 
-/*
-Note(Tom): Resetting and shutting down allocators. Simple enough operations. However there are some gnarly cases to consider:
--Bottom Level Allocator (BLA) is initialized
--A linear allocator is built on top of the BLA to hold program lifetime data and be able to insta reset program memory
--A generic allocator is throw on top of linear for dynamic allocations
-
-Note that this hierarchical structure does NOT reflect the allocator stack strucutre which closer resembles how the callstack
-is switching contexts. When an allocator is popped it is not destroyed, merely no longer useful in the current context.
-A copy of BLA's ptr is thrown onto the top of the stack whenever file IO functions are called for example, even though it's the foundation of the allocator hierarchy,
-then popped at the end of those functions. Containers should (TODO: will) add their allocators before any realloc or free calls to make sure they are using the correct allocator they were created with
-Therefore there is nothing STOPPING a programmer from pushing multiple copies* of an allocator onto the stack (and indeed if we forbade it, things like fileIO would currently break, so too would arrays maps etc).
-
-So what should happen if linear allocator wants to reset- but generic allocator is still on the stack? 
--BLA (can't be reset, shutdown or popped)
--Linear
--Generic <--going to be a dangling ptr
--Linear pushed in order to reset it
-
-That's a problem, since the generic allocator's ptr will remain on the allocator stack and when linear resets be dangling
-Sure if you observe the stack you can see that rather than pushing linear you could just as easily pop generic in order to reset, but this example is 
-contrived for simplicity. In reality there could be a complex multigenerational parent -> grandchild issue here that isn't so staightforward.
-
-At the very least should we cleanup the allocator stack, removing dangling children and shifting down?
-This might cause issues however, as the callstack unwinds a function may have had it's context pulled out from under it and not be able to function.
-
-This feels like a footgun.
-
-What I suggest is that if you have any children or decendents when shutting down or resetting we yell at you loudly and assert. This forces you to both shutdown dedendants and perhaps have them
-e popped off the stack before you can reset or shutdown them down. However that sort of defeats the point of that linear allocator, that sits there to be able to wipe and resart your app without
-having to "destruct" everything in your program. So, perhaps a "TRUST ME BRO" flag should be passed through as an argument- in which case the decendants will just be removed from the stack
-and you gotta deal with the fallout if there is any.
-
-If you write good procedural code with a short call stack and little context ping ponging you may never encounter a problem. But at the very least we should have some sort of mechanism in place
-to be able to TELL you if you are aiming a desert eagle at your foot, if only to aid debugging issues that arise.
-
-It could be argued that a free could cause the same issue- what happens if you free an allocator currently in use? <y gut is currently saying that that isn't something that we should (or even could)do anything about.
-
-It's a managed language. Get gud
-
-* "Therefore there is nothing STOPPING a programmer from pushing multiple copies of an allocator onto the stack". Maybe there should be. 
-Maybe the default case is "oi this is already on the stack". Then you get a "Trust me bro" flag for exceptions like file io and containers?
-Maybe that's the simplest solution to this limb remover. This would mean we wouldn't need to track parent/child relationships.
-
-*/
-
 void mem_reset_allocator_internal(){
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
 	current->reset(current->data);
@@ -216,163 +184,3 @@ void mem_shutdown_allocator_internal(){
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
 	current->shutdown(current->data);
 }
-
-#ifdef CORE_MEMORY_TRACKING
-
-enum MemoryTrackingFlag
-{
-	MTF_IGNORE = 1,
-	MTF_IS_ALLOCATOR = 2,
-	MTF_ALLOW_ALLOCATOR_NUKING = 4
-};
-
-struct Allocation
-{
-	const char* function;
-	u32 line;
-	void* ptr;
-	bool is_allocator;
-};
-
-struct AllocatorTrackingData
-{
-	Array<Allocation> allocations;
-	Hashmap* allocation_lookup;
-	Allocator* allocator;
-};
-
-struct MemoryTracking
-{
-	Array<AllocatorTrackingData> allocator_tracking_data;
-	Hashmap* allocator_tracking_lookup;
-	u32 flags;
-};
-
-static MemoryTracking* init_memory_tracking(){
-	g_core_ptr->memory_tracking = cast(MemoryTracking*)mem_alloc_internal(sizeof(MemoryTracking));
-
-	g_core_ptr->memory_tracking->allocator_tracking_lookup = hashmap_create(32U);
-	g_core_ptr->memory_tracking->allocator_tracking_data = Array<AllocatorTrackingData>();
-}
-
-static void set_memeory_tracking_flag(MemoryTrackingFlag flag, bool active){
-	if(active)
-	{
-		g_core_ptr->memory_tracking->flags |= flag;
-	}
-	else
-	{
-		g_core_ptr->memory_tracking->flags &= ~flag;
-	}
-}
-
-static bool is_memeory_tracking_flag_active(MemoryTrackingFlag flag){
-	return (g_core_ptr->memory_tracking->flags & flag) != 0;
-}
-
-static void start_tracking_allocator(Allocator* allocator){
-	
-	MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
-	assert(hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64)allocator) == HASHMAP_INVALID_VALUE);
-
-	AllocatorTrackingData tracking;
-	tracking.allocations = Array<Allocation>();
-	tracking.allocation_lookup = hashmap_create(64U);
-	tracking.allocator = allocator;
-
-	memory_tracking->allocator_tracking_data.add(tracking);
-	u32 index = memory_tracking->allocator_tracking_data.count-1;
-	hashmap_set_value(memory_tracking->allocator_tracking_lookup, cast(u64)allocator, index);
-}
-
-static AllocatorTrackingData* get_current_tracking_data()
-{
-	MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
-	Allocator* current_allocator = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size-1];
-	u32 index = hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64)current_allocator);
-	assert(index != HASHMAP_INVALID_VALUE);
-	return &memory_tracking->allocator_tracking_data[index];
-}
-
-void* track_allocation_internal(void* allocation, char* function, u32 line_number){
-	
-	AllocatorTrackingData* allocator_data = get_current_tracking_data();
-	
-	assert(hashmap_get_value(allocator_data->allocation_lookup, cast(u64)allocation) == HASHMAP_INVALID_VALUE);
-
-	Allocation allocation_data = {function, line_number, allocation, is_memeory_tracking_flag_active(MTF_IS_ALLOCATOR)};
-
-	allocator_data->allocations.add(allocation_data);
-	u32 index = allocator_data->allocations.count -1U;
-
-	hashmap_set_value(allocator_data->allocation_lookup, cast(u64)allocation, index);
-}
-
-static void recursively_track_frees(AllocatorTrackingData* allocator_data, void* allocation){
-	u32 index = hashmap_get_value(allocator_data->allocation_lookup, cast(u64)allocation);
-	assertf(index != HASHMAP_INVALID_VALUE, "Pointer freed was never allocated in the first place");
-	
-	if(allocator_data->allocations[index].is_allocator)
-	{
-		MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
-		Allocator* allocator = cast(Allocator*)allocator_data->allocations[index].ptr;
-		bool allocator_found = false;
-		For(u32, i, 0, memory_tracking->allocator_tracking_data.count){
-			if(memory_tracking->allocator_tracking_data[i].allocator == allocator)
-			{
-				assertf(is_memeory_tracking_flag_active(MTF_ALLOW_ALLOCATOR_NUKING), "Not safe to remove this allocator: you need to call mem_allow_allocator_nuking if you're sure you're not leaving dangling allocators");
-				allocator_found= true;
-				For(u32, i, 0u, g_core_ptr->current_stack_size){
-					assertf(g_core_ptr->allocator_stack[i] != allocator, "Even if you mem_allow_allocator_nuking you can't leave allocators dangling on the stack.");
-				}
-				
-				AllocatorTrackingData* allocator_data_from_child_allocation = &memory_tracking->allocator_tracking_data[i];
-				//Recursively check all the allocators allocations
-				For(u32, allocation_index, 0u, allocator_data_from_child_allocation->allocations.count){
-					recursively_track_frees(allocator_data_from_child_allocation, allocator_data_from_child_allocation->allocations[allocation_index].ptr);
-				}
-
-				memory_tracking->allocator_tracking_data.swap_remove_at(i);
-				hashmap_remove_key(memory_tracking->allocator_tracking_lookup, cast(u64)allocator);
-				
-				break;
-			}
-		}
-
-		assert(allocator_found);
-	}
-
-	allocator_data->allocations.swap_remove_at(index);
-	
-	// Patch up the allocators lookup info that got swaped into index's place
-	if(index < allocator_data->allocations.count){
-		hashmap_set_value(allocator_data->allocation_lookup, cast(u64)allocator_data->allocations[index].ptr, index );
-	}
-}
-
-void track_free_internal(void* free){
-
-	AllocatorTrackingData* allocator_data = get_current_tracking_data();
-	recursively_track_frees(allocator_data, free);
-}
-
-void mem_allow_allocator_nuking(bool allow){
-	set_memeory_tracking_flag(MTF_ALLOW_ALLOCATOR_NUKING, allow);
-}
-
-void track_free_whole_allocator_internal(bool stop_tracking){
-	unused(stop_tracking);
-	AllocatorTrackingData* allocator_data = get_current_tracking_data();
-	assert(allocator_data);
-	For(u32, i, 0, allocator_data->allocations.count){
-		recursively_track_frees(allocator_data, allocator_data->allocations[i].ptr);
-	}
-
-	if(stop_tracking){
-		MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
-		u32 index = hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64)allocator_data->allocator);
-		memory_tracking->allocator_tracking_data.swap_remove_at(index);
-		hashmap_remove_key(memory_tracking->allocator_tracking_lookup, cast(u64)allocator_data->allocator);
-	}
-}
-#endif

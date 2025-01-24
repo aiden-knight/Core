@@ -29,40 +29,19 @@ SOFTWARE.
 #pragma once
 
 #include "core_types.h"
-#include "memory_units.h"
+#ifdef CORE_MEMORY_TRACKING
+#include <memory_tracking.h>
+#endif // CORE_MEMORY_TRACKING
+
+#include "allocator.h" //TODO(Tom): Move if temp turns back to linear
 
 struct AllocatorGeneric;
 struct AllocatorLinearData;
 
 struct Paths;
 
-constexpr MemoryAlignment DEFAULT_MEMORY_ALIGNMENT = MEMORY_ALIGNMENT_EIGHT;
-
-typedef void*	( *allocator_init )( const u64 max_size );
-typedef void	( *allocator_shutdown )( void* allocator_data );
-typedef void*	( *allocator_allocate_aligned )( void* allocator_data, const u64 size, const MemoryAlignment alignment );
-typedef void*	( *allocator_reallocate_aligned )( void* allocator_data, void* ptr, const u64 new_size, const MemoryAlignment alignment );
-typedef void	( *allocator_free )( void* allocator_data, void* ptr );
-typedef void	( *allocator_reset )( void* allocator_data );
-
-struct Allocator {
-	allocator_init init;
-	allocator_shutdown	shutdown;
-	void*	allocate( void* allocator_data, const u64 size ) {return allocate_aligned(allocator_data, size, DEFAULT_MEMORY_ALIGNMENT);}
-	allocator_allocate_aligned allocate_aligned;
-	void*	reallocate ( void* allocator_data, void* ptr, const u64 new_size ){return reallocate_aligned(allocator_data, ptr, new_size, DEFAULT_MEMORY_ALIGNMENT);}
-	allocator_reallocate_aligned reallocate_aligned;
-	allocator_free free;
-	allocator_reset reset;
-
-	void* data = nullptr;
-};
-
 //TODO: Maybe you should put in on the stack like shutdown?
 void mem_allocator_intitialize(Allocator* allocator, u64 total_size);
-
-//TODO: DELETEME
-#define CORE_MEMORY_TRACKING
 
 // implicit context
 constexpr u32 MAX_ALLOCATOR_STACK_SIZE = 32;
@@ -75,7 +54,7 @@ struct CoreContext {
 	Paths*										paths;
 
 #ifdef CORE_MEMORY_TRACKING
-	struct MemoryTracking*						memory_tracking;
+	MemoryTracking*						memory_tracking;
 #endif
 };
 
@@ -102,9 +81,6 @@ void											mem_push_allocator(Allocator* allocator);
 void											mem_pop_allocator();
 
 #ifdef CORE_MEMORY_TRACKING
-void*											track_allocation_internal(void* allocation, char* function, u32 line_number);
-void											track_free_internal(void* free);
-void											track_free_whole_allocator_internal(bool stop_tracking);
 
 // call these ones instead!
 #define mem_alloc( size )							track_allocation_internal(mem_alloc_internal( (size)), __FUNCTION__, __LINE__)
