@@ -35,8 +35,7 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 		.additional_includes	= { "include" },
 		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
 		.ignore_warnings		= { "-Wno-switch-default" },
-		.warnings_as_
-		s		= true
+		.warnings_as_errors		= true
 	};
 
 	BuildConfig tests_common_non_suc = tests_common;
@@ -76,7 +75,7 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	// visual studio
 	options->generate_solution = true;
 	options->solution.name = "Core";
-	options->solution.path = "visual_studio";
+	options->solution.path = "../visual_studio";
 	options->solution.platforms = { "x64" };
 	options->solution.projects = {
 		{
