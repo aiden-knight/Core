@@ -33,7 +33,7 @@ SOFTWARE.
 constexpr u64 HASHMAP_UNUSED_BUCKET 	= 0U;
 constexpr u64 HASHMAP_TOMBSTONE_BUCKET 	= 0xffffffffffffffffU;
 constexpr u32 HASHMAP_INVALID_VALUE 	= 0xffffffffU;
-
+struct Allocator;
 struct HashmapBucket
 {
 	u32		key_hi;
@@ -49,6 +49,7 @@ struct Hashmap {
 	float32			max_utilisation;
 	bool8			should_grow;
 	HashmapBucket*	buckets;
+	Allocator*		allocator;
 };
 
 Hashmap*	hashmap_create( u32 starting_capacity, float32 normalized_max_utilisation = 0.5f, bool8 should_grow = true);

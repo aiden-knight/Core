@@ -54,10 +54,13 @@ Hashmap* hashmap_create( const u32 starting_capacity, float32 normalized_max_uti
 
 	hashmap_reset( map );
 
+	map->allocator = mem_get_current_allocator();
+
 	return map;
 }
 
 void hashmap_destroy( Hashmap* map ) {
+	mem_push_allocator(map->allocator);
 	assert( map );
 
 	mem_free( map->buckets );
@@ -65,6 +68,7 @@ void hashmap_destroy( Hashmap* map ) {
 
 	mem_free( map );
 	map = NULL;
+	mem_pop_allocator();
 }
 
 inline void set_key_at_index(Hashmap* map, u32 index, u64 key)
@@ -135,6 +139,8 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 		{
 			if(map->should_grow)
 			{
+				mem_push_allocator(map->allocator);
+				defer(mem_pop_allocator());
 				HashmapBucket* old_buckets = map->buckets;
 				defer(mem_free(old_buckets));
 
