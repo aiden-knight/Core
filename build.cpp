@@ -83,8 +83,10 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 			.code_folders = { "src", "include", "tests" },
 			.file_extensions = { "cpp", "c", "h", "inl" },
 			.configs = {
-				{ "debug",   tests_win64_debug_suc,   { /* debugger arguments */ } },
-				{ "release", tests_win64_release_suc, { /* debugger arguments */ } },
+				{ "debug-suc",   tests_win64_debug_suc,   { /* debugger arguments */ } },
+				{ "release-suc", tests_win64_release_suc, { /* debugger arguments */ } },
+				{ "debug-non-suc",   tests_win64_debug_non_suc,   { /* debugger arguments */ } },
+				{ "release-non-suc", tests_win64_release_non_suc, { /* debugger arguments */ } }
 			}
 		}
 	};
