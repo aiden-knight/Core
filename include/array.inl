@@ -81,7 +81,9 @@ Array<T>::Array()
 	: data( NULL )
 	, count( 0 )
 	, alloced( 0 )
+	, allocator(nullptr)
 {
+
 }
 
 template<class T>
@@ -93,7 +95,12 @@ Array<T>::~Array() {
 }
 
 template<class T>
-Array<T>::Array( const Array<T>& other ) {
+Array<T>::Array( const Array<T>& other )
+: data( NULL )
+	, count( 0 )
+	, alloced( 0 )
+	, allocator(nullptr)
+{
 	copy( other );
 }
 
@@ -101,6 +108,7 @@ template<class T>
 void Array<T>::copy( const Array<T>* src ) {
 	resize( src->count );
 	memcpy( data, src->data, src->count * sizeof( T ) );
+	count = src->count;
 }
 
 template<class T>
@@ -140,6 +148,10 @@ void Array<T>::reserve( const u64 bytes ) {
 	if ( bytes > alloced ) {
 		u64 previous_alloced = alloced;
 		alloced = next_multiple_of_4_up( bytes );
+
+		allocator = allocator == nullptr ? mem_get_current_allocator() : allocator;
+
+		mem_push_allocator(allocator);
 		if (previous_alloced > 0)
 		{
 			data = cast(T*) mem_realloc(data, alloced * sizeof(T));
@@ -148,6 +160,7 @@ void Array<T>::reserve( const u64 bytes ) {
 		{
 			data = cast(T*) mem_alloc(alloced * sizeof(T));
 		}
+		mem_pop_allocator();
 	}
 }
 
