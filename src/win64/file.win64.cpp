@@ -60,17 +60,17 @@ static File open_file_internal( const char* filename, const DWORD access_flags, 
 	return { handle, 0 };
 }
 
-static File open_or_create_file_internal( const char* filename, const DWORD access_flags, const DWORD creation_disposition ) {
-	assert( filename );
-
-	File file_handle = file_open( filename );
-
-	if ( file_handle.ptr != INVALID_HANDLE_VALUE ) {
-		return file_handle;
-	}
-
-	return open_file_internal( filename, access_flags, creation_disposition );
-}
+//static File open_or_create_file_internal( const char* filename, const DWORD access_flags, const DWORD creation_disposition ) {
+//	assert( filename );
+//
+//	File file_handle = open_file_internal( filename, access_flags, creation_disposition );
+//
+//	if ( file_handle.ptr != INVALID_HANDLE_VALUE ) {
+//		return file_handle;
+//	}
+//
+//	return open_file_internal( filename, access_flags, creation_disposition );
+//}
 
 static bool8 create_folder_internal( const char* path ) {
 	if ( folder_exists( path ) ) {
@@ -102,10 +102,18 @@ File file_open( const char* filename ) {
 	return open_file_internal( filename, GENERIC_READ | GENERIC_WRITE, OPEN_EXISTING );
 }
 
-File file_open_or_create( const char* filename, const bool8 keep_content ) {
-	DWORD creation_disposition = ( keep_content ) ? CREATE_NEW : CREATE_ALWAYS;
+File file_open_or_create( const char* filename, const bool8 keep_existing_content ) {
+	DWORD creation_disposition = ( keep_existing_content ) ? CREATE_NEW : CREATE_ALWAYS;
 
-	return open_or_create_file_internal( filename, GENERIC_READ | GENERIC_WRITE, creation_disposition );
+	//return open_or_create_file_internal( filename, GENERIC_READ | GENERIC_WRITE, creation_disposition );
+	DWORD access_flags = GENERIC_READ | GENERIC_WRITE;
+	File file_handle = open_file_internal( filename, access_flags, creation_disposition );
+
+	if ( file_handle.ptr != INVALID_HANDLE_VALUE ) {
+		return file_handle;
+	}
+
+	return open_file_internal( filename, access_flags, creation_disposition );
 }
 
 bool8 file_close( File* file ) {
