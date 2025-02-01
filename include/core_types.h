@@ -124,6 +124,7 @@ SOFTWARE.
 
 // returns the amount of padding required to align x up to the next aligned address
 #define padding_up(x, alignment)	( (alignment) - 1 )  & ~( (alignment) - 1 )
+
 // returns the input 'x' that has been aligned up by 'alignment' to the next largest value, in bytes
 #define align_up( x, alignment )	( (x) +  padding_up(x, alignment) )
 

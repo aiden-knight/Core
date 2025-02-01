@@ -52,4 +52,4 @@ void	malloc_allocator_free( void* allocator_data, void* ptr );
 // Not allowed.
 void	malloc_allocator_reset( void* allocator_data );
 
-void 	malloc_allocator_create_generic_interface(struct Allocator& out_interface);
+void 	malloc_allocator_create_generic_interface( Allocator& out_interface );

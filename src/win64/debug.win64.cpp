@@ -55,18 +55,16 @@ enum ConsoleColor{
 	CONSOLE_COLOR_DEFAULT		= 0x07,
 	CONSOLE_COLOR_RED			= 0x0C,
 	CONSOLE_COLOR_YELLOW		= 0x0E,
-	CONSOLE_COLOR_BLUE    		= 0x01,
-    CONSOLE_COLOR_BRIGHT_BLUE 	= 0x09,
-	CONSOLE_COLOR_LIGHT_GRAY					= 0x07
+	CONSOLE_COLOR_BLUE			= 0x01,
+	CONSOLE_COLOR_BRIGHT_BLUE	= 0x09,
+	CONSOLE_COLOR_LIGHT_GRAY	= 0x07
 };
 
 //Note(Tom): Question for Dan: is this going to be a problem across lib divides like you found with core context?
 static LogVerbosity g_current_verbosity = LOG_VERBOSITY_INFO;
 
-static void log(LogVerbosity required_verbosity, ConsoleColor prefix_color, ConsoleColor message_color, const char* prefix, const char* function, const char* fmt, va_list args)
-{
-	if(g_current_verbosity < required_verbosity)
-	{
+static void log( LogVerbosity required_verbosity, ConsoleColor prefix_color, ConsoleColor message_color, const char* prefix, const char* function, const char* fmt, va_list args ) {
+	if ( g_current_verbosity < required_verbosity ) {
 		return;
 	}
 
@@ -87,33 +85,32 @@ static void log(LogVerbosity required_verbosity, ConsoleColor prefix_color, Cons
 	SetConsoleTextAttribute( handle, CONSOLE_COLOR_DEFAULT );
 }
 
-void info_internal(const char* function, const char* fmt, ... )
-{
+void info_internal(const char* function, const char* fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-	log(LOG_VERBOSITY_INFO, CONSOLE_COLOR_BRIGHT_BLUE, CONSOLE_COLOR_LIGHT_GRAY, "INFO",function, fmt, args);
+	log( LOG_VERBOSITY_INFO, CONSOLE_COLOR_BRIGHT_BLUE, CONSOLE_COLOR_LIGHT_GRAY, "INFO", function, fmt, args );
 	va_end( args );
 }
 
-void warning_internal(const char* function, const char* fmt, ... ) {
+void warning_internal( const char* function, const char* fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-	log(LOG_VERBOSITY_WARNING, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "WARNING",function, fmt, args);
+	log( LOG_VERBOSITY_WARNING, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "WARNING",function, fmt, args );
 	va_end( args );
 }
 
-void error_internal(const char* function, const char* fmt, ... ) {
+void error_internal( const char* function, const char* fmt, ... ) {
 	va_list args;
-	va_start(args, fmt );
-	log(LOG_VERBOSITY_ERROR, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "ERROR", fmt, function, args);
+	va_start( args, fmt );
+	log( LOG_VERBOSITY_ERROR, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "ERROR", fmt, function, args );
 	va_end( args );
 }
 
-void set_log_verbosity(LogVerbosity verbosity){
+void set_log_verbosity( LogVerbosity verbosity ) {
 	g_current_verbosity = verbosity;
 }
 
-LogVerbosity get_log_verbosity(){
+LogVerbosity get_log_verbosity() {
 	return g_current_verbosity;
 }
 

@@ -57,9 +57,9 @@ extern void core_shutdown_platform();
 static CoreContext g_core_context = {};
 CoreContext* g_core_ptr = nullptr;
 
-void mem_allocator_intitialize(Allocator* allocator, u64 total_size){
+void mem_allocator_intitialize( Allocator* allocator, u64 total_size ) {
 	//TODO(Tom): Base allocator doesn't have data, it writes nullptr in INIT, so it could have init run many times, so perhaps a specific flag for initted
-	assert(!allocator->data);
+	assert( !allocator->data );
 	{
 		/*Big Note(TOM): This tracking assumes two things. One reasonable, one maybe not so
 			- There's only one allocation made to create an allocator; the entire mem space is allocated in one continous block
@@ -68,22 +68,21 @@ void mem_allocator_intitialize(Allocator* allocator, u64 total_size){
 			a stb array. x[header]*[arena] where x is the allocation but * is the thing returned to the user. I can't think of a good reason with our interface that would make sense
 		*/ 
 
-
 #ifdef CORE_MEMORY_TRACKING
-		ScopedFlags scoped_flags(MTF_IS_ALLOCATOR);
+		ScopedFlags scoped_flags( MTF_IS_ALLOCATOR );
 #endif
-		allocator->data = allocator->init(total_size);
+		allocator->data = allocator->init( total_size );
 	}
 
 #ifdef CORE_MEMORY_TRACKING
-	start_tracking_allocator(allocator);
+	start_tracking_allocator( allocator );
 #endif
 }
-static Allocator get_bottom_allocator()
-{
+
+static Allocator get_bottom_allocator() {
 	Allocator malloc_allocator;
 	// Note(Tom): Unlike other allocators malloc is stateless and doesn't need initting
-	malloc_allocator_create_generic_interface(malloc_allocator);
+	malloc_allocator_create_generic_interface( malloc_allocator );
 	return malloc_allocator;
 }
 
@@ -91,50 +90,48 @@ void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
 	assert( allocator_size );
 	assert( temp_storage_size );
 	//Note(TOM) unused for now. My thoughts are that perhaps you configure your programs element 1 allocator youself
-	unused(allocator_size);
+	unused( allocator_size );
+
 	g_core_ptr = &g_core_context;
 
-	g_core_context.current_stack_size = 0U;
-	For(u32, i, 0U, MAX_ALLOCATOR_STACK_SIZE){
+	g_core_context.current_stack_size = 0;
+	For ( u32, i, 0, MAX_ALLOCATOR_STACK_SIZE ) {
 		g_core_context.allocator_stack[i] = nullptr;
 	}
 
 	static Allocator s_bottom_allocator = get_bottom_allocator();
-	mem_push_allocator(&s_bottom_allocator);
+	mem_push_allocator( &s_bottom_allocator );
 	
 #ifdef CORE_MEMORY_TRACKING
 	init_memory_tracking();
 #endif
 
-	mem_allocator_intitialize(&s_bottom_allocator, 0U);
+	mem_allocator_intitialize( &s_bottom_allocator, 0 );
 
-	linear_allocator_create_generic_interface(g_core_context.temp_storage);
-	mem_allocator_intitialize(&g_core_context.temp_storage, temp_storage_size);
+	linear_allocator_create_generic_interface( g_core_context.temp_storage );
+	mem_allocator_intitialize( &g_core_context.temp_storage, temp_storage_size );
 
 	core_init_platform();
 }
 
-void mem_push_allocator(Allocator* allocator){
-	assert(g_core_ptr);
+void mem_push_allocator( Allocator* allocator ) {
+	assert( g_core_ptr );
 
-	assert(g_core_ptr->current_stack_size + 1 < MAX_ALLOCATOR_STACK_SIZE);
+	assert( g_core_ptr->current_stack_size + 1 < MAX_ALLOCATOR_STACK_SIZE );
 	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size++] = allocator;
 }
-void mem_pop_allocator(){
-	assert(g_core_ptr);
-	assertf(g_core_ptr->current_stack_size > 1, "Cannot pop passed the bottom allocator");
+
+void mem_pop_allocator() {
+	assert( g_core_ptr );
+	assertf( g_core_ptr->current_stack_size > 1, "Cannot pop passed the bottom allocator" );
 	g_core_ptr->current_stack_size--;
 	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size] = nullptr;
 }
 
 void core_shutdown() {
-	assert(g_core_ptr);
+	assert( g_core_ptr );
+
 	core_shutdown_platform();
-
-	// shutdown default allocators
-	{
-
-	}
 }
 
 void core_hook( CoreContext* context ) {
@@ -144,41 +141,41 @@ void core_hook( CoreContext* context ) {
 }
 
 void* mem_alloc_internal( const u64 size ) {
-	assert(g_core_ptr);
+	assert( g_core_ptr );
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
-	return current->allocate(current->data, size);
+	return current->allocate( current->data, size );
 }
 
 void* mem_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ) {
-	assert(g_core_ptr);
+	assert( g_core_ptr );
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size-1];
-	return current->allocate_aligned(current->data, size, alignment);
+	return current->allocate_aligned( current->data, size, alignment );
 }
 
 void* mem_realloc_internal( void* ptr, const u64 size ) {
-	assert(g_core_ptr);
+	assert( g_core_ptr );
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
-	return current->reallocate(current->data, ptr, size);
+	return current->reallocate( current->data, ptr, size );
 }
 
-void* mem_realloc_aligned_internal( void* ptr, const u64 size, const MemoryAlignment alignment ){
-	assert(g_core_ptr);
+void* mem_realloc_aligned_internal( void* ptr, const u64 size, const MemoryAlignment alignment ) {
+	assert( g_core_ptr );
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
-	return current->reallocate_aligned(current->data, ptr, size, alignment);
+	return current->reallocate_aligned( current->data, ptr, size, alignment );
 }
 
 void mem_free_internal( void* ptr ) {
-	assert(g_core_ptr);
+	assert( g_core_ptr );
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
-	return current->free(current->data, ptr);
+	return current->free( current->data, ptr );
 }
 
-void mem_reset_allocator_internal(){
+void mem_reset_allocator_internal() {
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
-	current->reset(current->data);
+	current->reset( current->data );
 }
 
-void mem_shutdown_allocator_internal(){
+void mem_shutdown_allocator_internal() {
 	Allocator* current = g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
-	current->shutdown(current->data);
+	current->shutdown( current->data );
 }

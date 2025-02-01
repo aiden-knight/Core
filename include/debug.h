@@ -28,6 +28,8 @@ SOFTWARE.
 
 #pragma once
 
+// TODO(DM): the only reason this exists is because we call IsDebuggerPresent() and __debugbreak() in this file
+// that probably wants to be moved into a .inl in that case
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #define NOMINMAX
@@ -41,23 +43,24 @@ SOFTWARE.
 
 ================================================================================================
 */
-enum LogVerbosity : u8
-{
+
+enum LogVerbosity {
 	LOG_VERBOSITY_NONE = 0,
 	LOG_VERBOSITY_ERROR,
 	LOG_VERBOSITY_WARNING,
 	LOG_VERBOSITY_INFO
 };
+
 // logging
-void							info_internal(const char* function, const char* fmt, ...);
+void							info_internal( const char* function, const char* fmt, ... );
 void							warning_internal( const char* function, const char* fmt, ... );
 void							error_internal( const char* function, const char* fmt, ... );
 
-#define		info(fmt, ...)		info_internal(__FUNCTION__, fmt, ##__VA_ARGS__)
-#define		warning(fmt, ...)	warning_internal(__FUNCTION__, fmt, ##__VA_ARGS__)
-#define		error(fmt, ...)		error_internal(__FUNCTION__, fmt, ##__VA_ARGS__)
+#define info( fmt, ... )		info_internal( __FUNCTION__, fmt, ##__VA_ARGS__ )
+#define warning( fmt, ... )		warning_internal( __FUNCTION__, fmt, ##__VA_ARGS__ )
+#define error( fmt, ... )		error_internal( __FUNCTION__, fmt, ##__VA_ARGS__ )
 
-void							set_log_verbosity(LogVerbosity verbosity);
+void							set_log_verbosity( LogVerbosity verbosity );
 LogVerbosity					get_log_verbosity();
 void							dump_callstack( void );
 

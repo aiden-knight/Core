@@ -81,7 +81,7 @@ Array<T>::Array()
 	: data( NULL )
 	, count( 0 )
 	, alloced( 0 )
-	, allocator(nullptr)
+	, allocator( NULL )
 {
 
 }
@@ -99,7 +99,7 @@ Array<T>::Array( const Array<T>& other )
 : data( NULL )
 	, count( 0 )
 	, alloced( 0 )
-	, allocator(nullptr)
+	, allocator( NULL )
 {
 	copy( other );
 }
@@ -131,7 +131,7 @@ inline void Array<T>::remove_at( const u64 index ) {
 }
 
 template<class T>
-inline void	Array<T>::swap_remove_at(const u64 index){
+inline void	Array<T>::swap_remove_at( const u64 index ) {
 	assert( index < count );
 	data[index] = data[count-1];
 	count--;
@@ -151,15 +151,8 @@ void Array<T>::reserve( const u64 bytes ) {
 
 		allocator = allocator == nullptr ? mem_get_current_allocator() : allocator;
 
-		mem_push_allocator(allocator);
-		if (previous_alloced > 0)
-		{
-			data = cast(T*) mem_realloc(data, alloced * sizeof(T));
-		}
-		else
-		{
-			data = cast(T*) mem_alloc(alloced * sizeof(T));
-		}
+		mem_push_allocator( allocator );
+		data = cast( T* ) mem_realloc( data, alloced * sizeof( T ) );
 		mem_pop_allocator();
 	}
 }

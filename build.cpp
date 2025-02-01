@@ -46,12 +46,16 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	BuildConfig tests_win64_debug_non_suc = tests_common_non_suc;
 	tests_win64_debug_non_suc.name			= "win64-debug-non-suc";
 	tests_win64_debug_non_suc.binary_folder	= "bin/win64/debug";
+	tests_win64_debug_non_suc.defines.push_back( "_DEBUG" );
+	tests_win64_debug_non_suc.additional_libs.push_back( "msvcrtd.lib" );
 	add_build_config( options, &tests_win64_debug_non_suc );
 
 	BuildConfig tests_win64_release_non_suc = tests_common_non_suc;
 	tests_win64_release_non_suc.name				= "win64-release-non-suc";
 	tests_win64_release_non_suc.binary_folder		= "bin/win64/release";
 	tests_win64_release_non_suc.optimization_level	= OPTIMIZATION_LEVEL_O3;
+	tests_win64_release_non_suc.defines.push_back( "NDEBUG" );
+	tests_win64_release_non_suc.additional_libs.push_back( "msvcrt.lib" );
 	add_build_config( options, &tests_win64_release_non_suc );
 
 
@@ -63,17 +67,21 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	BuildConfig tests_win64_debug_suc = tests_common_suc;
 	tests_win64_debug_suc.name = "win64-debug-suc";
 	tests_win64_debug_suc.binary_folder = tests_win64_debug_non_suc.binary_folder;
+	tests_win64_debug_suc.defines.push_back( "_DEBUG" );
+	tests_win64_debug_suc.additional_libs.push_back( "msvcrtd.lib" );
 	add_build_config( options, &tests_win64_debug_suc );
 
 	BuildConfig tests_win64_release_suc = tests_common_suc;
 	tests_win64_release_suc.name = "win64-release-suc";
 	tests_win64_release_suc.binary_folder = tests_win64_release_non_suc.binary_folder;
+	tests_win64_release_suc.defines.push_back( "NDEBUG" );
+	tests_win64_release_suc.additional_libs.push_back( "msvcrt.lib" );
 	tests_win64_release_suc.optimization_level = OPTIMIZATION_LEVEL_O3;
 	add_build_config( options, &tests_win64_release_suc );
 
 
 	// visual studio
-	options->generate_solution = true;
+	options->generate_solution = false;
 	options->solution.name = "Core";
 	options->solution.path = "visual_studio";
 	options->solution.platforms = { "x64" };

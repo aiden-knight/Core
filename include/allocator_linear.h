@@ -49,21 +49,21 @@ struct LinearAllocator {
 	void*		arena;
 };
 
-LinearAllocator*	linear_allocator_create( const u64 size_bytes);
-void	linear_allocator_destroy( LinearAllocator* allocator );
+LinearAllocator*	linear_allocator_create( const u64 size_bytes );
+void				linear_allocator_destroy( LinearAllocator* allocator );
 
-void*	linear_allocator_alloc( LinearAllocator* allocator, const u64 size_bytes, const MemoryAlignment alignment);
+void*				linear_allocator_alloc( LinearAllocator* allocator, const u64 size_bytes, const MemoryAlignment alignment );
 
-void*	linear_allocator_realloc( LinearAllocator* allocator, void* ptr, const u64 newSize, const MemoryAlignment alignment);
+void*				linear_allocator_realloc( LinearAllocator* allocator, void* ptr, const u64 newSize, const MemoryAlignment alignment );
 
 // Not allowed.
-void	linear_allocator_free( LinearAllocator* allocator, void* ptr);
+void				linear_allocator_free( LinearAllocator* allocator, void* ptr );
 
-u64		linear_allocator_tell(LinearAllocator* allocator);
-void	linear_allocator_rewind(LinearAllocator* allocator, u64 previous_position);
+u64					linear_allocator_tell( LinearAllocator* allocator );
+void				linear_allocator_rewind( LinearAllocator* allocator, u64 previous_position );
 
 // "Resets" the position of the linear allocator back to the start of the memory block.
 // All allocations made after calling this will override previously made allocations from this allocator.
-void	linear_allocator_reset( LinearAllocator* allocator );
+void				linear_allocator_reset( LinearAllocator* allocator );
 
-void 	linear_allocator_create_generic_interface(struct Allocator& out_interface);
+void 				linear_allocator_create_generic_interface( Allocator& out_interface );

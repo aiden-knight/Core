@@ -41,36 +41,40 @@ SOFTWARE.
 
 //Note(TOM): these two functions break out of the usual allocator interface with
 // tell and rewind. RTTI checks might be a good idea
-u64 mem_tell_temp_storage( void ){
-	assert(g_core_ptr);
-	assert(g_core_ptr->temp_storage.data);
+u64 mem_tell_temp_storage( void ) {
+	assert( g_core_ptr );
+	assert( g_core_ptr->temp_storage.data );
 
-	LinearAllocator* linear_allocator = cast(LinearAllocator*)g_core_ptr->temp_storage.data;
-	return linear_allocator_tell(linear_allocator);
+	LinearAllocator* linear_allocator = cast( LinearAllocator* ) g_core_ptr->temp_storage.data;
+	return linear_allocator_tell( linear_allocator );
 }
-void mem_rewind_temp_storage( const u64 position ){
-	assert(g_core_ptr);
-	assert(g_core_ptr->temp_storage.data);
 
-	LinearAllocator* linear_allocator = cast(LinearAllocator*)g_core_ptr->temp_storage.data;
+void mem_rewind_temp_storage( const u64 position ) {
+	assert( g_core_ptr );
+	assert( g_core_ptr->temp_storage.data );
 
-	linear_allocator_rewind(linear_allocator, position );
+	LinearAllocator* linear_allocator = cast( LinearAllocator* ) g_core_ptr->temp_storage.data;
+
+	linear_allocator_rewind( linear_allocator, position );
 }
 
 void mem_reset_temp_storage() {
-	assert(g_core_ptr);
-	assert(g_core_ptr->temp_storage.data);
-	g_core_ptr->temp_storage.reset(g_core_ptr->temp_storage.data);
+	assert( g_core_ptr );
+	assert( g_core_ptr->temp_storage.data );
+
+	g_core_ptr->temp_storage.reset( g_core_ptr->temp_storage.data );
 }
 
 void* mem_temp_alloc_internal( const u64 size) {
-	assert(g_core_ptr);
-	assert(g_core_ptr->temp_storage.data);
-	return g_core_ptr->temp_storage.allocate(g_core_ptr->temp_storage.data, size);
+	assert( g_core_ptr );
+	assert( g_core_ptr->temp_storage.data );
+
+	return g_core_ptr->temp_storage.allocate( g_core_ptr->temp_storage.data, size );
 }
 
-void* mem_temp_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ){
-	assert(g_core_ptr);
-	assert(g_core_ptr->temp_storage.data);
-	return g_core_ptr->temp_storage.allocate_aligned(g_core_ptr->temp_storage.data, size, alignment);
+void* mem_temp_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ) {
+	assert( g_core_ptr );
+	assert( g_core_ptr->temp_storage.data );
+
+	return g_core_ptr->temp_storage.allocate_aligned( g_core_ptr->temp_storage.data, size, alignment );
 }
