@@ -29,7 +29,9 @@ SOFTWARE.
 #ifdef _WIN64
 
 #include <library.h>
+
 #include <debug.h>
+#include <typecast.inl>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -55,7 +57,7 @@ Library library_load( const char* name ) {
 void library_unload( Library* library ) {
 	assert( library && library->ptr );
 
-	BOOL freed = FreeLibrary( cast( HMODULE ) library->ptr );
+	BOOL freed = FreeLibrary( cast( HMODULE, library->ptr ) );
 
 	assert( freed );
 	unused( freed );
@@ -67,11 +69,11 @@ void* library_get_proc_address( const Library library, const char* func_name ) {
 	assert( library.ptr );
 	assert( func_name );
 
-	FARPROC proc_addr = GetProcAddress( cast( HMODULE ) library.ptr, func_name );
+	FARPROC proc_addr = GetProcAddress( cast( HMODULE, library.ptr ), func_name );
 
 	//assert( proc_addr );
 
-	return cast( void* ) proc_addr;
+	return cast( void*, proc_addr );
 }
 
 #endif // _WIN64

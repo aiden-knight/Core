@@ -53,6 +53,7 @@ SOFTWARE.
 #include <string_helpers.h>
 #include <temp_storage.h>
 #include <timer.h>
+#include <typecast.inl>
 #endif
 
 #define TEMPER_IMPLEMENTATION
@@ -185,7 +186,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthco
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "." );
 
 TEMPER_TEST_PARAMETRIC( test_string_substring, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 start, const u64 count, const char* expected_substring ) {
-	char* actual_susbtring = cast( char* ) mem_temp_alloc( count * sizeof( char ) );
+	char* actual_susbtring = cast( char*, mem_temp_alloc( count * sizeof( char ) ) );
 
 	string_substring( string, start, count, actual_susbtring );
 
@@ -228,7 +229,7 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, 
 	u64 old_offset = allocator->offset;
 	u64 old_size = allocator->size_bytes;
 
-	TestStruct* test_struct = cast( TestStruct* ) linear_allocator_alloc( allocator, sizeof( TestStruct ), MEMORY_ALIGNMENT_EIGHT);
+	TestStruct* test_struct = cast( TestStruct*, linear_allocator_alloc( allocator, sizeof( TestStruct ), MEMORY_ALIGNMENT_EIGHT ) );
 	test_struct->x = x;
 	test_struct->string = string;
 
@@ -236,8 +237,8 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, 
 	TEMPER_CHECK_TRUE( test_struct->x == x );
 	TEMPER_CHECK_TRUE( string_equals( test_struct->string, string ) );
 
-	u64 padding = padding_up(old_offset,MEMORY_ALIGNMENT_EIGHT);
-	u64 expected_new_offset = old_offset + padding + sizeof(TestStruct);
+	u64 padding = padding_up( old_offset, MEMORY_ALIGNMENT_EIGHT );
+	u64 expected_new_offset = old_offset + padding + sizeof( TestStruct );
 
 	TEMPER_CHECK_TRUE( allocator->offset == expected_new_offset );
 	TEMPER_CHECK_TRUE( allocator->offset != old_offset );
@@ -546,60 +547,56 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation)
 {
-	Hashmap* hashmap = hashmap_create(number_of_buckets, utilisation, false);
+	Hashmap* hashmap = hashmap_create( number_of_buckets, utilisation, false );
 	u64 hash_seed = 0x9E3779B97F4A7C15;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-int-float-conversion"
-	u32 intended_fill = static_cast<u32>(number_of_buckets * utilisation);
+	u32 intended_fill = static_cast<u32>( number_of_buckets * utilisation );
 #pragma GCC diagnostic pop
 
-	auto get_hash_at_sequence = [&](u32 sequence) -> u64
-	{
-		assert(sequence < hashmap->usage_count);
+	auto get_hash_at_sequence = [&]( u32 sequence ) -> u64 {
+		assert( sequence < hashmap->usage_count );
+
 		u32 running_hash_count = -1U;
 		u64 hash = HASHMAP_TOMBSTONE_BUCKET;
-		For(u32, key_index, 0, hashmap->capacity)
-		{
-			u64 key_at_index = hashmap_internal_combine_at_index(hashmap, key_index);
-			if(key_at_index != HASHMAP_UNUSED_BUCKET && key_at_index != HASHMAP_TOMBSTONE_BUCKET)
-			{
+
+		For ( u32, key_index, 0, hashmap->capacity ) {
+			u64 key_at_index = hashmap_internal_combine_at_index( hashmap, key_index );
+
+			if ( key_at_index != HASHMAP_UNUSED_BUCKET && key_at_index != HASHMAP_TOMBSTONE_BUCKET ) {
 				running_hash_count++;
-				if(running_hash_count == sequence)
-				{
+
+				if ( running_hash_count == sequence ) {
 					hash = key_at_index;
 					break;
 				}
 			}
 		}
+
 		return hash;
 	};
 
 	//Setup test by bringing the utilisation up to utilitsation
 	{
 		u64 i = 0U;
-		while (hashmap->usage_count + hashmap->tombstone_count < intended_fill)
-		{
-			if (i % 3 != 2)
-			{
+		while ( hashmap->usage_count + hashmap->tombstone_count < intended_fill ) {
+			if ( i % 3 != 2 ) {
 				// Two adds for one remove
 				constexpr u32 LENGTH_OF_RANDOM_FLOATS = 16u;
 				float random_data[LENGTH_OF_RANDOM_FLOATS];
 
-				For(u32, float_index, 0, LENGTH_OF_RANDOM_FLOATS)
-				{
-					random_data[float_index] = random_float32(0.f, 1.f);
+				For ( u32, float_index, 0, LENGTH_OF_RANDOM_FLOATS ) {
+					random_data[float_index] = random_float32( 0.f, 1.f );
 				}
 
-				u64 hash = hash64(random_data, sizeof(float) * LENGTH_OF_RANDOM_FLOATS, hash_seed);
+				u64 hash = hash64( random_data, sizeof( float ) * LENGTH_OF_RANDOM_FLOATS, hash_seed );
 
-				hashmap_set_value(hashmap, hash, 69);
-			}
-			else
-			{
-				u32 to_remove = (u32)random_float32(0, (float32)(hashmap->usage_count -1));
-				u64 hash = get_hash_at_sequence(to_remove);
+				hashmap_set_value( hashmap, hash, 69 );
+			} else {
+				u32 to_remove = cast( u32, random_float32( 0, cast( float32, (hashmap->usage_count -1) ) ) );
+				u64 hash = get_hash_at_sequence( to_remove );
 
-				hashmap_remove_key(hashmap, hash);
+				hashmap_remove_key( hashmap, hash );
 			}
 
 			i++;
@@ -608,52 +605,49 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 
 	// get a bunch of random hashes and grab the results
 	Array<u32> linear_probe_length;
-	linear_probe_length.reserve(intended_fill);
-	For(u32, i, 0, hashmap->capacity)
-	{
-		u64 hash = hashmap_internal_combine_at_index(hashmap, i);
-		if(hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET)
-		{
+	linear_probe_length.reserve( intended_fill );
+	For ( u32, i, 0, hashmap->capacity ) {
+		u64 hash = hashmap_internal_combine_at_index( hashmap, i );
+		if ( hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET ) {
 			continue;
 		}
-		hashmap_get_value(hashmap, hash);
-		linear_probe_length.add(hashmap->last_linear_probe);
+
+		hashmap_get_value( hashmap, hash );
+		linear_probe_length.add( hashmap->last_linear_probe );
 	}
 
 	// Analyze 
 	u32 biggest = 0U;
-	float mean = 0.f;
-	float none_zero_mean = 0.f;
+	float mean = 0.0f;
+	float none_zero_mean = 0.0f;
 	u32 num_zero_probes = 0U;
-	For(u32, i, 0, linear_probe_length.count)
-	{
+	For ( u32, i, 0, linear_probe_length.count ) {
 		u32 probe = linear_probe_length[i];
-		if(probe > biggest)
-		{
+
+		if ( probe > biggest ) {
 			biggest = probe;
 		}
 
-		if(probe == 0U)
-		{
+		if ( probe == 0U ) {
 			num_zero_probes++;
-		}
-		else
-		{
-			none_zero_mean += (float32)probe;
+		} else {
+			none_zero_mean += cast( float32, probe );
 		}
 
-		mean += (float32)probe;
-		//warning("%d", probe);
+		mean += cast( float32, probe );
+		//warning( "%d", probe );
 	}
 
-	mean = mean / (float32)linear_probe_length.count;
+	mean = mean / cast( float32, linear_probe_length.count );
 
-	none_zero_mean = none_zero_mean / (float32)(linear_probe_length.count - num_zero_probes);
+	none_zero_mean = none_zero_mean / cast( float32, linear_probe_length.count - num_zero_probes );
 
-	info("\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, average of non zero was %f, biggest was %d. Num that were zero: %d\n Tombstone:Used: %d:%d\n",
-	utilisation * 100.f,number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count);
+	info(
+		"\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, average of non zero was %f, biggest was %d. Num that were zero: %d\n Tombstone:Used: %d:%d\n",
+		utilisation * 100.0f, number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count
+	);
 
-	hashmap_destroy(hashmap);
+	hashmap_destroy( hashmap );
 }
 
 static Hashmap* g_hashmap = NULL;
@@ -661,7 +655,7 @@ static Hashmap* g_hashmap = NULL;
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_create, &g_hashmap, 10 );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dan",     27 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Tom",     27 ); //Don't forget your buddy :)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Tom",     27 ); //Don't forget your buddy :) -- never <3
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Mum",     53 );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dad",     62 );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Grandad", 89 );
@@ -670,25 +664,24 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
 
-TEMPER_TEST(test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN)
-{
-	Hashmap* map = hashmap_create(10, 0.5f, true);
+TEMPER_TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
+	Hashmap* map = hashmap_create( 10, 0.5f, true );
 	u64 key = 10;
 	u32 value = 10;
 
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
-	hashmap_set_value(map, key++, value++);
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
 	// Should caust a regrow
-	hashmap_set_value(map, key++, value++);
-	TEMPER_CHECK_TRUE_A(map->capacity == 15);
+	hashmap_set_value( map, key++, value++ );
+	TEMPER_CHECK_TRUE_A( map->capacity == 15 );
 
 	// In the new map, 10 is a value bucket index
-	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 10) == 10);
+	TEMPER_CHECK_TRUE( hashmap_internal_combine_at_index( map, 10 ) == 10 );
 	// 15 isn't so it should wrap around
-	TEMPER_CHECK_TRUE(hashmap_internal_combine_at_index(map, 0) == 15);
+	TEMPER_CHECK_TRUE( hashmap_internal_combine_at_index( map, 0 ) == 15 );
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
@@ -899,7 +892,7 @@ TEMPER_TEST_PARAMETRIC( test_file_write, TEMPER_FLAG_SHOULD_RUN, File* file, con
 
 	// read that data back and check that it was actually written
 	{
-		char* data_read_from_file = cast( char* ) malloc( ( num_bytes_to_write + 1 ) * sizeof( char ) );
+		char* data_read_from_file = cast( char*, malloc( ( num_bytes_to_write + 1 ) * sizeof( char ) ) );
 
 		bool8 read = file_read( file, offset, num_bytes_to_write, data_read_from_file );
 		data_read_from_file[num_bytes_to_write] = 0;
@@ -1271,7 +1264,7 @@ TEMPER_TEST( test_library_load, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEMPER_TEST( test_library_get_proc_address, TEMPER_FLAG_SHOULD_RUN ) {
-	GetDLLNameFunc fp_get_dll_name = cast( GetDLLNameFunc ) library_get_proc_address( g_test_dll, "get_dll_name" );
+	GetDLLNameFunc fp_get_dll_name = cast( GetDLLNameFunc, library_get_proc_address( g_test_dll, "get_dll_name" ) );
 	TEMPER_CHECK_TRUE( fp_get_dll_name != NULL );
 
 	const char* name = fp_get_dll_name();
@@ -1293,9 +1286,9 @@ TEMPER_TEST( test_library_unload, TEMPER_FLAG_SHOULD_RUN ) {
 #define TEST_PADDING "................................................................"
 
 static void on_before_test( const temperTestInfo_t* test_info ) {
-	const int pad_length_max = cast( int ) strlen( TEST_PADDING );
+	const int pad_length_max = cast( int, strlen( TEST_PADDING ) );
 
-	const int dot_length = pad_length_max - cast( int ) strlen( test_info->testNameStr );
+	const int dot_length = pad_length_max - cast( int, strlen( test_info->testNameStr ) );
 	assert( dot_length );
 
 	printf( "%s %*.*s ", test_info->testNameStr, dot_length, dot_length, TEST_PADDING );

@@ -27,8 +27,10 @@ SOFTWARE.
 */
 
 #include <hash.h>
+
 #include <allocation_context.h>
 #include <debug.h>
+#include <typecast.inl>
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Weverything"
@@ -62,7 +64,7 @@ struct Hasher {
 };
 
 Hasher* hasher_create( const u64 seed ) {
-	Hasher* hasher = cast( Hasher* ) mem_alloc( sizeof( Hasher ) );
+	Hasher* hasher = cast( Hasher*, mem_alloc( sizeof( Hasher ) ) );
 	memset( hasher, 0, sizeof( Hasher ) );
 
 	hasher->state = XXH64_createState();

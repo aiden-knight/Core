@@ -28,14 +28,13 @@ SOFTWARE.
 
 #ifdef CORE_SUC
 
-#include "int_truncation.cpp"
-
 #if defined( _WIN64 )
 	#include "core.win64.suc.cpp"
 #else
 	#error Unrecognised platform.
 #endif
 
+#include <typecast.inl>
 #include <array.inl>
 #include <ring.inl>
 #include "allocation_context.cpp"

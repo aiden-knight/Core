@@ -51,7 +51,13 @@ extern "C" {
 
 #define TEST_DLL_NAME "TestDLL"
 
-extern __declspec( dllexport ) const char* get_dll_name( void );
+#ifdef TEST_DLL_EXPORTS
+#define TEST_DLL_API extern __declspec( dllexport )
+#else
+#define TEST_DLL_API extern __declspec( dllimport )
+#endif
+
+TEST_DLL_API const char* get_dll_name( void );
 
 #ifdef __cplusplus
 }

@@ -27,11 +27,12 @@ SOFTWARE.
 */
 
 #include <allocator_linear.h>
-#include <allocation_context.h>
 
+#include <allocation_context.h>
 #include <core_types.h>
 #include <memory_units.h>
 #include <debug.h>
+#include <typecast.inl>
 
 #include <stdlib.h>	// malloc, free
 
@@ -48,10 +49,10 @@ LinearAllocator* linear_allocator_create( const u64 size_bytes) {
 
 	void* memory = malloc( sizeof( LinearAllocator ) + size_bytes );
 
-	LinearAllocator* allocator = cast( LinearAllocator* ) memory;
+	LinearAllocator* allocator = cast( LinearAllocator*, memory );
 	allocator->offset = 0;
 	allocator->size_bytes = size_bytes;
-	allocator->arena = cast( u8* ) memory + sizeof( LinearAllocator );
+	allocator->arena = cast( u8*, memory ) + sizeof( LinearAllocator );
 
 	return allocator;
 }
@@ -82,7 +83,12 @@ void* linear_allocator_alloc( LinearAllocator* allocator, const u64 size_bytes, 
 	}
 
 	allocator->offset += padding;
-	return ( cast( u8* ) ( allocator->arena ) ) + allocator->offset;
+
+	void* ptr = ( cast( u8*, allocator->arena ) ) + allocator->offset;
+
+	allocator->offset += size_bytes;
+
+	return ptr;
 }
 
 #pragma clang diagnostic pop
@@ -136,14 +142,14 @@ void linear_allocator_reset( LinearAllocator* allocator ) {
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wcast-function-type-strict"
 void linear_allocator_create_generic_interface( Allocator& out_interface ) {
-	out_interface.init = cast( allocator_init ) &linear_allocator_create;
-	out_interface.shutdown = cast( allocator_shutdown ) &linear_allocator_destroy;
+	out_interface.init = cast( allocator_init, &linear_allocator_create );
+	out_interface.shutdown = cast( allocator_shutdown, &linear_allocator_destroy );
 
-	out_interface.allocate_aligned = cast( allocator_allocate_aligned ) &linear_allocator_alloc;
-	out_interface.reallocate_aligned = cast( allocator_reallocate_aligned ) &linear_allocator_realloc;
+	out_interface.allocate_aligned = cast( allocator_allocate_aligned, &linear_allocator_alloc );
+	out_interface.reallocate_aligned = cast( allocator_reallocate_aligned, &linear_allocator_realloc );
 
-	out_interface.free = cast( allocator_free ) &linear_allocator_free;
-	out_interface.reset = cast( allocator_reset ) &linear_allocator_reset;
+	out_interface.free = cast( allocator_free, &linear_allocator_free );
+	out_interface.reset = cast( allocator_reset, &linear_allocator_reset );
 
 	out_interface.data = NULL; // set by calling allocator_intitialize;
 }

@@ -26,83 +26,56 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include <core_types.h>
-#include <debug.h>
+#pragma once
+
+#include "core_types.h"
+#include "debug.h"
+
+#include <float.h>
 
 /*
 ================================================================================================
 
-	int truncation
+	Typecasting
 
 ================================================================================================
 */
 
-s32 TruncS64ToS32( const s64 x ) {
-	assert( x < S32_MAX );
-	return cast( s32 ) x;
-}
+// Call these ones!
+#define cast( Type, x )				(Type) (x)
+#define trunc_cast( Type, x )		trunc_cast_internal<Type>( (x) )
 
-s16 TruncS64ToS16( const s64 x ) {
-	assert( x < S16_MAX );
-	return cast( s16 ) x;
-}
 
-s8 TruncS64ToS8( const s64 x ) {
-	assert( x < S8_MAX );
-	return cast( s8 ) x;
-}
+// DO NOT CALL THESE ONES!
+template<class OutType, class InType>
+OutType trunc_cast_internal( const InType in ) {
+	bool8 is_input_floating_point = cast( InType, 0.5 ) != 0;
+	bool8 is_output_floating_point = cast( OutType, 0.5 ) != 0;
 
-s16 TruncS32ToS16( const s32 x ) {
-	assert( x < S16_MAX );
-	return cast( s16 ) x;
-}
+	bool8 is_input_signed = cast( InType, -1 ) < 0;
+	bool8 is_output_signed = cast( OutType, -1 ) < 0;
 
-s8 TruncS32ToS8( const s32 x ) {
-	assert( x < S8_MAX );
-	return cast( s8 ) x;
-}
+	OutType min_output_value = 0;
+	OutType max_output_value = 0;
 
-s8 TruncS16ToS8( const s16 x ) {
-	assert( x < S8_MAX );
-	return cast( s8 ) x;
-}
+	if ( is_output_floating_point ) {
+		min_output_value = cast( OutType, -FLT_MAX );
+		max_output_value = cast( OutType, FLT_MAX );
+	} else {
+		if ( is_output_signed ) {
+			max_output_value = cast( OutType, ( 1ULL << ( sizeof( OutType ) * 8 - 1 ) ) - 1 );
+			min_output_value = cast( OutType, -max_output_value - 1 );
+		} else {
+			min_output_value = 0;
+			max_output_value = cast( OutType, ~0 );
+		}
+	}
 
-u32 TruncU64ToU32( const u64 x ) {
-	assert( x < U32_MAX );
-	return cast( u32 ) x;
-}
+	if ( is_input_signed ) {
+		assert( in >= cast( OutType, min_output_value ) );
+	}
 
-u16 TruncU64ToU16( const u64 x ) {
-	assert( x < U16_MAX );
-	return cast( u16 ) x;
-}
+	assert( in <= cast( OutType, max_output_value ) );
 
-u8 TruncU64ToU8( const u64 x ) {
-	assert( x < U8_MAX );
-	return cast( u8 ) x;
-}
-
-s32 TruncU64ToS32( const u64 x ) {
-	assert( x < S32_MAX );
-	return cast( s32 ) x;
-}
-
-s32 TruncU32ToS32( const u32 x ) {
-	assert( x < S32_MAX );
-	return cast( s32 ) x;
-}
-
-u16 TruncU32ToU16( const u32 x ) {
-	assert( x < U16_MAX );
-	return cast( u16 ) x;
-}
-
-u8 TruncU32ToU8( const u32 x ) {
-	assert( x < U8_MAX );
-	return cast( u8 ) x;
-}
-
-u8 TruncU16ToU8( const u16 x ) {
-	assert( x < U8_MAX );
-	return cast( u8 ) x;
+	return cast( OutType, in );
 }

@@ -29,8 +29,10 @@ SOFTWARE.
 #ifdef _WIN64
 
 #include <debug.h>
+
 #include <core_types.h>
-//#include <string_helpers.h>
+#include <string_helpers.h>
+#include <typecast.inl>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -40,8 +42,6 @@ SOFTWARE.
 #include <stdio.h>	// printf, vprintf
 #include <stdlib.h>	// malloc, free
 #include <malloc.h>	// alloca
-
-#include <string_helpers.h>
 
 /*
 ================================================================================================
@@ -73,9 +73,11 @@ static void log( LogVerbosity required_verbosity, ConsoleColor prefix_color, Con
 	SetConsoleTextAttribute( handle, prefix_color );
 
 #ifdef LOG_SHOW_FUNCTIONS
-	printf( "\n%s(%s):  ", prefix, function );
+	printf( "%s(%s):  ", prefix, function );
 #else
-	printf( "\n%s:  ", prefix );
+	unused( function );
+	
+	printf( "%s:  ", prefix );
 #endif
 
 	SetConsoleTextAttribute( handle, message_color );
@@ -95,14 +97,14 @@ void info_internal(const char* function, const char* fmt, ... ) {
 void warning_internal( const char* function, const char* fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-	log( LOG_VERBOSITY_WARNING, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "WARNING",function, fmt, args );
+	log( LOG_VERBOSITY_WARNING, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "WARNING", function, fmt, args );
 	va_end( args );
 }
 
 void error_internal( const char* function, const char* fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-	log( LOG_VERBOSITY_ERROR, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "ERROR", fmt, function, args );
+	log( LOG_VERBOSITY_ERROR, CONSOLE_COLOR_RED, CONSOLE_COLOR_YELLOW, "ERROR", function, fmt, args );
 	va_end( args );
 }
 
@@ -148,7 +150,7 @@ void dump_callstack( void ) {
 	for ( ULONG i = 0; ; i++ ) {
 		BOOL more_stack_left_to_walk = StackWalk( machine_image_type, process, GetCurrentThread(), &stack_frame, &context_record, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL );
 
-		IMAGEHLP_SYMBOL64* symbol = cast( IMAGEHLP_SYMBOL64* ) malloc( sizeof( IMAGEHLP_SYMBOL64 ) + MAX_PATH * sizeof( TCHAR ) );
+		IMAGEHLP_SYMBOL64* symbol = cast( IMAGEHLP_SYMBOL64*, malloc( sizeof( IMAGEHLP_SYMBOL64 ) + MAX_PATH * sizeof( TCHAR ) ) );
 		symbol->SizeOfStruct = sizeof( IMAGEHLP_SYMBOL64 );
 		symbol->MaxNameLength = MAX_PATH;	// DM!!! is this correct?
 
@@ -165,7 +167,7 @@ void dump_callstack( void ) {
 		unused( got_line );*/
 
 		char symbol_name[MAX_PATH];
-		if ( UnDecorateSymbolName( symbol->Name, cast( PSTR ) symbol_name, MAX_PATH, UNDNAME_COMPLETE ) == 0 ) {
+		if ( UnDecorateSymbolName( symbol->Name, cast( PSTR, symbol_name ), MAX_PATH, UNDNAME_COMPLETE ) == 0 ) {
 			fatal_error( "Stack walk failed: UnDecorateSymbolName failed: 0x%X.", GetLastError() );
 		}
 
@@ -224,7 +226,7 @@ void fatal_error_internal( const char* file, const int line, const char* prefix,
 
 	s64 total_length = len;
 
-	char* error_msg = cast( char* ) alloca( total_length );
+	char* error_msg = cast( char*, alloca( total_length ) );
 	string_vsnprintf( error_msg, total_length, fmt, args );
 	error_msg[total_length - 1] = 0;
 
