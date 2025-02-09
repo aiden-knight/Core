@@ -44,8 +44,8 @@ SOFTWARE.
 
 Hashmap* hashmap_create( const u32 starting_capacity, float32 normalized_max_utilisation, bool8 should_grow ) {
 	assert( starting_capacity );
-	assert( normalized_max_utilisation < 0.f );
-	assert( normalized_max_utilisation <= 1.f );
+	assert( normalized_max_utilisation > 0.0f );
+	assert( normalized_max_utilisation <= 1.0f );
 
 	Hashmap* map = cast( Hashmap*, mem_alloc( sizeof( Hashmap ) ) );
 	map->capacity = starting_capacity;

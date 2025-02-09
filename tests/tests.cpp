@@ -29,31 +29,31 @@ SOFTWARE.
 #ifdef CORE_SUC
 #include "../src/core.suc.cpp"
 #else
-#include <allocation_context.h>
-#include <allocator_malloc.h>
-#include <allocator_linear.h>
-#include <array.inl>
-#include <cmd_line_args.h>
-#include <core_types.h>
-#include <date_and_time.h>
-#include <debug.h>
-#include <defer.h>
-#include <file.h>
-#include <hash.h>
-#include <hashmap.h>
-#include <library.h>
-#include <math.h>
-#include <memory_units.h>
-#include <paths.h>
-#include <process.h>
-#include <profiler.h>
-#include <random.h>
-#include <ring.inl>
-#include <string_builder.h>
-#include <string_helpers.h>
-#include <temp_storage.h>
-#include <timer.h>
-#include <typecast.inl>
+#include "../include/allocation_context.h"
+#include "../include/allocator_malloc.h"
+#include "../include/allocator_linear.h"
+#include "../include/array.inl"
+#include "../include/cmd_line_args.h"
+#include "../include/core_types.h"
+#include "../include/date_and_time.h"
+#include "../include/debug.h"
+#include "../include/defer.h"
+#include "../include/file.h"
+#include "../include/hash.h"
+#include "../include/hashmap.h"
+#include "../include/library.h"
+//#include "../include/math.h"
+#include "../include/memory_units.h"
+#include "../include/paths.h"
+#include "../include/process.h"
+#include "../include/profiler.h"
+#include "../include/random.h"
+#include "../include/ring.inl"
+#include "../include/string_builder.h"
+#include "../include/string_helpers.h"
+#include "../include/temp_storage.h"
+#include "../include/timer.h"
+#include "../include/typecast.inl"
 #endif
 
 #define TEMPER_IMPLEMENTATION
@@ -545,8 +545,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* ha
 	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == third_key);
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation)
-{
+TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation ) {
 	Hashmap* hashmap = hashmap_create( number_of_buckets, utilisation, false );
 	u64 hash_seed = 0x9E3779B97F4A7C15;
 #pragma GCC diagnostic push
@@ -593,7 +592,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 
 				hashmap_set_value( hashmap, hash, 69 );
 			} else {
-				u32 to_remove = cast( u32, random_float32( 0, cast( float32, (hashmap->usage_count -1) ) ) );
+				u32 to_remove = cast( u32, random_float32( 0, cast( float32, hashmap->usage_count - 1 ) ) );
 				u64 hash = get_hash_at_sequence( to_remove );
 
 				hashmap_remove_key( hashmap, hash );
@@ -829,25 +828,26 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_ring_full,  &g_test_ring, false );
 
 TEMPER_TEST_PARAMETRIC( test_file_open_or_create, TEMPER_FLAG_SHOULD_RUN, File* file, const char* filename ) {
 	TEMPER_CHECK_TRUE( filename );
+	TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 
 	*file = file_open_or_create( filename );
 
-	TEMPER_CHECK_TRUE( file->ptr );
+	TEMPER_CHECK_TRUE( file->ptr != INVALID_HANDLE_VALUE );
 	TEMPER_CHECK_TRUE( file->offset == 0 );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_open, TEMPER_FLAG_SHOULD_RUN, File* file, const char* filename, const bool8 should_exist ) {
 	TEMPER_CHECK_TRUE( file );
-	TEMPER_CHECK_TRUE( !file->ptr );
+	TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 
 	*file = file_open( filename );
 
-	bool8 file_exists = file->ptr != NULL;
+	bool8 file_exists = file->ptr != INVALID_HANDLE_VALUE;
 
 	if ( should_exist ) {
-		TEMPER_CHECK_TRUE( file->ptr != NULL );
+		TEMPER_CHECK_TRUE( file->ptr != INVALID_HANDLE_VALUE );
 	} else {
-		TEMPER_CHECK_TRUE( file->ptr == NULL );
+		TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 	}
 
 	TEMPER_CHECK_TRUE( file_exists == should_exist );
@@ -862,7 +862,7 @@ TEMPER_TEST_PARAMETRIC( test_file_close, TEMPER_FLAG_SHOULD_RUN, File* file ) {
 
 	TEMPER_CHECK_TRUE( closed );
 
-	TEMPER_CHECK_TRUE( !file->ptr );
+	TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_write_entire, TEMPER_FLAG_SHOULD_RUN, const char* filename, const char* data_to_write ) {
@@ -952,7 +952,7 @@ TEMPER_TEST_PARAMETRIC( test_file_get_size, TEMPER_FLAG_SHOULD_RUN, const char* 
 
 	file_close( &file );
 
-	TEMPER_CHECK_TRUE( !file.ptr );
+	TEMPER_CHECK_TRUE( file.ptr == INVALID_HANDLE_VALUE );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_rename, TEMPER_FLAG_SHOULD_RUN, const char* filename_old, const char* filename_new ) {
@@ -1029,7 +1029,7 @@ TEMPER_TEST_PARAMETRIC( test_file_delete, TEMPER_FLAG_SHOULD_RUN, const char* fi
 
 	// now check it doesnt actually exist anymore
 	file = file_open( filename );
-	TEMPER_CHECK_TRUE( !file.ptr );
+	TEMPER_CHECK_TRUE( file.ptr == INVALID_HANDLE_VALUE );
 }
 
 TEMPER_TEST_PARAMETRIC( test_folder_exists, TEMPER_FLAG_SHOULD_RUN, const char* path, const bool8 should_exist ) {
@@ -1081,7 +1081,7 @@ TEMPER_TEST_PARAMETRIC( test_folder_delete, TEMPER_FLAG_SHOULD_RUN, const char* 
 
 #define TEST_LINE_OVERWRITE		"this file has now been overwritten"
 
-static File						g_test_file = {};
+static File						g_test_file = { INVALID_HANDLE_VALUE };
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_open, &g_test_file, TEST_FILENAME, false );
 
@@ -1326,5 +1326,7 @@ int main( int argc, char** argv ) {
 
 	TEMPER_RUN( argc, argv );
 
-	return TEMPER_GET_EXIT_CODE();
+	int exitCode = TEMPER_GET_EXIT_CODE();
+
+	return exitCode;
 }

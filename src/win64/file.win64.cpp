@@ -127,8 +127,7 @@ bool8 file_close( File* file ) {
 
 	//printf( "%s() last error: 0x%08X\n", __FUNCTION__, GetLastError() );
 
-	file->ptr = NULL;
-	file = NULL;
+	file->ptr = INVALID_HANDLE_VALUE;
 
 	return cast( bool8, result );
 }
