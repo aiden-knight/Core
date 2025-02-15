@@ -324,15 +324,12 @@ TEMPER_TEST_PARAMETRIC( test_array_add, TEMPER_FLAG_SHOULD_RUN, Array<s32>* arra
 	TEMPER_CHECK_TRUE( array->data != NULL );
 	TEMPER_CHECK_TRUE( array->count == old_count + 1 );
 
-	u64 new_alloced = 0;
-	if ( old_alloced == 0 ) {
-		new_alloced = 1;
-	} else {
-		new_alloced = old_alloced << 1;
-	}
-
 	if ( old_count == old_alloced ) {
+		u64 new_alloced = next_multiple_of_4_up( old_alloced + 1 );
+
 		TEMPER_CHECK_TRUE( array->alloced == new_alloced );
+	} else {
+		TEMPER_CHECK_TRUE( array->alloced == old_alloced );
 	}
 }
 
