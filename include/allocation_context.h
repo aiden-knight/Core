@@ -64,8 +64,10 @@ struct CoreContext {
 
 extern CoreContext*								g_core_ptr;
 
-void											core_init( const u64 allocator_size, const u64 temp_storage_size );
-void											core_shutdown( void );
+
+void											core_init();
+void											core_init( const u64 temp_storage_size );
+void											core_shutdown();
 
 void											core_hook( CoreContext* context );
 
@@ -79,8 +81,8 @@ void*											mem_realloc_internal( void* ptr, const u64 size );
 void*											mem_realloc_aligned_internal( void* ptr, const u64 size, const MemoryAlignment alignment );
 void											mem_free_internal( void* ptr );
 
-void											mem_reset_allocator_internal( void );
-void											mem_shutdown_allocator_internal( void );
+void											mem_reset_allocator_internal();
+void											mem_shutdown_allocator_internal();
 
 void											mem_push_allocator( Allocator* allocator );
 void											mem_pop_allocator();

@@ -86,11 +86,14 @@ static Allocator get_bottom_allocator() {
 	return malloc_allocator;
 }
 
-void core_init( const u64 allocator_size, const u64 temp_storage_size ) {
-	assert( allocator_size );
-	assert( temp_storage_size );
-	//Note(TOM) unused for now. My thoughts are that perhaps you configure your programs element 1 allocator youself
-	unused( allocator_size );
+void core_init() {
+	constexpr u64 default_temp_storage_size = MEM_MEGABYTES( 64 );
+
+	core_init( default_temp_storage_size );
+}
+
+void core_init( const u64 temp_storage_size ) {
+	assert( temp_storage_size > 0 );
 
 	g_core_ptr = &g_core_context;
 
