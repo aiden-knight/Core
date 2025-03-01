@@ -34,6 +34,8 @@ SOFTWARE.
 #include "../include/allocator_linear.h"
 #include "../include/array.inl"
 #include "../include/cmd_line_args.h"
+#include "../include/core_process.h"
+#include "../include/core_string.h"
 #include "../include/core_types.h"
 #include "../include/date_and_time.h"
 #include "../include/debug.h"
@@ -42,11 +44,8 @@ SOFTWARE.
 #include "../include/hash.h"
 #include "../include/hashmap.h"
 #include "../include/library.h"
-//#include "../include/math.h"
 #include "../include/memory_units.h"
 #include "../include/paths.h"
-#include "../include/process.h"
-#include "../include/profiler.h"
 #include "../include/random.h"
 #include "../include/ring.inl"
 #include "../include/string_builder.h"
@@ -126,12 +125,93 @@ TEMPER_TEST( print_functions, TEMPER_FLAG_SHOULD_SKIP ) {
 /*
 ================================================================================================
 
+	String
+
+================================================================================================
+*/
+
+TEMPER_TEST( string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
+	String s;
+
+	TEMPER_CHECK_TRUE( s.data == NULL );
+	TEMPER_CHECK_TRUE( s.count == 0 );
+	TEMPER_CHECK_TRUE( s.alloced == 0 );
+	TEMPER_CHECK_TRUE( s.allocator == NULL );
+}
+
+TEMPER_TEST_PARAMETRIC( string_assignment, TEMPER_FLAG_SHOULD_RUN, const char* str ) {
+	size_t str_length = strlen( str );
+
+	String actual_string = str;
+
+	TEMPER_CHECK_TRUE( strcmp( cast( char*, actual_string.data ), str ) == 0 );
+	TEMPER_CHECK_TRUE( actual_string.data[actual_string.count] == 0 );
+	TEMPER_CHECK_TRUE( actual_string.count == str_length );
+	TEMPER_CHECK_TRUE( actual_string.alloced == str_length + 1 );
+}
+
+TEMPER_TEST_PARAMETRIC( string_copy, TEMPER_FLAG_SHOULD_RUN, const String& a ) {
+	String b = a;
+
+	TEMPER_CHECK_TRUE( a.count == b.count );
+	TEMPER_CHECK_TRUE( a.alloced == b.alloced );
+	TEMPER_CHECK_TRUE( memcmp( a.data, b.data, a.count ) == 0 );
+	TEMPER_CHECK_TRUE( b.data[b.count] == 0 );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "a" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "This is" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Wake up, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Follow the White Rabbit" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Knock knock, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Free your mind, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "a" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "This is" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Wake up, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Follow the White Rabbit" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Knock knock, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Free your mind, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
+
+static void test_string_printf_charptr_s32( const char* name, const s32 age ) {
+	const char* fmt = "%s %d";
+
+	char expected_string[1024] = {};
+	int expected_string_length = sprintf( expected_string, fmt, name, age );
+
+	String actual_string;
+	string_printf( &actual_string, fmt, name, age );
+
+	TEMPER_CHECK_TRUE( string_equals( expected_string, (char*) actual_string.data ) );
+	TEMPER_CHECK_TRUE( cast( u64, expected_string_length ) == actual_string.count );
+	TEMPER_CHECK_TRUE( actual_string.alloced == actual_string.count + 1 );
+}
+
+TEMPER_TEST( string_printf, TEMPER_FLAG_SHOULD_RUN ) {
+	test_string_printf_charptr_s32( "Dan",   29 );
+	test_string_printf_charptr_s32( "Tom",   34 );
+	test_string_printf_charptr_s32( "Zack",  30 );
+	test_string_printf_charptr_s32( "Ben",   30 );
+	test_string_printf_charptr_s32( "Adam",  32 );
+	test_string_printf_charptr_s32( "Niall", 31 );
+
+	// TODO(DM): add more tests covering more use cases
+}
+
+
+/*
+================================================================================================
+
 	String Helpers
 
 ================================================================================================
 */
 
-TEMPER_TEST( test_string_equals, TEMPER_FLAG_SHOULD_RUN ) {
+TEMPER_TEST( string_helpers_string_equals, TEMPER_FLAG_SHOULD_RUN ) {
 	const char* string_a = "This is a string";
 	const char* string_b = "This is a string";
 
@@ -146,46 +226,62 @@ TEMPER_TEST( test_string_equals, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( !string_equals( string_c, string_d ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix, const bool8 expected_result ) {
-	TEMPER_CHECK_TRUE( string_starts_with( string, prefix ) == expected_result );
+TEMPER_TEST_PARAMETRIC( string_helpers_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix, const bool8 should_start_with ) {
+	TEMPER_CHECK_TRUE( string_starts_with( string, prefix ) == should_start_with );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "T", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "Th", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There ", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There are", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There are ", true );
+static const char* g_test_string_leaves = "There are 69,105 leaves on the pile.";
+static const char* g_test_string_matrix = "I'm going to be as forthcoming as I can be, Mr Anderson.";
 
-TEMPER_TEST_PARAMETRIC( test_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix ) {
-	TEMPER_CHECK_TRUE( string_ends_with( string, prefix ) );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "T",          true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "Th",         true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There ",     true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There are",  true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There are ", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "are ",       false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, " are ",      false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "69,105",     false );
+
+TEMPER_TEST_PARAMETRIC( string_helpers_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix, const bool8 should_end_with ) {
+	TEMPER_CHECK_TRUE( string_ends_with( string, prefix ) == should_end_with );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", ", Mr Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", "Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", "son." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", "." );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, ", Mr Anderson.", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "Anderson.",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "son.",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, ".",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "Anderson",       false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "son",            false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "forthcoming",    false );
 
-TEMPER_TEST_PARAMETRIC( test_string_contains, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* substring ) {
-	TEMPER_CHECK_TRUE( string_contains( string, substring ) );
+TEMPER_TEST_PARAMETRIC( string_helpers_string_contains, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* substring, const bool8 should_contain ) {
+	TEMPER_CHECK_TRUE( string_contains( string, substring ) == should_contain );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "I'm" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "I'm " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "to be as" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "to be as " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " to be as" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " to be as " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "forthcoming" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " as I can be" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", ", Mr Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "son." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "son" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "." );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "I'm",            true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "I'm ",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "to be as",       true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "to be as ",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " to be as",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " to be as ",     true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "forthcoming",    true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " as I can be",   true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " ",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, ", Mr Anderson.", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "Anderson.",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "son.",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "son",            true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, ".",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "White rabbit",   false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "Im",             false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "frothcoming",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "Adnerson",       false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, ")",              false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "asdf",           false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "123456",         false );
 
-TEMPER_TEST_PARAMETRIC( test_string_substring, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 start, const u64 count, const char* expected_substring ) {
+TEMPER_TEST_PARAMETRIC( string_helpers_string_substring, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 start, const u64 count, const char* expected_substring ) {
 	char* actual_susbtring = cast( char*, mem_temp_alloc( count * sizeof( char ) ) );
 
 	string_substring( string, start, count, actual_susbtring );
@@ -193,11 +289,11 @@ TEMPER_TEST_PARAMETRIC( test_string_substring, TEMPER_FLAG_SHOULD_RUN, const cha
 	TEMPER_CHECK_TRUE( string_equals( expected_substring, actual_susbtring ) );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 0,  15, "As you can see" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 15, 25, "we've had our eye on you" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 40, 18, "for some time now" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 57, 15, ", Mr Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 59, 12, "Mr Anderson" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 0,  15, "As you can see" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 15, 25, "we've had our eye on you" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 40, 18, "for some time now" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 57, 15, ", Mr Anderson." );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 59, 12, "Mr Anderson" );
 
 
 /*
@@ -1315,7 +1411,7 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 
 int main( int argc, char** argv ) {
 	// TODO(DM): 19/1/2023: this wants to be in a test
-	core_init( MEM_KILOBYTES( 1 ), MEM_KILOBYTES( 1 ) );
+	core_init();
 	defer( core_shutdown() );
 
 	g_temperTestContext.callbacks.OnBeforeTest = on_before_test;

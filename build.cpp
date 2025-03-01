@@ -59,7 +59,7 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	//
 	BuildConfig tests_common = {
 		.source_files			= { "tests/tests.cpp" },
-		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS", "CORE_MEMORY_TRACKING" },
+		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS"/*, "CORE_MEMORY_TRACKING"*/ },
 		.additional_includes	= { "include" },
 		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
 		.ignore_warnings		= { "-Wno-switch-default" },

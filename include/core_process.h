@@ -26,12 +26,19 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include <profiler.h>
-#include <core_types.h>
+#pragma once
 
-void profiler_frame_marker_internal() {
-}
+#include "core_types.h"
+#include "array.h"
+#include "dll_export.h"
 
-void profiler_scope_named_internal( const char* name ) {
-	unused( name );
-}
+struct Process;
+
+
+CORE_API Process*	process_create( Array<const char*>* args, Array<const char*>* environment_variables );
+
+CORE_API void		process_destroy( Process* process );
+
+CORE_API s32		process_join( Process** process );
+
+CORE_API u64		process_read_stdout( Process* process, char* out_buffer, const u32 count );

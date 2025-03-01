@@ -27,19 +27,17 @@ SOFTWARE.
 */
 
 #include <allocation_context.h>
+#include <allocator.h>
 #include <allocator_malloc.h>
 #include <allocator_linear.h>
-#include <debug.h>
 #include <cmd_line_args.h>
+#include <debug.h>
+#include <hashmap.h>
+#include <typecast.inl>
 
 #include "core_local.h"
 
 #include <memory.h>	// memcpy
-#include <hashmap.h>
-
-#include <type_traits>
-
-#include <allocator.h>
 
 /*
 ================================================================================================

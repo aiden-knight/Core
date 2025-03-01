@@ -28,9 +28,42 @@ SOFTWARE.
 
 #pragma once
 
-#define PROFILER_FRAME_MARKER()			profiler_frame_marker_internal()
-#define PROFILER_SCOPE()				profiler_scope_named_internal( __FUNCTION__ )
-#define PROFILER_SCOPE_NAMED( name )	profiler_scope_named_internal( name )
+#include "core_types.h"
+#include "dll_export.h"
 
-void profiler_frame_marker_internal();
-void profiler_scope_named_internal( const char* name );
+struct Allocator;
+
+/*
+================================================================================================
+
+	String
+
+	Container type used to represent text.
+
+	Unlike C++'s std::string, this string type doesn't allow for appending additional data on
+	the end of it.  If you want to do that, use StringBuilder.
+
+	This string type only calls realloc() when making the string hold a larger piece of text.
+
+================================================================================================
+*/
+
+struct String {
+	u8*			data = NULL;
+	u64			count = 0;
+	u64			alloced = 0;
+	Allocator*	allocator = NULL;
+
+				String() {}
+				String( const char* str );
+				String( const String& str );
+				~String();
+
+	String&		operator=( const char* str );
+	String&		operator=( const String& str );
+
+	u8			operator[]( const u64 index );
+	u8			operator[]( const u64 index ) const;
+};
+
+CORE_API void	string_printf( String* dst, const char* fmt, ... );

@@ -149,7 +149,7 @@ void Array<T>::reserve( const u64 bytes ) {
 		u64 previous_alloced = alloced;
 		alloced = next_multiple_of_4_up( bytes );
 
-		allocator = allocator == nullptr ? mem_get_current_allocator() : allocator;
+		allocator = ( allocator == nullptr ) ? mem_get_current_allocator() : allocator;
 
 		mem_push_allocator( allocator );
 		// TODO(DM): 07/02/2025: using our own cast( T, x ) function doesnt work here when we enable CORE_MEMORY_TRACKING

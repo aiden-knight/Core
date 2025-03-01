@@ -26,7 +26,7 @@ SOFTWARE.
 ===========================================================================
 */
 
-#ifdef _WIN64
+#ifdef _WIN32
 
 #include <file.h>
 
@@ -475,4 +475,4 @@ u64 folder_get_num_files( const char* path ) {
 	return count;
 }
 
-#endif // _WIN64
+#endif // _WIN32
