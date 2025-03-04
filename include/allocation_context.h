@@ -115,4 +115,4 @@ CORE_API inline void 								mem_allow_allocator_nuking( bool allow ) { unused( 
 
 #endif
 
-inline Allocator*									mem_get_current_allocator() { return g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1]; }
+CORE_API Allocator*									mem_get_current_allocator();

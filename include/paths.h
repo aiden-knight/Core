@@ -31,6 +31,23 @@ SOFTWARE.
 #include "core_types.h"
 #include "dll_export.h"
 
+/*
+================================================================================================
+
+	File path helper functions
+
+	A series of helper functions for OS-dependent API calls for things like getting the CWD, as
+	well as some non OS-dependent things.
+
+================================================================================================
+*/
+
+#ifdef _WIN32
+	#define PATH_SEPARATOR "\\"
+#else
+	#define PATH_SEPARATOR "/"
+#endif
+
 // Returns the absolute path of where the current program is running from.
 CORE_API const char*	paths_get_app_path();
 
@@ -55,4 +72,5 @@ CORE_API bool8			paths_is_path_absolute( const char* path );
 
 CORE_API const char*	paths_canonicalise_path( const char* path );
 
+// Make sure that any slashes found in 'path' are what the OS expects them to be.
 CORE_API const char*	paths_fix_slashes( const char* path );

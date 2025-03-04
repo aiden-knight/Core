@@ -129,6 +129,10 @@ void mem_pop_allocator() {
 	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size] = nullptr;
 }
 
+Allocator* mem_get_current_allocator() {
+	return g_core_ptr->allocator_stack[g_core_ptr->current_stack_size - 1];
+}
+
 void core_shutdown() {
 	assert( g_core_ptr );
 
