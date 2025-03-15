@@ -166,7 +166,7 @@ static void recursively_track_frees( AllocatorTrackingData* allocator_data, void
 	}
 
 	allocator_data->allocations.swap_remove_at( index );
-
+	hashmap_remove_key(allocator_data->allocation_lookup, cast(u64, allocation));
 	// Patch up the allocators lookup info that got swaped into index's place
 	if ( index < allocator_data->allocations.count ) {
 		hashmap_set_value( allocator_data->allocation_lookup, cast( u64, allocator_data->allocations[index].ptr ), index );
@@ -174,7 +174,7 @@ static void recursively_track_frees( AllocatorTrackingData* allocator_data, void
 }
 
 void track_free_internal( void* free ) {
-	if ( is_memeory_tracking_flag_active( MTF_IGNORE ) ) {
+	if ( is_memeory_tracking_flag_active( MTF_IGNORE ) || free == nullptr) {
 		return;
 	}
 
