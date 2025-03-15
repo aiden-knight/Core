@@ -106,6 +106,13 @@ static AllocatorTrackingData* get_current_tracking_data() {
 	return &memory_tracking->allocator_tracking_data[index];
 }
 
+void* track_reallocation_internal(void* new_allocation, void* old_allocation, const char* function, const u32 line_number)
+{
+	track_allocation_internal(new_allocation, function, line_number);
+	track_free_internal(old_allocation);
+	return new_allocation;
+}
+
 void* track_allocation_internal( void* allocation, const char* function, const u32 line_number ) {
 	if ( is_memeory_tracking_flag_active( MTF_IGNORE ) ) {
 		return allocation;

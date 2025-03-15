@@ -86,8 +86,8 @@ CORE_API void										mem_pop_allocator();
 // call these ones!
 #define mem_alloc( size )							track_allocation_internal( mem_alloc_internal( (size) ), __FUNCTION__, __LINE__ )
 #define mem_alloc_aligned( size, alignment )		track_allocation_internal( mem_alloc_aligned_internal( (size), cast( MemoryAlignment, (alignment) ) ), __FUNCTION__, __LINE__ )
-#define mem_realloc( ptr, size )					track_allocation_internal( mem_realloc_internal( (ptr), (size) ), __FUNCTION__, __LINE__ ); track_free_internal( (ptr) )
-#define mem_realloc_aligned( ptr, size, alignment )	track_allocation_internal( mem_realloc_aligned_internal( (ptr), (size), cast( MemoryAlignment, (alignment) ) ), __FUNCTION__, __LINE__ ); track_free_internal( (ptr) )
+#define mem_realloc( ptr, size )					track_reallocation_internal( mem_realloc_internal( (ptr), (size) ), (ptr), __FUNCTION__, __LINE__ )
+#define mem_realloc_aligned( ptr, size, alignment )	track_reallocation_internal( mem_realloc_aligned_internal( (ptr), (size), cast( MemoryAlignment, (alignment) ) ), (ptr),  __FUNCTION__, __LINE__ )
 #define mem_free( ptr )								mem_free_internal( (ptr) ); track_free_internal( (ptr) ); ptr = NULL
 
 // Resets the current allocator
