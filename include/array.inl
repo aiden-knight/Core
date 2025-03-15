@@ -89,8 +89,11 @@ Array<T>::Array()
 template<class T>
 Array<T>::~Array() {
 	if ( data ) {
+		assert(allocator);
+		mem_push_allocator(allocator);
 		mem_free( data );
 		data = NULL;
+		mem_pop_allocator();
 	}
 }
 

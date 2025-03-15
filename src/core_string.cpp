@@ -88,7 +88,10 @@ String::String( const String& str ) {
 
 String::~String() {
 	if ( data ) {
+		assert(allocator != nullptr);
+		mem_push_allocator(allocator);
 		mem_free( data );
+		mem_pop_allocator();
 		data = NULL;
 	}
 }
