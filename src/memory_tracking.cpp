@@ -74,8 +74,18 @@ static void set_memory_tracking_flag( MemoryTrackingFlag flag, bool active ) {
 	}
 }
 
-static bool is_memeory_tracking_flag_active( MemoryTrackingFlag flag ) {
+bool is_memeory_tracking_flag_active( MemoryTrackingFlag flag ) {
 	return ( g_core_ptr->memory_tracking->flags & flag ) != 0;
+}
+
+CORE_API void	check_allocator_is_active(Allocator* allocator)
+{
+	MemoryTracking* memory_tracking = g_core_ptr->memory_tracking;
+	if (memory_tracking && !is_memeory_tracking_flag_active(MTF_IGNORE))
+	{
+		assertf(hashmap_get_value(memory_tracking->allocator_tracking_lookup, cast(u64, allocator)) != HASHMAP_INVALID_VALUE,
+			"The allocator needs to to be active. Either it's not been initialized or has been cleaned up");
+	}
 }
 
 void start_tracking_allocator( Allocator* allocator ) {

@@ -118,6 +118,10 @@ void core_init( const u64 temp_storage_size ) {
 void mem_push_allocator( Allocator* allocator ) {
 	assert( g_core_ptr );
 
+#ifdef CORE_MEMORY_TRACKING
+	check_allocator_is_active(allocator);
+#endif
+
 	assert( g_core_ptr->current_stack_size + 1 < MAX_ALLOCATOR_STACK_SIZE );
 	g_core_ptr->allocator_stack[g_core_ptr->current_stack_size++] = allocator;
 }

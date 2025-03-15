@@ -41,6 +41,8 @@ CORE_API void*	track_reallocation_internal(void* new_allocation, void* old_alloc
 CORE_API void	track_free_internal( void* free );
 CORE_API void	track_free_whole_allocator_internal( bool stop_tracking );
 
+CORE_API void	check_allocator_is_active(Allocator* allocator);
+
 struct ScopedFlags {
 		ScopedFlags( u32 new_flags, u32 remove_flags = 0 );
 		~ScopedFlags();
