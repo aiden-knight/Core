@@ -135,7 +135,6 @@ TEMPER_TEST( string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 
 	TEMPER_CHECK_TRUE( s.data == NULL );
 	TEMPER_CHECK_TRUE( s.count == 0 );
-	TEMPER_CHECK_TRUE( s.alloced == 0 );
 	TEMPER_CHECK_TRUE( s.allocator == NULL );
 }
 
@@ -147,14 +146,12 @@ TEMPER_TEST_PARAMETRIC( string_assignment, TEMPER_FLAG_SHOULD_RUN, const char* s
 	TEMPER_CHECK_TRUE( strcmp( cast( char*, actual_string.data ), str ) == 0 );
 	TEMPER_CHECK_TRUE( actual_string.data[actual_string.count] == 0 );
 	TEMPER_CHECK_TRUE( actual_string.count == str_length );
-	TEMPER_CHECK_TRUE( actual_string.alloced == str_length + 1 );
 }
 
 TEMPER_TEST_PARAMETRIC( string_copy, TEMPER_FLAG_SHOULD_RUN, const String& a ) {
 	String b = a;
 
 	TEMPER_CHECK_TRUE( a.count == b.count );
-	TEMPER_CHECK_TRUE( a.alloced == b.alloced );
 	TEMPER_CHECK_TRUE( memcmp( a.data, b.data, a.count ) == 0 );
 	TEMPER_CHECK_TRUE( b.data[b.count] == 0 );
 }
@@ -188,7 +185,6 @@ static void test_string_printf_charptr_s32( const char* name, const s32 age ) {
 
 	TEMPER_CHECK_TRUE( string_equals( expected_string, (char*) actual_string.data ) );
 	TEMPER_CHECK_TRUE( cast( u64, expected_string_length ) == actual_string.count );
-	TEMPER_CHECK_TRUE( actual_string.alloced == actual_string.count + 1 );
 }
 
 TEMPER_TEST( string_printf, TEMPER_FLAG_SHOULD_RUN ) {

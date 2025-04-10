@@ -37,37 +37,20 @@ SOFTWARE.
 #include <string.h>
 
 static void string_reserve_internal( String* dst, const u64 length ) {
-	if ( length > dst->alloced ) {
-		dst->alloced = length;
-
+	if ( length > dst->count ) {
 		dst->allocator = ( dst->allocator == NULL ) ? mem_get_current_allocator() : dst->allocator;
 
 		mem_push_allocator( dst->allocator );
 
-		// TODO(DM): 07/02/2025: using our own cast( T, x ) function doesnt work here when we enable CORE_MEMORY_TRACKING
-		// this is because in that instance mem_realloc calls track_allocation_internal() followed immediately by track_free_internal(), which the compiler wont like if we were to do the following:
-		//
-		//	data = cast( T*, mem_realloc( data, alloced * sizeof( T ) ) );
-		//
-		// therefore we need to make the mem_realloc() define call just the one function instead of one after the other
-		dst->data = (u8*) mem_realloc( dst->data, dst->alloced * sizeof( u8 ) );
+		dst->data = cast( u8*, mem_realloc( dst->data, ( dst->count + 1 ) * sizeof( u8 ) ) );
 
 		mem_pop_allocator();
 	}
 }
 
-static void string_set_internal( String* dst, const char* src, const u64 length ) {
-	string_reserve_internal( dst, length + 1 );
-
-	dst->count = length;
-
-	memcpy( dst->data, src, length );
-	dst->data[length] = 0;
-}
-
 static void string_copy_internal( String* dst, const String* src ) {
 	char* data_as_char = cast( char*, src->data );
-	string_set_internal( dst, data_as_char, src->count );
+	string_copy_from_c_string( dst, data_as_char, src->count );
 }
 
 /*
@@ -79,7 +62,7 @@ static void string_copy_internal( String* dst, const String* src ) {
 */
 
 String::String( const char* str ) {
-	string_set_internal( this, str, strlen( str ) );
+	string_copy_from_c_string( this, str, strlen( str ) );
 }
 
 String::String( const String& str ) {
@@ -88,16 +71,19 @@ String::String( const String& str ) {
 
 String::~String() {
 	if ( data ) {
-		assert(allocator != nullptr);
-		mem_push_allocator(allocator);
+		assert( allocator != nullptr );
+		
+		mem_push_allocator( allocator );
+
 		mem_free( data );
-		mem_pop_allocator();
 		data = NULL;
+
+		mem_pop_allocator();
 	}
 }
 
 String& String::operator=( const char* str ) {
-	string_set_internal( this, str, strlen( str ) );
+	string_copy_from_c_string( this, str, strlen( str ) );
 	return *this;
 }
 
@@ -116,6 +102,15 @@ u8 String::operator[]( const u64 index ) const {
 	return data[index];
 }
 
+void string_copy_from_c_string( String* dst, const char* src, const u64 length ) {
+	string_reserve_internal( dst, length + 1 );
+
+	dst->count = length;
+
+	memcpy( dst->data, src, length );
+	dst->data[length] = 0;
+}
+
 void string_printf( String* dst, const char* fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
@@ -127,6 +122,6 @@ void string_printf( String* dst, const char* fmt, ... ) {
 
 	dst->count = length;
 
-	vsnprintf( cast( char*, dst->data ), dst->alloced, fmt, args );
+	vsnprintf( cast( char*, dst->data ), dst->count + 1, fmt, args );
 	dst->data[length] = 0;
 }
