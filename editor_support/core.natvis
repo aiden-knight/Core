@@ -4,6 +4,8 @@
 	<Type Name="Array&lt;*&gt;">
 		<DisplayString>{{ count={count} }}</DisplayString>
 		<Expand>
+			<Item Name="alloced">alloced</Item>
+			<Item Name="allocator">allocator</Item>
 			<ArrayItems>
 				<Size>count</Size>
 				<ValuePointer>data</ValuePointer>
