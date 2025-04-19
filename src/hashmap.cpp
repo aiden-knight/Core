@@ -80,8 +80,8 @@ inline void set_key_at_index( Hashmap* map, u32 index, u64 key ) {
 }
 
 void hashmap_reset( Hashmap* map ) {
-	For ( u32, i, 0, map->capacity ) {
-		set_key_at_index( map, i, HASHMAP_UNUSED_BUCKET );
+	For ( i, map->capacity ) {
+		set_key_at_index( map, trunc_cast( u32, i ), HASHMAP_UNUSED_BUCKET );
 		map->buckets[i].value = HASHMAP_INVALID_VALUE;
 	}
 
@@ -150,7 +150,7 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 				// Alternatively we could swap tombstone and unused values round and then unused value == empty bucket and zero the entire damn thing :)
 				hashmap_reset( map );
 
-				For ( u32, old_bucket_index, 0, old_capacity ) {
+				For ( old_bucket_index, old_capacity ) {
 					u64 key_in_bucket = hashmap_internal_combine( old_buckets[old_bucket_index].key_hi, old_buckets[old_bucket_index].key_lo );
 					if ( key_in_bucket != HASHMAP_UNUSED_BUCKET && key_in_bucket != HASHMAP_TOMBSTONE_BUCKET ) {
 						hashmap_set_value( map, key_in_bucket, old_buckets[old_bucket_index].value );

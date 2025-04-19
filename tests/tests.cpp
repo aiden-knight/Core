@@ -471,8 +471,8 @@ TEMPER_TEST_PARAMETRIC( test_array_copy, TEMPER_FLAG_SHOULD_RUN, Array<s32>* ori
 	TEMPER_CHECK_TRUE( new_array->count == original_array->count );
 	TEMPER_CHECK_TRUE( new_array->alloced == next_multiple_of_4_up( new_array->count ) );
 
-	For ( u64, i, 0, new_array->count ) {
-		TEMPER_CHECK_TRUE_M( (*new_array)[i] == (*original_array)[i], "new_array[%llu] != original_array[%llu] when it should!", i, i );
+	For ( i, new_array->count ) {
+		TEMPER_CHECK_TRUE_M( ( *new_array )[i] == ( *original_array )[i], "new_array[%llu] != original_array[%llu] when it should!", i, i );
 	}
 }
 
@@ -532,15 +532,14 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 ================================================================================================
 */
 
-TEMPER_TEST(test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN)
-{
+TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
 	u32 lo_part = 0xFAFAFAFA;
 	u32 hi_part = 0xAFAFAFAF;
 
-	u64 combined = hashmap_internal_combine(hi_part, lo_part);
-	TEMPER_CHECK_TRUE_A( combined == 0xFAFAFAFAAFAFAFAF);
-	TEMPER_CHECK_TRUE_A( hashmap_internal_get_hi_part(combined) == hi_part);
-	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part(combined) == lo_part);
+	u64 combined = hashmap_internal_combine( hi_part, lo_part );
+	TEMPER_CHECK_TRUE_A( combined == 0xFAFAFAFAAFAFAFAF );
+	TEMPER_CHECK_TRUE_A( hashmap_internal_get_hi_part( combined ) == hi_part );
+	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part( combined ) == lo_part );
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** hashmap, const u32 count ) {
@@ -553,7 +552,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** h
 
 	TEMPER_CHECK_TRUE( ( *hashmap )->capacity == count );
 
-	For ( u64, i, 0, ( *hashmap )->capacity ) {
+	For ( i, ( *hashmap )->capacity ) {
 		HashmapBucket& bucket = ( *hashmap )->buckets[i];
 		TEMPER_CHECK_TRUE_A( hashmap_internal_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
 		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
@@ -588,7 +587,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 
 	TEMPER_CHECK_TRUE( hashmap->capacity == old_count );
 
-		For ( u64, i, 0, hashmap->capacity ) {
+	For ( i, hashmap->capacity ) {
 		HashmapBucket& bucket = hashmap->buckets[i];
 		TEMPER_CHECK_TRUE_A( hashmap_internal_combine(bucket.key_hi, bucket.key_lo) == HASHMAP_UNUSED_BUCKET );
 		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
@@ -650,8 +649,8 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 		u32 running_hash_count = -1U;
 		u64 hash = HASHMAP_TOMBSTONE_BUCKET;
 
-		For ( u32, key_index, 0, hashmap->capacity ) {
-			u64 key_at_index = hashmap_internal_combine_at_index( hashmap, key_index );
+		For ( key_index, hashmap->capacity ) {
+			u64 key_at_index = hashmap_internal_combine_at_index( hashmap, trunc_cast( u32, key_index ) );
 
 			if ( key_at_index != HASHMAP_UNUSED_BUCKET && key_at_index != HASHMAP_TOMBSTONE_BUCKET ) {
 				running_hash_count++;
@@ -675,7 +674,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 				constexpr u32 LENGTH_OF_RANDOM_FLOATS = 16u;
 				float random_data[LENGTH_OF_RANDOM_FLOATS];
 
-				For ( u32, float_index, 0, LENGTH_OF_RANDOM_FLOATS ) {
+				For ( float_index, LENGTH_OF_RANDOM_FLOATS ) {
 					random_data[float_index] = random_float32( 0.f, 1.f );
 				}
 
@@ -696,8 +695,8 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	// get a bunch of random hashes and grab the results
 	Array<u32> linear_probe_length;
 	linear_probe_length.reserve( intended_fill );
-	For ( u32, i, 0, hashmap->capacity ) {
-		u64 hash = hashmap_internal_combine_at_index( hashmap, i );
+	For ( i, hashmap->capacity ) {
+		u64 hash = hashmap_internal_combine_at_index( hashmap, trunc_cast( u32, i ) );
 		if ( hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET ) {
 			continue;
 		}
@@ -711,7 +710,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	float mean = 0.0f;
 	float none_zero_mean = 0.0f;
 	u32 num_zero_probes = 0U;
-	For ( u32, i, 0, linear_probe_length.count ) {
+	For ( i, linear_probe_length.count ) {
 		u32 probe = linear_probe_length[i];
 
 		if ( probe > biggest ) {
@@ -1316,7 +1315,7 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 TEMPER_TEST_PARAMETRIC( random_float_within_range, TEMPER_FLAG_SHOULD_RUN, const float32 low, const float32 high ) {
-	For ( u64, i, 0, 1000000 ) {
+	For ( i, 1000000 ) {
 		float32 random_float = random_float32( low, high );
 
 		TEMPER_CHECK_TRUE( random_float >= low );

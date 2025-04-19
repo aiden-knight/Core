@@ -96,7 +96,7 @@ void core_init( const u64 temp_storage_size ) {
 	g_core_ptr = &g_core_context;
 
 	g_core_context.current_stack_size = 0;
-	For ( u32, i, 0, MAX_ALLOCATOR_STACK_SIZE ) {
+	For ( i, MAX_ALLOCATOR_STACK_SIZE ) {
 		g_core_context.allocator_stack[i] = nullptr;
 	}
 
