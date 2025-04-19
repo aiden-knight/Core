@@ -74,7 +74,7 @@ static void set_memory_tracking_flag( MemoryTrackingFlag flag, bool active ) {
 	}
 }
 
-bool is_memeory_tracking_flag_active( MemoryTrackingFlag flag ) {
+static bool is_memeory_tracking_flag_active( MemoryTrackingFlag flag ) {
 	return ( g_core_ptr->memory_tracking->flags & flag ) != 0;
 }
 
