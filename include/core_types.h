@@ -52,10 +52,10 @@ SOFTWARE.
 
 // for loop helper macro
 // DM: these exist because I'm getting bored of typing the whole thing out every time and it feels like boiler-plate
-#define For( T, it, start, count )	for ( T it = (start); it < (count); it++ )
+#define For( it, count )			for ( u64 it = 0; it < (count); it++ )
 
 // reverse for loop helper macro
-#define RFor( T, it, start, count )	for ( T it = (count); it-- > (start); )
+#define RFor( it, count )			for ( u64 it = (count); it-- > 0; )
 
 // returns the amount of padding required to align x up to the next aligned address
 #define padding_up( x, alignment )	( (alignment) - 1 ) & ~( (alignment) - 1 )
