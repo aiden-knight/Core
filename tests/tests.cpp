@@ -143,15 +143,17 @@ TEMPER_TEST_PARAMETRIC( string_assignment, TEMPER_FLAG_SHOULD_RUN, const char* s
 
 	String actual_string = str;
 
-	TEMPER_CHECK_TRUE( strcmp( cast( char*, actual_string.data ), str ) == 0 );
-	TEMPER_CHECK_TRUE( actual_string.data[actual_string.count] == 0 );
 	TEMPER_CHECK_TRUE( actual_string.count == str_length );
+	TEMPER_CHECK_TRUE( strcmp( cast( char*, actual_string.data ), str ) == 0 );
+	TEMPER_CHECK_TRUE( memcmp( actual_string.data, str, actual_string.count ) == 0 );
+	TEMPER_CHECK_TRUE( actual_string.data[actual_string.count] == 0 );
 }
 
-TEMPER_TEST_PARAMETRIC( string_copy, TEMPER_FLAG_SHOULD_RUN, const String& a ) {
+TEMPER_TEST_PARAMETRIC( string_copy_other_string, TEMPER_FLAG_SHOULD_RUN, const String& a ) {
 	String b = a;
 
 	TEMPER_CHECK_TRUE( a.count == b.count );
+	TEMPER_CHECK_TRUE( strcmp( a.data, b.data ) == 0 );
 	TEMPER_CHECK_TRUE( memcmp( a.data, b.data, a.count ) == 0 );
 	TEMPER_CHECK_TRUE( b.data[b.count] == 0 );
 }
@@ -165,14 +167,14 @@ TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Knock knock, Neo" );
 TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Free your mind, Neo" );
 TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "a" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Test" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "This is" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Wake up, Neo" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Follow the White Rabbit" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Knock knock, Neo" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "Free your mind, Neo" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_copy, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "a" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "This is" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Wake up, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Follow the White Rabbit" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Knock knock, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Free your mind, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
 
 static void test_string_printf_charptr_s32( const char* name, const s32 age ) {
 	const char* fmt = "%s %d";
