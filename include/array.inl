@@ -35,6 +35,7 @@ SOFTWARE.
 #include "debug.h"
 #include "allocation_context.h"
 #include "core_math.h"
+#include "typecast.inl"
 
 #include <memory.h>
 
