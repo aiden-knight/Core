@@ -170,9 +170,9 @@ const char* path_fix_slashes( const char* path ) {
 	memcpy( result, path, path_length * sizeof( char ) );
 	result[path_length] = 0;
 
-	For ( charIndex, path_length ) {
-		if ( result[charIndex] == '/' ) {
-			result[charIndex] = '\\';
+	For ( u64, char_index, 0, path_length ) {
+		if ( result[char_index] == '/' ) {
+			result[char_index] = '\\';
 		}
 	}
 
