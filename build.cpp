@@ -62,6 +62,7 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS", "CORE_MEMORY_TRACKING" },
 		.additional_includes	= { "include" },
 		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
+		.warning_levels			= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignore_warnings		= { "-Wno-switch-default" },
 		.warnings_as_errors		= true
 	};

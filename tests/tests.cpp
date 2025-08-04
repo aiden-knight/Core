@@ -1370,6 +1370,38 @@ TEMPER_TEST( test_library_unload, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 
+/*
+================================================================================================
+
+	Process
+
+================================================================================================
+*/
+
+TEMPER_TEST( test_process, TEMPER_FLAG_SHOULD_RUN ) {
+	Array<const char*> args;
+	args.add( "\"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\"" );
+	args.add( "-latest" );
+	args.add( "-products" );
+	args.add( "*" );
+	args.add( "-requires" );
+	args.add( "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" );
+	args.add( "-property" );
+	args.add( "installationPath" );
+
+	Process* process = process_create( &args, NULL );
+
+	char buffer[1024] = { 0 };
+	while ( process_read_stdout( process, buffer, 1024 ) ) {
+		printf( "%s", buffer );
+	}
+
+	s32 exit_code = process_join( process );
+
+	TEMPER_CHECK_TRUE( exit_code == 0 );
+}
+
+
 //================================================================
 
 
