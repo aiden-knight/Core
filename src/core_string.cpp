@@ -43,7 +43,8 @@ static void string_reserve_internal( String* dst, const u64 length ) {
 		mem_push_allocator( dst->allocator );
 		defer( mem_pop_allocator() );
 
-		dst->data = cast( char*, mem_realloc( dst->data, length * sizeof( char ) ) );
+		dst->original_data = cast( char*, mem_realloc( dst->data, length * sizeof( char ) ) );
+		dst->data = dst->original_data;
 	}
 }
 
@@ -68,13 +69,13 @@ String::String( const String& str ) {
 }
 
 String::~String() {
-	if ( data ) {
+	if ( original_data ) {
 		assert( allocator != nullptr );
 
 		mem_push_allocator( allocator );
 
-		mem_free( data );
-		data = NULL;
+		mem_free( original_data );
+		original_data = NULL;
 
 		mem_pop_allocator();
 	}
@@ -114,8 +115,10 @@ void string_copy_from_c_string( String* dst, const char* src, const u64 length )
 
 	dst->count = length;
 
-	memcpy( dst->data, src, length );
-	dst->data[length] = 0;
+	memcpy( dst->original_data, src, length );
+	dst->original_data[length] = 0;
+
+	dst->data = dst->original_data;
 }
 
 void string_printf( String* dst, const char* fmt, ... ) {
@@ -123,12 +126,14 @@ void string_printf( String* dst, const char* fmt, ... ) {
 	va_start( args, fmt );
 	defer( va_end( args ) );
 
-	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
+	u64 length = cast( u64, string_vsnprintf( NULL, 0, fmt, args ) );
 
 	string_reserve_internal( dst, length + 1 );
 
 	dst->count = length;
 
-	vsnprintf( dst->data, dst->count + 1, fmt, args );
-	dst->data[length] = 0;
+	vsnprintf( dst->original_data, dst->count + 1, fmt, args );
+	dst->original_data[length] = 0;
+
+	dst->data = dst->original_data;
 }

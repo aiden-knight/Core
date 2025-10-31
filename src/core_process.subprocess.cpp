@@ -53,9 +53,23 @@ struct Process {
 	struct subprocess_s	proc;
 };
 
-Process* process_create( Array<const char*>* args, Array<const char*>* environment_variables ) {
+static int internal_get_subprocess_options( const ProcessFlags flags ) {
+	int options = 0;
+
+	if ( flags & PROCESS_FLAG_ASYNC ) {
+		options |= subprocess_option_enable_async;
+	}
+
+	if ( flags & PROCESS_FLAG_COMBINE_STDOUT_AND_STDERR ) {
+		options |= subprocess_option_combined_stdout_stderr;
+	}
+
+	return options;
+}
+
+Process* process_create( Array<const char*>* args, Array<const char*>* environment_variables, const ProcessFlags flags ) {
 	assert( args );
-	assertf( args->count >= 1, "When calling \"%s\", the args array MUST have at least one element in it (which is the name of the process you want to call).\n" );
+	assert( args->count > 0 );
 	assert( args->data != NULL );
 
 	//TODO(TOM): Figure out how to configure the file IO allocator
@@ -64,13 +78,7 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 	mem_push_allocator( platform_allocator );
 	defer( mem_pop_allocator() );
 
-	// dont memset here because kicking off a subprocess is a slow thing to do
-	// and we need all the speed wins we can get here, no matter how small
-	Process* process = cast( Process*, mem_alloc( sizeof( Process ) ) );
-	process->proc = {};
-
-	// separate stdout and stderr doesnt work for some reason?
-	int options = subprocess_option_combined_stdout_stderr | subprocess_option_enable_async;
+	int options = internal_get_subprocess_options( flags );
 
 	if ( environment_variables == NULL ) {
 		options |= subprocess_option_inherit_environment;
@@ -86,10 +94,16 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 		args->add( NULL );
 	}
 
-	int result = subprocess_create_ex( args->data, options, environment_variables ? environment_variables->data : NULL, &process->proc );
+	struct subprocess_s subprocess = {};
+	if ( subprocess_create_ex( args->data, options, environment_variables ? environment_variables->data : NULL, &subprocess ) != 0 ) {
+		//error( "Failed to create process: 0x%X\n", GetLastError() );
+		return NULL;
+	}
 
-	assertf( result == 0, "Failed to create process: 0x%X\n", GetLastError() );
-	unused( result );
+	// dont memset here because kicking off a subprocess is a slow thing to do
+	// and we need all the speed wins we can get here, no matter how small
+	Process* process = cast( Process*, mem_alloc( sizeof( Process ) ) );
+	process->proc = subprocess;
 
 	return process;
 }
@@ -116,10 +130,9 @@ void process_destroy( Process* process ) {
 
 s32 process_join( Process* process ) {
 	assert( process );
-	assert( *process );
 
 	int exit_code = -1;
-	int result = subprocess_join( process->proc, &exit_code );
+	int result = subprocess_join( &process->proc, &exit_code );
 
 	assert( result == 0 );
 	unused( result );
@@ -127,7 +140,7 @@ s32 process_join( Process* process ) {
 	return exit_code;
 }
 
-u64 process_read_stdout( Process* process, char* out_buffer, const u32 count ) {
+u32 process_read_stdout( Process* process, char* out_buffer, const u32 count ) {
 	assert( process );
 	assert( out_buffer );
 

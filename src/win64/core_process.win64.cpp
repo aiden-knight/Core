@@ -50,9 +50,10 @@ struct Process {
 	PROCESS_INFORMATION	process_info;
 	HANDLE				stdout_read;
 	HANDLE				stdout_write;
+	HANDLE				event_stdout;
 };
 
-Process* process_create( Array<const char*>* args, Array<const char*>* environment_variables ) {
+Process* process_create( Array<const char*>* args, Array<const char*>* environment_variables, const ProcessFlags flags ) {
 	assert( args );
 	assert( args->count > 0 );
 
@@ -69,7 +70,8 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 
 	// stdout
 	if ( !CreatePipe( &process->stdout_read, &process->stdout_write, &sec_attr, 0 ) ) {
-		fatal_error( "CreatePipe call failed: 0x%X.\n", GetLastError() );
+		error( "CreatePipe call failed: 0x%X.\n", GetLastError() );
+		return NULL;
 	}
 
 	STARTUPINFO start_info = { sizeof( start_info ) };
@@ -106,6 +108,10 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 	}
 	defer( mem_free( combined_args ) );
 
+	if ( flags & PROCESS_FLAG_ASYNC ) {
+		process->event_stdout = CreateEvent( &sec_attr, 1, 1, NULL );
+	}
+
 	BOOL created = CreateProcess(
 		NULL,
 		const_cast<LPSTR>( combined_args ),
@@ -120,22 +126,57 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 	);
 
 	if ( !created ) {
-		fatal_error( "CreateProcess() failed: 0x%X.\n", GetLastError() );
+		error( "CreateProcess() failed: 0x%X.\n", GetLastError() );
+		return NULL;
 	}
 
+#if 1
 	CloseHandle( start_info.hStdOutput );
+	//start_info.hStdOutput = NULL;
+#else
+	CloseHandle( process->stdout_write );
+	//process->stdout_write = NULL;
+#endif
+
+	CloseHandle( process->process_info.hThread );
+	//process->process_info.hThread = NULL;
 
 	return process;
 }
 
 void process_destroy( Process* process ) {
-	CloseHandle( process->stdout_read );
-	CloseHandle( process->process_info.hProcess );
-	CloseHandle( process->process_info.hThread );
+	assert( process );
+
+	if ( process->stdout_read ) {
+		CloseHandle( process->stdout_read );
+		process->stdout_read = NULL;
+	}
+
+	if ( process->process_info.hProcess ) {
+		CloseHandle( process->process_info.hProcess );
+		process->process_info.hProcess = NULL;
+	}
+
+	if ( process->process_info.hThread ) {
+		CloseHandle( process->process_info.hThread );
+		process->process_info.hThread = NULL;
+	}
+
+	if ( process->event_stdout ) {
+		CloseHandle( process->event_stdout );
+		process->event_stdout = NULL;
+	}
+
+	mem_free( process );
+	process = NULL;
 }
 
 s32 process_join( Process* process ) {
+	assert( process );
+
 	CloseHandle( process->stdout_read );
+	process->stdout_read = NULL;
+
 	WaitForSingleObject( process->process_info.hProcess, INFINITE );
 
 	DWORD exit_code = 0;
@@ -147,13 +188,32 @@ s32 process_join( Process* process ) {
 }
 
 u32 process_read_stdout( Process* process, char* out_buffer, const u32 count ) {
-	//OVERLAPPED overlapped = {};
-	//overlapped.hEvent = process->output_event;
+	assert( process );
+	assert( out_buffer );
+	assert( count > 0 );
+
+	OVERLAPPED overlapped = {};
+	overlapped.hEvent = process->event_stdout;
 
 	DWORD bytes_read = 0;
-	BOOL read = ReadFile( process->stdout_read, out_buffer, count, &bytes_read, /*&overlapped*/NULL );
+	BOOL read = ReadFile( process->stdout_read, out_buffer, count, &bytes_read, &overlapped );
 
-	return read ? bytes_read : 0;
+	if ( !read ) {
+		DWORD last_error = GetLastError();
+
+		if ( last_error == ERROR_IO_PENDING ) {
+			if ( !GetOverlappedResult( process->stdout_read, &overlapped, &bytes_read, 1 ) ) {
+				last_error = GetLastError();
+
+				if ( ( last_error != ERROR_IO_INCOMPLETE ) && ( last_error != ERROR_HANDLE_EOF ) ) {
+					error( "Failed to read stdout of subprocess: 0x%X.\n", GetLastError() );
+					return 0;
+				}
+			}
+		}
+	}
+
+	return bytes_read;
 }
 
 #endif // defined( _WIN32 ) && !defined( CORE_USE_SUBPROCESS )
