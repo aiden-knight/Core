@@ -25,6 +25,7 @@ SOFTWARE.
 
 ===========================================================================
 */
+
 // Include this file in your source files.
 
 #pragma once
@@ -34,6 +35,7 @@ SOFTWARE.
 #include "debug.h"
 #include "allocation_context.h"
 #include "core_math.h"
+#include "typecast.inl"
 
 #include <memory.h>
 
@@ -81,26 +83,39 @@ Array<T>::Array()
 	: data( NULL )
 	, count( 0 )
 	, alloced( 0 )
+	, allocator( NULL )
 {
+}
+
+template<class T>
+Array<T>::Array( const Array<T>& other )
+	: data( NULL )
+	, count( 0 )
+	, alloced( 0 )
+	, allocator( NULL )
+{
+	copy( &other );
 }
 
 template<class T>
 Array<T>::~Array() {
 	if ( data ) {
+		assert( allocator );
+
+		mem_push_allocator( allocator );
+
 		mem_free( data );
 		data = NULL;
-	}
-}
 
-template<class T>
-Array<T>::Array( const Array<T>& other ) {
-	copy( this, other );
+		mem_pop_allocator();
+	}
 }
 
 template<class T>
 void Array<T>::copy( const Array<T>* src ) {
 	resize( src->count );
 	memcpy( data, src->data, src->count * sizeof( T ) );
+	count = src->count;
 }
 
 template<class T>
@@ -116,9 +131,23 @@ void Array<T>::add_range( const T* ptr, const u64 num_items ) {
 }
 
 template<class T>
-inline void Array<T>::remove_at( const u64 index ) {
+void Array<T>::add_range( const Array<T>* array ) {
+	if ( array->count > 0 ) {
+		add_range( array->data, array->count );
+	}
+}
+
+template<class T>
+void Array<T>::remove_at( const u64 index ) {
 	assert( index < count );
 	memcpy( data + index, data + index + 1, ( count - index ) * sizeof( T ) );
+	count--;
+}
+
+template<class T>
+void	Array<T>::swap_remove_at( const u64 index ) {
+	assert( index < count );
+	data[index] = data[count-1];
 	count--;
 }
 
@@ -131,8 +160,14 @@ void Array<T>::resize( const u64 num_items ) {
 template<class T>
 void Array<T>::reserve( const u64 bytes ) {
 	if ( bytes > alloced ) {
+		u64 previous_alloced = alloced;
 		alloced = next_multiple_of_4_up( bytes );
-		data = cast( T* ) mem_realloc( data, alloced * sizeof( T ) );
+
+		allocator = ( allocator == nullptr ) ? mem_get_current_allocator() : allocator;
+
+		mem_push_allocator( allocator );
+		data = cast( T*, mem_realloc( data, alloced * sizeof( T ) ) );
+		mem_pop_allocator();
 	}
 }
 
@@ -148,7 +183,7 @@ void Array<T>::zero() {
 
 template<class T>
 Array<T>& Array<T>::operator=( const Array<T>& other ) {
-	copy( this, &other );
+	copy( &other );
 	return *this;
 }
 

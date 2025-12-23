@@ -26,83 +26,43 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include <core_types.h>
-#include <debug.h>
+#ifdef __linux__
+
+#include <library.h>
+
+#include <dlfcn.h>
 
 /*
 ================================================================================================
 
-	int truncation
+	Library
 
 ================================================================================================
 */
 
-s32 TruncS64ToS32( const s64 x ) {
-	assert( x < S32_MAX );
-	return cast( s32 ) x;
+Library library_load( const char* name ) {
+	return Library {
+		.ptr = dlopen( name, RTLD_LAZY ),
+	};
 }
 
-s16 TruncS64ToS16( const s64 x ) {
-	assert( x < S16_MAX );
-	return cast( s16 ) x;
+void library_unload( Library* library ) {
+	assert( library );
+	assert( library->ptr );
+
+	if ( dlclose( library->ptr ) != 0 ) {
+		int err = errno;
+		error( "Failed to close library handle: %s\n", strerror( err ) );
+	}
+
+	library->ptr = NULL;
 }
 
-s8 TruncS64ToS8( const s64 x ) {
-	assert( x < S8_MAX );
-	return cast( s8 ) x;
+void* library_get_proc_address( const Library library, const char* func_name ) {
+	assert( library.ptr );
+	assert( func_name );
+
+	return dlsym( library.ptr, func_name );
 }
 
-s16 TruncS32ToS16( const s32 x ) {
-	assert( x < S16_MAX );
-	return cast( s16 ) x;
-}
-
-s8 TruncS32ToS8( const s32 x ) {
-	assert( x < S8_MAX );
-	return cast( s8 ) x;
-}
-
-s8 TruncS16ToS8( const s16 x ) {
-	assert( x < S8_MAX );
-	return cast( s8 ) x;
-}
-
-u32 TruncU64ToU32( const u64 x ) {
-	assert( x < U32_MAX );
-	return cast( u32 ) x;
-}
-
-u16 TruncU64ToU16( const u64 x ) {
-	assert( x < U16_MAX );
-	return cast( u16 ) x;
-}
-
-u8 TruncU64ToU8( const u64 x ) {
-	assert( x < U8_MAX );
-	return cast( u8 ) x;
-}
-
-s32 TruncU64ToS32( const u64 x ) {
-	assert( x < S32_MAX );
-	return cast( s32 ) x;
-}
-
-s32 TruncU32ToS32( const u32 x ) {
-	assert( x < S32_MAX );
-	return cast( s32 ) x;
-}
-
-u16 TruncU32ToU16( const u32 x ) {
-	assert( x < U16_MAX );
-	return cast( u16 ) x;
-}
-
-u8 TruncU32ToU8( const u32 x ) {
-	assert( x < U8_MAX );
-	return cast( u8 ) x;
-}
-
-u8 TruncU16ToU8( const u16 x ) {
-	assert( x < U8_MAX );
-	return cast( u8 ) x;
-}
+#endif // __linux__

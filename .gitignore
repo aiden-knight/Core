@@ -1,7 +1,5 @@
-#
-# core stuff
-#
-
 bin
 clang
 .builder
+
+visual_studio

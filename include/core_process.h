@@ -29,21 +29,22 @@ SOFTWARE.
 #pragma once
 
 #include "core_types.h"
+#include "array.h"
+#include "dll_export.h"
 
-#define HASHMAP64_UNUSED 0xffffffffffffffffULL
+struct Process;
 
-struct Hashmap64 {
-	u64			count;
-	u64*		keys;
-	u64*		values;
+enum ProcessFlagBits {
+	PROCESS_FLAG_ASYNC	= 1,
+	PROCESS_FLAG_COMBINE_STDOUT_AND_STDERR,
 };
+typedef u32 ProcessFlags;
 
-Hashmap64*		hashmap64_create( u64 count );
-void			hashmap64_destroy( Hashmap64* map );
 
-void			hashmap64_reset( Hashmap64* map );
+CORE_API Process*	process_create( Array<const char*>* args, Array<const char*>* environment_variables, const ProcessFlags flags );
 
-// Returns the value associated with the key if the key has a value, otherwise returns 0.
-u64				hashmap64_get_value( const Hashmap64* map, const u64 key );
+CORE_API void		process_destroy( Process* process );
 
-void			hashmap64_set_value( Hashmap64* map, const u64 key, const u64 value );
+CORE_API s32		process_join( Process* process );
+
+CORE_API u32		process_read_stdout( Process* process, char* out_buffer, const u32 count );

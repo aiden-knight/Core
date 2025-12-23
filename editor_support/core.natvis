@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<AutoVisualizer xmlns="http://schemas.microsoft.com/vstudio/debugger/natvis/2010">
+
+	<Type Name="Array&lt;*&gt;">
+		<DisplayString>{{ count={count} }}</DisplayString>
+		<Expand>
+			<Item Name="alloced">alloced</Item>
+			<Item Name="allocator">allocator</Item>
+			<ArrayItems>
+				<Size>count</Size>
+				<ValuePointer>data</ValuePointer>
+			</ArrayItems>
+		</Expand>
+	</Type>
+
+</AutoVisualizer>

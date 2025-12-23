@@ -28,47 +28,35 @@ SOFTWARE.
 
 #pragma once
 
-#include "core_types.h"
-#include "memory_units.h"
-
 /*
 ================================================================================================
 
-	Generic Allocator
+	DLL Export
 
-	Generic malloc/free tracker used to help identify which allocations are being made where
-	and which ones aren't being cleaned up.
+	Core is an header-only library and does not compile out to a DLL.  However, you may want to
+	use Core in a project that does.  This means that if you want any program that's including
+	and linking to your DLL program to also use code from Core then you will need to expose
+	Core to the DLL.  This header lets you do that.
+
+	If you're familiar with exporting functions to DLLs then you already know what's happening
+	in this header, but if not here's what all the #defines mean:
+
+	All you really need to know as the user is this: If you're using Core in a program that
+	compiles out to a dynamic library then you want to #define both CORE_DLL and CORE_EXPORTS
+	in your build system somewhere.
+
+	CORE_API will either export the function to the DLL, or import the function from it
+	depending on whether or not CORE_EXPORTS is #defined.
 
 ================================================================================================
 */
 
-struct GenericAllocationHeader {
-	struct GenericAllocationHeader*	prev;
-	struct GenericAllocationHeader*	next;
-
-	void*							ptr;
-	u64								size;
-	u64								line;
-	//char							file[1024];
-	const char*						file;
-};
-
-struct AllocatorGeneric {
-	GenericAllocationHeader*		tail;
-	u64								total_alloced_bytes;
-};
-
-void	mem_create_generic( const u64 size, void** out_allocator_data );
-void	mem_destroy_generic( void* allocator_data );
-
-void*	mem_alloc_generic( void* allocator_data, const u64 size, const char* file, const int line );
-void*	mem_alloc_generic_aligned( void* allocator_data, const u64 size, const MemoryAlignment alignment, const char* file, const int line );
-
-void*	mem_realloc_generic( void* allocator_data, void* ptr, const u64 size, const char* file, const int line );
-
-void	mem_free_generic( void* allocator_data, void* ptr, const char* file, const int line );
-
-// Not allowed.
-void	mem_reset_generic( void* allocator_data );
-
-void	mem_generic_check_leaks( AllocatorGeneric* allocator );
+#ifdef CORE_DLL
+	#ifdef CORE_EXPORTS
+		#define CORE_API	__declspec( dllexport )
+	#else
+		#define CORE_API	__declspec( dllimport )
+	#endif
+#else
+	#define CORE_API
+#endif

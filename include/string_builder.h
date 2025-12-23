@@ -28,7 +28,15 @@ SOFTWARE.
 
 #pragma once
 
+#include "dll_export.h"
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
+#endif
+
 struct StringBuilderBuffer {
+	u32						length;
 	char*					data;
 	StringBuilderBuffer*	next;
 };
@@ -38,10 +46,14 @@ struct StringBuilder {
 	StringBuilderBuffer*	tail;
 };
 
-void						string_builder_reset( StringBuilder* builder );
-void						string_builder_destroy( StringBuilder* builder );
+CORE_API void				string_builder_reset( StringBuilder* builder );
+CORE_API void				string_builder_destroy( StringBuilder* builder );
 
-// void						string_builder_appendfv( StringBuilder* builder, const char* fmt, va_list args );
-void						string_builder_appendf( StringBuilder* builder, const char* fmt, ... );
+// CORE_API void				string_builder_appendfv( StringBuilder* builder, const char* fmt, va_list args );
+CORE_API void				string_builder_appendf( StringBuilder* builder, const char* fmt, ... );
 
-const char*					string_builder_to_string( StringBuilder* builder );
+CORE_API const char*		string_builder_to_string( StringBuilder* builder );
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

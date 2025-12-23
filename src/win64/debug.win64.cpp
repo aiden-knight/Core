@@ -26,11 +26,13 @@ SOFTWARE.
 ===========================================================================
 */
 
-#ifdef _WIN64
+#ifdef _WIN32
 
 #include <debug.h>
+
 #include <core_types.h>
-//#include <string_helpers.h>
+#include <string_helpers.h>
+#include <typecast.inl>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -41,56 +43,31 @@ SOFTWARE.
 #include <stdlib.h>	// malloc, free
 #include <malloc.h>	// alloca
 
-#include <string_helpers.h>
-
 /*
 ================================================================================================
 
-	Debug
+	Win64 debug
 
 ================================================================================================
 */
 
-enum {
-	CONSOLE_COLOR_DEFAULT	= 0x07,
-	CONSOLE_COLOR_RED		= 0x0C,
-	CONSOLE_COLOR_YELLOW	= 0x0E
-};
-
-void warning( const char* fmt, ... ) {
+void set_console_text_color( const ConsoleTextColor color ) {
 	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );
 
-	va_list args;
-	va_start( args, fmt );
+	WORD color_win64 = 0;
 
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_RED );
+	switch ( color ) {
+		case CONSOLE_TEXT_COLOR_DEFAULT:		color_win64 = 0x07; break;
+		case CONSOLE_TEXT_COLOR_RED:			color_win64 = 0x0C; break;
+		case CONSOLE_TEXT_COLOR_YELLOW:			color_win64 = 0x0E; break;
+		case CONSOLE_TEXT_COLOR_BLUE:			color_win64 = 0x01; break;
+		case CONSOLE_TEXT_COLOR_BRIGHT_BLUE:	color_win64 = 0x09; break;
+		case CONSOLE_TEXT_COLOR_LIGHT_GRAY:		color_win64 = 0x07; break;
+	}
 
-	printf( "WARNING: " );
+	assert( color_win64 != 0 );
 
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_YELLOW );
-
-	vprintf( fmt, args );
-	va_end( args );
-
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_DEFAULT );
-}
-
-void error( const char* fmt, ... ) {
-	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );
-
-	va_list args;
-	va_start( args, fmt );
-
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_RED );
-
-	printf( "ERROR: " );
-
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_YELLOW );
-
-	vprintf( fmt, args );
-	va_end( args );
-
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_DEFAULT );
+	SetConsoleTextAttribute( handle, color_win64 );
 }
 
 #ifdef _DEBUG
@@ -127,7 +104,7 @@ void dump_callstack( void ) {
 	for ( ULONG i = 0; ; i++ ) {
 		BOOL more_stack_left_to_walk = StackWalk( machine_image_type, process, GetCurrentThread(), &stack_frame, &context_record, NULL, SymFunctionTableAccess, SymGetModuleBase, NULL );
 
-		IMAGEHLP_SYMBOL64* symbol = cast( IMAGEHLP_SYMBOL64* ) malloc( sizeof( IMAGEHLP_SYMBOL64 ) + MAX_PATH * sizeof( TCHAR ) );
+		IMAGEHLP_SYMBOL64* symbol = cast( IMAGEHLP_SYMBOL64*, malloc( sizeof( IMAGEHLP_SYMBOL64 ) + MAX_PATH * sizeof( TCHAR ) ) );
 		symbol->SizeOfStruct = sizeof( IMAGEHLP_SYMBOL64 );
 		symbol->MaxNameLength = MAX_PATH;	// DM!!! is this correct?
 
@@ -144,7 +121,7 @@ void dump_callstack( void ) {
 		unused( got_line );*/
 
 		char symbol_name[MAX_PATH];
-		if ( UnDecorateSymbolName( symbol->Name, cast( PSTR ) symbol_name, MAX_PATH, UNDNAME_COMPLETE ) == 0 ) {
+		if ( UnDecorateSymbolName( symbol->Name, cast( PSTR, symbol_name ), MAX_PATH, UNDNAME_COMPLETE ) == 0 ) {
 			fatal_error( "Stack walk failed: UnDecorateSymbolName failed: 0x%X.", GetLastError() );
 		}
 
@@ -168,11 +145,11 @@ void dump_callstack( void ) {
 static void assert_dialog_internal( const char* file, const int line, const char* prefix, const char* msg ) {
 	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );
 
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_RED );
+	SetConsoleTextAttribute( handle, CONSOLE_TEXT_COLOR_RED );
 
 	printf( "%s: %s line %d: ", prefix, file, line );
 
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_YELLOW );
+	SetConsoleTextAttribute( handle, CONSOLE_TEXT_COLOR_YELLOW );
 
 	printf( "%s\n", msg );
 
@@ -180,7 +157,7 @@ static void assert_dialog_internal( const char* file, const int line, const char
 	dump_callstack();
 #endif
 
-	SetConsoleTextAttribute( handle, CONSOLE_COLOR_DEFAULT );
+	SetConsoleTextAttribute( handle, CONSOLE_TEXT_COLOR_DEFAULT );
 
 #ifdef _DEBUG
 	_CrtDbgReport( _CRT_ASSERT, file, line, NULL, msg );
@@ -189,27 +166,8 @@ static void assert_dialog_internal( const char* file, const int line, const char
 #endif
 }
 
-void fatal_error_internal( const char* file, const int line, const char* prefix, const char* fmt, ... ) {
-#ifdef _DEBUG
-	_CrtSetReportMode( _CRT_ASSERT, _CRTDBG_MODE_WNDW );
-#endif
-
-	va_list args;
-	va_start( args, fmt );
-
-	// build error msg
-	int len = string_vsnprintf( NULL, 0, fmt, args );
-	len++;	// + 1 for null terminator
-
-	s64 total_length = len;
-
-	char* error_msg = cast( char* ) alloca( total_length );
-	string_vsnprintf( error_msg, total_length, fmt, args );
-	error_msg[total_length - 1] = 0;
-
-	assert_dialog_internal( file, line, prefix, error_msg );
-
-	va_end( args );
+errorCode_t get_last_error_code() {
+	return GetLastError();
 }
 
-#endif // _WIN64
+#endif // _WIN32

@@ -26,9 +26,10 @@ SOFTWARE.
 ===========================================================================
 */
 
-#ifdef _WIN64
+#ifdef _WIN32
 
 #include <timer.h>
+#include <typecast.inl>
 
 #define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
@@ -57,21 +58,21 @@ s64 time_cycles( void ) {
 #pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
 
 float64 time_seconds( void ) {
-	return cast( float64 ) time_cycles() / cast( float64 ) get_frequency();
+	return cast( float64, time_cycles() ) / cast( float64, get_frequency() );
 }
 
 float64 time_ms( void ) {
-	return ( cast( float64 ) ( time_cycles() * 1000 ) / get_frequency() );
+	return cast( float64, time_cycles() * 1000 ) / get_frequency();
 }
 
 float64 time_us( void ) {
-	return ( cast( float64 ) ( time_cycles() * 1000000 ) / get_frequency() );
+	return cast( float64, time_cycles() * 1000000 ) / get_frequency();
 }
 
 float64 time_ns( void ) {
-	return ( cast( float64 ) ( time_cycles() * 1000000000 ) / get_frequency() );
+	return cast( float64, time_cycles() * 1000000000 ) / get_frequency();
 }
 
 #pragma clang diagnostic pop
 
-#endif // _WIN64
+#endif // _WIN32

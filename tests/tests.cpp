@@ -29,31 +29,30 @@ SOFTWARE.
 #ifdef CORE_SUC
 #include "../src/core.suc.cpp"
 #else
-#include <allocation_context.h>
-#include <allocator_generic.h>
-#include <allocator_linear.h>
-#include <array.inl>
-#include <cmd_line_args.h>
-#include <core_types.h>
-#include <date_and_time.h>
-#include <debug.h>
-#include <defer.h>
-#include <file.h>
-#include <hash.h>
-#include <hashmap32.h>
-#include <hashmap64.h>
-#include <library.h>
-#include <math.h>
-#include <memory_units.h>
-#include <paths.h>
-#include <process.h>
-#include <profiler.h>
-#include <random.h>
-#include <ring.inl>
-#include <string_builder.h>
-#include <string_helpers.h>
-#include <temp_storage.h>
-#include <timer.h>
+#include "../include/allocation_context.h"
+#include "../include/allocator_malloc.h"
+#include "../include/allocator_linear.h"
+#include "../include/array.inl"
+#include "../include/cmd_line_args.h"
+#include "../include/core_process.h"
+#include "../include/core_string.h"
+#include "../include/core_types.h"
+#include "../include/date_and_time.h"
+#include "../include/debug.h"
+#include "../include/defer.h"
+#include "../include/file.h"
+#include "../include/hash.h"
+#include "../include/hashmap.h"
+#include "../include/library.h"
+#include "../include/memory_units.h"
+#include "../include/paths.h"
+#include "../include/random.h"
+#include "../include/ring.inl"
+#include "../include/string_builder.h"
+#include "../include/string_helpers.h"
+#include "../include/temp_storage.h"
+#include "../include/timer.h"
+#include "../include/typecast.inl"
 #endif
 
 #define TEMPER_IMPLEMENTATION
@@ -126,12 +125,91 @@ TEMPER_TEST( print_functions, TEMPER_FLAG_SHOULD_SKIP ) {
 /*
 ================================================================================================
 
+	String
+
+================================================================================================
+*/
+
+TEMPER_TEST( string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
+	String s;
+
+	TEMPER_CHECK_TRUE( s.data == NULL );
+	TEMPER_CHECK_TRUE( s.count == 0 );
+	TEMPER_CHECK_TRUE( s.allocator == NULL );
+}
+
+TEMPER_TEST_PARAMETRIC( string_assignment, TEMPER_FLAG_SHOULD_RUN, const char* str ) {
+	size_t str_length = strlen( str );
+
+	String actual_string = str;
+
+	TEMPER_CHECK_TRUE( actual_string.count == str_length );
+	TEMPER_CHECK_TRUE( strcmp( cast( char*, actual_string.data ), str ) == 0 );
+	TEMPER_CHECK_TRUE( memcmp( actual_string.data, str, actual_string.count ) == 0 );
+	TEMPER_CHECK_TRUE( actual_string.data[actual_string.count] == 0 );
+}
+
+TEMPER_TEST_PARAMETRIC( string_copy_other_string, TEMPER_FLAG_SHOULD_RUN, const String& a ) {
+	String b = a;
+
+	TEMPER_CHECK_TRUE( a.count == b.count );
+	TEMPER_CHECK_TRUE( strcmp( a.data, b.data ) == 0 );
+	TEMPER_CHECK_TRUE( memcmp( a.data, b.data, a.count ) == 0 );
+	TEMPER_CHECK_TRUE( b.data[b.count] == 0 );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "a" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "This is" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Wake up, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Follow the White Rabbit" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Knock knock, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "Free your mind, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_assignment, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "a" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "This is" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Wake up, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Follow the White Rabbit" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Knock knock, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "Free your mind, Neo" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_copy_other_string, "I need a longer string but idk what to type so I'm just gonna keep typing the thoughts that pop into my mind cat dog yeah no whatever" );
+
+static void test_string_printf_charptr_s32( const char* name, const s32 age ) {
+	const char* fmt = "%s %d";
+
+	char expected_string[1024] = {};
+	int expected_string_length = sprintf( expected_string, fmt, name, age );
+
+	String actual_string;
+	string_printf( &actual_string, fmt, name, age );
+
+	TEMPER_CHECK_TRUE( string_equals( expected_string, (char*) actual_string.data ) );
+	TEMPER_CHECK_TRUE( cast( u64, expected_string_length ) == actual_string.count );
+}
+
+TEMPER_TEST( string_printf, TEMPER_FLAG_SHOULD_RUN ) {
+	test_string_printf_charptr_s32( "Dan",   29 );
+	test_string_printf_charptr_s32( "Tom",   34 );
+	test_string_printf_charptr_s32( "Zack",  30 );
+	test_string_printf_charptr_s32( "Ben",   30 );
+	test_string_printf_charptr_s32( "Adam",  32 );
+	test_string_printf_charptr_s32( "Niall", 31 );
+
+	// TODO(DM): add more tests covering more use cases
+}
+
+
+/*
+================================================================================================
+
 	String Helpers
 
 ================================================================================================
 */
 
-TEMPER_TEST( test_string_equals, TEMPER_FLAG_SHOULD_RUN ) {
+TEMPER_TEST( string_helpers_string_equals, TEMPER_FLAG_SHOULD_RUN ) {
 	const char* string_a = "This is a string";
 	const char* string_b = "This is a string";
 
@@ -146,58 +224,74 @@ TEMPER_TEST( test_string_equals, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( !string_equals( string_c, string_d ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix, const bool8 expected_result ) {
-	TEMPER_CHECK_TRUE( string_starts_with( string, prefix ) == expected_result );
+TEMPER_TEST_PARAMETRIC( string_helpers_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix, const bool8 should_start_with ) {
+	TEMPER_CHECK_TRUE( string_starts_with( string, prefix ) == should_start_with );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "T", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "Th", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There ", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There are", true );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "There are 69,105 leaves on the pile.", "There are ", true );
+static const char* g_test_string_leaves = "There are 69,105 leaves on the pile.";
+static const char* g_test_string_matrix = "I'm going to be as forthcoming as I can be, Mr Anderson.";
 
-TEMPER_TEST_PARAMETRIC( test_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix ) {
-	TEMPER_CHECK_TRUE( string_ends_with( string, prefix ) );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "T",          true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "Th",         true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There ",     true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There are",  true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "There are ", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "are ",       false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, " are ",      false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_starts_with, g_test_string_leaves, "69,105",     false );
+
+TEMPER_TEST_PARAMETRIC( string_helpers_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* prefix, const bool8 should_end_with ) {
+	TEMPER_CHECK_TRUE( string_ends_with( string, prefix ) == should_end_with );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", ", Mr Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", "Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", "son." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "I'm going to be as forthcoming as I can be, Mr Anderson.", "." );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, ", Mr Anderson.", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "Anderson.",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "son.",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, ".",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "Anderson",       false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "son",            false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_ends_with, g_test_string_matrix, "forthcoming",    false );
 
-TEMPER_TEST_PARAMETRIC( test_string_contains, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* substring ) {
-	TEMPER_CHECK_TRUE( string_contains( string, substring ) );
+TEMPER_TEST_PARAMETRIC( string_helpers_string_contains, TEMPER_FLAG_SHOULD_RUN, const char* string, const char* substring, const bool8 should_contain ) {
+	TEMPER_CHECK_TRUE( string_contains( string, substring ) == should_contain );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "I'm" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "I'm " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "to be as" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "to be as " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " to be as" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " to be as " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "forthcoming" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " as I can be" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", " " );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", ", Mr Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "son." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "son" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "I'm going to be as forthcoming as I can be, Mr Anderson.", "." );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "I'm",            true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "I'm ",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "to be as",       true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "to be as ",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " to be as",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " to be as ",     true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "forthcoming",    true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " as I can be",   true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, " ",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, ", Mr Anderson.", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "Anderson.",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "son.",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "son",            true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, ".",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "White rabbit",   false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "Im",             false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "frothcoming",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "Adnerson",       false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, ")",              false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "asdf",           false );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_contains, g_test_string_matrix, "123456",         false );
 
-TEMPER_TEST_PARAMETRIC( test_string_substring, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 start, const u64 count, const char* expected_substring ) {
-	char* actual_susbtring = cast( char* ) mem_temp_alloc( count * sizeof( char ) );
+TEMPER_TEST_PARAMETRIC( string_helpers_string_substring, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 start, const u64 count, const char* expected_substring ) {
+	char* actual_susbtring = cast( char*, mem_temp_alloc( count * sizeof( char ) ) );
 
 	string_substring( string, start, count, actual_susbtring );
 
 	TEMPER_CHECK_TRUE( string_equals( expected_substring, actual_susbtring ) );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 0,  15, "As you can see" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 15, 25, "we've had our eye on you" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 40, 18, "for some time now" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 57, 15, ", Mr Anderson." );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 59, 12, "Mr Anderson" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 0,  15, "As you can see" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 15, 25, "we've had our eye on you" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 40, 18, "for some time now" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 57, 15, ", Mr Anderson." );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_helpers_string_substring, "As you can see we've had our eye on you for some time now, Mr Anderson.", 59, 12, "Mr Anderson" );
 
 
 /*
@@ -213,27 +307,23 @@ struct TestStruct {
 	const char*	string;
 };
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator, const u64 size_bytes ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator** allocator, const u64 size_bytes ) {
 	TEMPER_CHECK_TRUE( allocator );
 	TEMPER_CHECK_TRUE( !*allocator );
 
-	mem_create_linear( size_bytes, cast( void** ) allocator );
+	*allocator = linear_allocator_create( size_bytes );
 
 	TEMPER_CHECK_TRUE( ( *allocator )->offset == 0 );
 	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == size_bytes );
 }
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator, const u32 x, const char* string ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, LinearAllocator* allocator, const u32 x, const char* string ) {
 	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( *allocator );
 
-	u64 old_offset = ( *allocator )->offset;
-	u64 old_size = ( *allocator )->size_bytes;
+	u64 old_offset = allocator->offset;
+	u64 old_size = allocator->size_bytes;
 
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
-
-	TestStruct* test_struct = cast( TestStruct* ) mem_alloc_linear( *allocator, sizeof( TestStruct ), __FILE__, __LINE__ );
+	TestStruct* test_struct = cast( TestStruct*, linear_allocator_alloc( allocator, sizeof( TestStruct ), MEMORY_ALIGNMENT_EIGHT ) );
 	test_struct->x = x;
 	test_struct->string = string;
 
@@ -241,248 +331,57 @@ TEMPER_TEST_PARAMETRIC( linear_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, Alloc
 	TEMPER_CHECK_TRUE( test_struct->x == x );
 	TEMPER_CHECK_TRUE( string_equals( test_struct->string, string ) );
 
-	u64 expected_new_offset = align_up( old_offset + sizeof( TestStruct ) + sizeof( LinearAllocatorHeader ), cast( u64 ) MEMORY_ALIGNMENT_EIGHT );
+	u64 padding = padding_up( old_offset, MEMORY_ALIGNMENT_EIGHT );
+	u64 expected_new_offset = old_offset + padding + sizeof( TestStruct );
 
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == expected_new_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->offset != old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
+	TEMPER_CHECK_TRUE( allocator->offset == expected_new_offset );
+	TEMPER_CHECK_TRUE( allocator->offset != old_offset );
+	TEMPER_CHECK_TRUE( allocator->size_bytes == old_size );
 }
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, LinearAllocator* allocator ) {
 	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( *allocator );
 
-	u64 old_offset = ( *allocator )->offset;
-	u64 old_size = ( *allocator )->size_bytes;
+	u64 old_offset 	= allocator->offset;
+	u64 old_size 	= allocator->size_bytes;
 
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
+	linear_allocator_reset( allocator );
 
-	mem_reset_linear( *allocator );
-
-	TEMPER_CHECK_TRUE( ( *allocator )->offset == 0 );
-	TEMPER_CHECK_TRUE( ( *allocator )->offset != old_offset );
-	TEMPER_CHECK_TRUE( ( *allocator )->size_bytes == old_size );
+	TEMPER_CHECK_TRUE( allocator->offset == 0 );
+	TEMPER_CHECK_TRUE( allocator->offset != old_offset );
+	TEMPER_CHECK_TRUE( allocator->size_bytes == old_size );
 }
 
-TEMPER_TEST_PARAMETRIC( linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, AllocatorLinearData** allocator ) {
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator* allocator ) {
 	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( *allocator );
 
-	mem_destroy_linear( *allocator );
+	linear_allocator_destroy( allocator );
 	allocator = NULL;
 
 	TEMPER_CHECK_TRUE( !allocator );
 }
 
-static AllocatorLinearData* g_allocator = NULL;
+static LinearAllocator* g_allocator = NULL;
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_create, &g_allocator, MEM_KILOBYTES( 1 ) );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_create, &g_allocator, MEM_KILOBYTES( 1 ) );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 100, "this is a test string" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 200, "this is another test string" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 300, "and another one" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 400, "one last time" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 500, "ok im done now" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 100, "this is a test string" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 200, "this is another test string" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 300, "and another one" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 400, "one last time" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 500, "ok im done now" );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_reset, &g_allocator );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_reset, g_allocator );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 555, "should be starting from the beginning again now" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 666, "your message here" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 777, "dont look directly into the bugs" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 888, "rzcore is great" );
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_allocate, &g_allocator, 999, "Ross Kemp" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 555, "should be starting from the beginning again now" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 666, "your message here" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 777, "dont look directly into the bugs" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 888, "rzcore is great" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 888, "rzcore? great throwback Dan" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_allocate, g_allocator, 999, "Ross Kemp" );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( linear_allocator_destroy, &g_allocator );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, g_allocator );
 
-
-/*
-================================================================================================
-
-	AllocatorGeneric
-
-================================================================================================
-*/
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunused-but-set-parameter"
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_create, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, const u64 size ) {
-	TEMPER_CHECK_TRUE( allocator );
-	TEMPER_CHECK_TRUE( !*allocator );
-
-	mem_create_generic( size, cast( void** ) allocator );
-
-	TEMPER_CHECK_TRUE( ( *allocator )->tail == NULL );
-}
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator ) {
-	TEMPER_CHECK_TRUE( ( *allocator )->tail == NULL );
-
-	mem_destroy_generic( *allocator );
-	( *allocator ) = NULL;
-
-	TEMPER_CHECK_TRUE( !*allocator );
-}
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_allocate, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, const TestStruct thing, TestStruct** out_thing ) {
-	GenericAllocationHeader* previous_tail = ( *allocator )->tail;
-
-	// DM: 23/12/2022: obviously this is imperfect
-	// but idk how else to elegantly automate getting the line that the TestStruct got allocated at
-	const u64 alloc_line = __LINE__ + 2;
-
-	TestStruct* alloced_thing = cast( TestStruct* ) mem_alloc_generic( ( *allocator ), sizeof( TestStruct ), __FILE__, __LINE__ );
-	alloced_thing->x = thing.x;
-	alloced_thing->string = thing.string;
-
-	*out_thing = alloced_thing;
-
-	TEMPER_CHECK_TRUE( alloced_thing != NULL );
-	TEMPER_CHECK_TRUE( alloced_thing->x == thing.x );
-	TEMPER_CHECK_TRUE( string_equals( alloced_thing->string, thing.string ) );
-
-	// check header
-	{
-		u8* ptr = cast( u8* ) alloced_thing;
-
-		TEMPER_CHECK_TRUE( ( *allocator )->tail == cast( GenericAllocationHeader* ) ptr - 1 );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->next == NULL );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->prev == previous_tail );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->ptr == alloced_thing );
-		TEMPER_CHECK_TRUE( memcmp( ( *allocator )->tail->ptr, alloced_thing, sizeof( TestStruct ) ) == 0 );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->size == sizeof( TestStruct ) );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail->line == alloc_line );
-		TEMPER_CHECK_TRUE( string_equals( ( *allocator )->tail->file, __FILE__ ) );
-	}
-}
-
-#pragma clang diagnostic pop
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_free, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, TestStruct* thing, const bool8 freeing_tail, const bool8 all_things_are_free ) {
-	GenericAllocationHeader* old_tail = ( *allocator )->tail;
-	GenericAllocationHeader* old_tail_prev = ( *allocator )->tail->prev;
-
-	TestStruct thing_copy = {
-		.x		= thing->x,
-		.string	= thing->string
-	};
-
-	mem_free_generic( ( *allocator ), thing, __FILE__, __LINE__ );
-
-	TEMPER_CHECK_TRUE( thing->x != thing_copy.x );
-	TEMPER_CHECK_TRUE( thing->string != thing_copy.string );
-
-	thing = NULL;
-
-	if ( freeing_tail ) {
-		TEMPER_CHECK_TRUE( ( *allocator )->tail != old_tail );
-		TEMPER_CHECK_TRUE( ( *allocator )->tail == old_tail_prev );
-	}
-
-	// are all things free?
-	{
-		const bool8 actual_answer = ( *allocator )->tail == NULL;
-
-		TEMPER_CHECK_TRUE( actual_answer == all_things_are_free );
-	}
-}
-
-static AllocatorGeneric* g_allocator_generic = NULL;
-
-static TestStruct* g_thing0 = NULL;
-static TestStruct* g_thing1 = NULL;
-static TestStruct* g_thing2 = NULL;
-static TestStruct* g_thing3 = NULL;
-static TestStruct* g_thing4 = NULL;
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_create, &g_allocator_generic, MEM_KILOBYTES( 1 ) );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_destroy, &g_allocator_generic );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_create, &g_allocator_generic, MEM_KILOBYTES( 1 ) );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 5,  "This is a string"       }, &g_thing0 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 6,  "This is another string" }, &g_thing1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 9,  "Did this get malloced?" }, &g_thing2 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 14, "What about this one?"   }, &g_thing3 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 19, "Did it really though?"  }, &g_thing4 );
-
-// first test the ideal use-case of free-ing in reverse order
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing4, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing3, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing2, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing1, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing0, true, true );
-
-// now test out of order freeing
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 1,  "one"     }, &g_thing0 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 2,  "two"     }, &g_thing1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 4,  "four"    }, &g_thing2 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 8,  "eight"   }, &g_thing3 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_allocate, &g_allocator_generic, { 16, "sixteen" }, &g_thing4 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing0, false, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing1, false, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing3, false, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing4, true, false );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, g_thing2, true, true );
-
-TEMPER_TEST_PARAMETRIC( generic_allocator_realloc, TEMPER_FLAG_SHOULD_RUN, AllocatorGeneric** allocator, TestStruct** out_things_array, u64* out_things_array_count, const u64 num_things_to_add ) {
-	TEMPER_CHECK_TRUE( out_things_array_count );
-
-	// cache things before realloc call
-	u64 old_count = ( *out_things_array_count );
-	u8* old_ptr = cast( u8* ) *out_things_array;
-	GenericAllocationHeader* old_header = old_ptr ? ( cast( GenericAllocationHeader* ) old_ptr - 1 ) : NULL;
-	GenericAllocationHeader* old_prev = old_header ? old_header->prev : NULL;
-	GenericAllocationHeader* old_next = old_header ? old_header->next : NULL;
-
-	*out_things_array_count += num_things_to_add;
-
-	u64 new_realloc_size = ( *out_things_array_count ) * sizeof( TestStruct );
-
-	u64 alloc_line = __LINE__ + 2;
-
-	*out_things_array = cast( TestStruct* ) mem_realloc_generic( *allocator, *out_things_array, new_realloc_size, __FILE__, __LINE__ );
-
-	// get new values after realloc call
-	u8* ptr = cast( u8* ) *out_things_array;
-	GenericAllocationHeader* header = cast( GenericAllocationHeader* ) ptr - 1;
-
-	TEMPER_CHECK_TRUE( ( *out_things_array ) != NULL );
-	TEMPER_CHECK_TRUE( ( *out_things_array_count ) == old_count + num_things_to_add );
-
-	// check header
-	{
-		TEMPER_CHECK_TRUE( header->ptr == ( *out_things_array ) );
-		TEMPER_CHECK_TRUE( header->size == new_realloc_size );
-		TEMPER_CHECK_TRUE( string_equals( header->file, __FILE__ ) );
-		TEMPER_CHECK_TRUE( header->line == alloc_line );
-		TEMPER_CHECK_TRUE( header->prev == old_prev );
-		TEMPER_CHECK_TRUE( header->next == old_next );
-
-		if ( header->prev ) {
-			TEMPER_CHECK_TRUE( header->prev->next == header );
-		}
-
-		if ( header->next ) {
-			TEMPER_CHECK_TRUE( header->next->prev == header );
-		}
-	}
-}
-
-static u64 things_array_count = 0;
-static TestStruct* things_array = NULL;
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_realloc, &g_allocator_generic, &things_array, &things_array_count, 1 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_free, &g_allocator_generic, things_array, true, true );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( generic_allocator_destroy, &g_allocator_generic );
 
 
 /*
@@ -519,15 +418,12 @@ TEMPER_TEST_PARAMETRIC( test_array_add, TEMPER_FLAG_SHOULD_RUN, Array<s32>* arra
 	TEMPER_CHECK_TRUE( array->data != NULL );
 	TEMPER_CHECK_TRUE( array->count == old_count + 1 );
 
-	u64 new_alloced = 0;
-	if ( old_alloced == 0 ) {
-		new_alloced = 1;
-	} else {
-		new_alloced = old_alloced << 1;
-	}
-
 	if ( old_count == old_alloced ) {
+		u64 new_alloced = next_multiple_of_4_up( old_alloced + 1 );
+
 		TEMPER_CHECK_TRUE( array->alloced == new_alloced );
+	} else {
+		TEMPER_CHECK_TRUE( array->alloced == old_alloced );
 	}
 }
 
@@ -576,7 +472,7 @@ TEMPER_TEST_PARAMETRIC( test_array_copy, TEMPER_FLAG_SHOULD_RUN, Array<s32>* ori
 	TEMPER_CHECK_TRUE( new_array->alloced == next_multiple_of_4_up( new_array->count ) );
 
 	For ( u64, i, 0, new_array->count ) {
-		TEMPER_CHECK_TRUE_M( (*new_array)[i] == (*original_array)[i], "new_array[%llu] != original_array[%llu] when it should!", i, i );
+		TEMPER_CHECK_TRUE_M( ( *new_array )[i] == ( *original_array )[i], "new_array[%llu] != original_array[%llu] when it should!", i, i );
 	}
 }
 
@@ -631,142 +527,256 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 /*
 ================================================================================================
 
-	Hashmap32
+	Hashmap
 
 ================================================================================================
 */
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_create, TEMPER_FLAG_SHOULD_RUN, Hashmap32** hashmap, const u32 count ) {
+TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
+	u32 lo_part = 0xFAFAFAFA;
+	u32 hi_part = 0xAFAFAFAF;
+
+	u64 combined = hashmap_internal_combine( hi_part, lo_part );
+	TEMPER_CHECK_TRUE_A( combined == 0xFAFAFAFAAFAFAFAF );
+	TEMPER_CHECK_TRUE_A( hashmap_internal_get_hi_part( combined ) == hi_part );
+	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part( combined ) == lo_part );
+}
+
+TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** hashmap, const u32 count ) {
 	TEMPER_CHECK_TRUE( hashmap );
 	TEMPER_CHECK_TRUE( !*hashmap );
 
 	TEMPER_CHECK_TRUE( count );
 
-	*hashmap = hashmap32_create( count );
+	*hashmap = hashmap_create( count );
 
-	TEMPER_CHECK_TRUE( ( *hashmap )->count == count );
+	TEMPER_CHECK_TRUE( ( *hashmap )->capacity == count );
 
-	For ( u64, i, 0, ( *hashmap )->count ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->keys[i] == HASHMAP32_UNUSED );
-	}
-
-	For ( u64, i, 0, ( *hashmap )->count ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->values[i] == HASHMAP32_UNUSED );
+	For ( u32, i, 0, ( *hashmap )->capacity ) {
+		HashmapBucket& bucket = ( *hashmap )->buckets[i];
+		TEMPER_CHECK_TRUE_A( hashmap_internal_combine( bucket.key_hi, bucket.key_lo ) == HASHMAP_UNUSED_BUCKET );
+		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap32* hashmap, const char* name, const u32 age ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap, const char* name, const u32 age ) {
+	
+	LogVerbosity previous_log_verbosity = get_log_verbosity();
+	set_log_verbosity(LOG_VERBOSITY_ERROR); //Hiding warnings from getting values that don't exist as this is intentionally checking this behaviour
+	
 	TEMPER_CHECK_TRUE( hashmap );
 
 	const u32 name_hash = hash32( name, strlen( name ), 0 );
 
-	TEMPER_CHECK_TRUE( hashmap32_get_value( hashmap, name_hash ) == 0 );
+	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) == HASHMAP_INVALID_VALUE );
 
-	hashmap32_set_value( hashmap, name_hash, age );
+	hashmap_set_value( hashmap, name_hash, age );
 
-	TEMPER_CHECK_TRUE( hashmap32_get_value( hashmap, name_hash ) == age );
-	TEMPER_CHECK_TRUE( hashmap32_get_value( hashmap, name_hash ) != 0 );
+	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) == age );
+	TEMPER_CHECK_TRUE( hashmap_get_value( hashmap, name_hash ) != HASHMAP_INVALID_VALUE );
+
+	set_log_verbosity(previous_log_verbosity);
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap32_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap32* hashmap ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
-	u32 old_count = hashmap->count;
+	u32 old_count = hashmap->capacity;
 
-	hashmap32_reset( hashmap );
+	hashmap_reset( hashmap );
 
-	TEMPER_CHECK_TRUE( hashmap->count == old_count );
+	TEMPER_CHECK_TRUE( hashmap->capacity == old_count );
 
-	For ( u64, i, 0, hashmap->count ) {
-		TEMPER_CHECK_TRUE_A( hashmap->keys[i] == HASHMAP32_UNUSED );
+	For ( u32, i, 0, hashmap->capacity ) {
+		HashmapBucket& bucket = hashmap->buckets[i];
+		TEMPER_CHECK_TRUE_A( hashmap_internal_combine( bucket.key_hi, bucket.key_lo ) == HASHMAP_UNUSED_BUCKET );
+		TEMPER_CHECK_TRUE_A( bucket.value == HASHMAP_INVALID_VALUE );
 	}
 
-	For ( u64, i, 0, hashmap->count ) {
-		TEMPER_CHECK_TRUE_A( hashmap->values[i] == HASHMAP32_UNUSED );
-	}
+	TEMPER_CHECK_TRUE_A(hashmap->usage_count == 0U);
+	TEMPER_CHECK_TRUE_A(hashmap->tombstone_count == 0U);
 }
 
-static Hashmap32* g_hashmap32 = NULL;
-
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_create, &g_hashmap32, 10 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Dan",     27 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Mum",     53 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Dad",     62 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_set_and_get_value, g_hashmap32, "Grandad", 89 );
-
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap32_reset, g_hashmap32 );
-
-
-/*
-================================================================================================
-
-	Hashmap64
-
-================================================================================================
-*/
-
-TEMPER_TEST_PARAMETRIC( test_hashmap64_create, TEMPER_FLAG_SHOULD_RUN, Hashmap64** hashmap, const u64 count ) {
-	TEMPER_CHECK_TRUE( hashmap );
-	TEMPER_CHECK_TRUE( !*hashmap );
-
-	TEMPER_CHECK_TRUE( count );
-
-	*hashmap = hashmap64_create( count );
-
-	TEMPER_CHECK_TRUE( ( *hashmap )->count == count );
-
-	For ( u64, i, 0, ( *hashmap )->count ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->keys[i] == HASHMAP64_UNUSED );
-	}
-
-	For ( u64, i, 0, ( *hashmap )->count ) {
-		TEMPER_CHECK_TRUE_A( ( *hashmap )->values[i] == HASHMAP64_UNUSED );
-	}
-}
-
-TEMPER_TEST_PARAMETRIC( test_hashmap64_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap64* hashmap, const char* name, const u64 age ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
-	const u64 name_hash = hash64( name, strlen( name ), 0 );
+	hashmap_reset(hashmap);
 
-	TEMPER_CHECK_TRUE( hashmap64_get_value( hashmap, name_hash ) == 0 );
+	u32 count = hashmap->capacity;
+	u32 first_key = count; 		// Bucket index % = 0
+	u32 second_key = count * 2; // Bucket index % = 0
+	u32 third_key = count + 1;	// Bucket index % = 1;
 
-	hashmap64_set_value( hashmap, name_hash, age );
+	u32 first_value = 69;
+	u32 second_value = 70;
+	u32 third_value = 90;
 
-	TEMPER_CHECK_TRUE( hashmap64_get_value( hashmap, name_hash ) == age );
-	TEMPER_CHECK_TRUE( hashmap64_get_value( hashmap, name_hash ) != 0 );
+	hashmap_set_value(hashmap, first_key, first_value); 	// Actual bucket pos 0
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 0) == first_key);
+	hashmap_set_value(hashmap, second_key, second_value); // Actual bucket pos 1 (wanted 0)
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == second_key);
+	hashmap_set_value(hashmap, third_key, third_value);	// Actual bucket pos 2 (wanted 1)
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 2) == third_key);
+
+	hashmap_remove_key(hashmap, second_key);
+
+	// Check the tombstone from the second value is in place to allow proper gets
+	TEMPER_CHECK_TRUE_A(hashmap_get_value(hashmap, third_key) == third_value);
+
+	hashmap_remove_key(hashmap, third_key);
+	// Check tombstones were removed
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 2) == HASHMAP_UNUSED_BUCKET);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == HASHMAP_UNUSED_BUCKET);
+
+	hashmap_set_value(hashmap, third_key, third_value);
+
+	// Check that add won't probe passed removed tombstone
+	TEMPER_CHECK_TRUE_A(hashmap_get_value(hashmap, third_key) == third_value);
+	TEMPER_CHECK_TRUE_A(hashmap_internal_combine_at_index(hashmap, 1) == third_key);
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap64_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap64* hashmap ) {
-	TEMPER_CHECK_TRUE( hashmap );
+TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation ) {
+	Hashmap* hashmap = hashmap_create( number_of_buckets, utilisation, false );
+	u64 hash_seed = 0x9E3779B97F4A7C15;
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wimplicit-int-float-conversion"
+	u32 intended_fill = static_cast<u32>( number_of_buckets * utilisation );
+#pragma GCC diagnostic pop
 
-	u64 old_count = hashmap->count;
+	auto get_hash_at_sequence = [&]( u32 sequence ) -> u64 {
+		assert( sequence < hashmap->usage_count );
 
-	hashmap64_reset( hashmap );
+		u32 running_hash_count = -1U;
+		u64 hash = HASHMAP_TOMBSTONE_BUCKET;
 
-	TEMPER_CHECK_TRUE( hashmap->count == old_count );
+		For ( u32, key_index, 0, hashmap->capacity ) {
+			u64 key_at_index = hashmap_internal_combine_at_index( hashmap, trunc_cast( u32, key_index ) );
 
-	For ( u64, i, 0, hashmap->count ) {
-		TEMPER_CHECK_TRUE_A( hashmap->keys[i] == HASHMAP64_UNUSED );
+			if ( key_at_index != HASHMAP_UNUSED_BUCKET && key_at_index != HASHMAP_TOMBSTONE_BUCKET ) {
+				running_hash_count++;
+
+				if ( running_hash_count == sequence ) {
+					hash = key_at_index;
+					break;
+				}
+			}
+		}
+
+		return hash;
+	};
+
+	//Setup test by bringing the utilisation up to utilitsation
+	{
+		u64 i = 0U;
+		while ( hashmap->usage_count + hashmap->tombstone_count < intended_fill ) {
+			if ( i % 3 != 2 ) {
+				// Two adds for one remove
+				constexpr u32 LENGTH_OF_RANDOM_FLOATS = 16u;
+				float random_data[LENGTH_OF_RANDOM_FLOATS];
+
+				For ( u32, float_index, 0, LENGTH_OF_RANDOM_FLOATS ) {
+					random_data[float_index] = random_float32( 0.f, 1.f );
+				}
+
+				u64 hash = hash64( random_data, sizeof( float ) * LENGTH_OF_RANDOM_FLOATS, hash_seed );
+
+				hashmap_set_value( hashmap, hash, 69 );
+			} else {
+				u32 to_remove = cast( u32, random_float32( 0, cast( float32, hashmap->usage_count - 1 ) ) );
+				u64 hash = get_hash_at_sequence( to_remove );
+
+				hashmap_remove_key( hashmap, hash );
+			}
+
+			i++;
+		}
 	}
 
-	For ( u64, i, 0, hashmap->count ) {
-		TEMPER_CHECK_TRUE_A( hashmap->values[i] == HASHMAP64_UNUSED );
+	// get a bunch of random hashes and grab the results
+	Array<u32> linear_probe_length;
+	linear_probe_length.reserve( intended_fill );
+	For ( u32, i, 0, hashmap->capacity ) {
+		u64 hash = hashmap_internal_combine_at_index( hashmap, trunc_cast( u32, i ) );
+		if ( hash == HASHMAP_TOMBSTONE_BUCKET || hash == HASHMAP_UNUSED_BUCKET ) {
+			continue;
+		}
+
+		hashmap_get_value( hashmap, hash );
+		linear_probe_length.add( hashmap->last_linear_probe );
 	}
+
+	// Analyze 
+	u32 biggest = 0U;
+	float mean = 0.0f;
+	float none_zero_mean = 0.0f;
+	u32 num_zero_probes = 0U;
+	For ( u64, i, 0, linear_probe_length.count ) {
+		u32 probe = linear_probe_length[i];
+
+		if ( probe > biggest ) {
+			biggest = probe;
+		}
+
+		if ( probe == 0U ) {
+			num_zero_probes++;
+		} else {
+			none_zero_mean += cast( float32, probe );
+		}
+
+		mean += cast( float32, probe );
+		//warning( "%d", probe );
+	}
+
+	mean = mean / cast( float32, linear_probe_length.count );
+
+	none_zero_mean = none_zero_mean / cast( float32, linear_probe_length.count - num_zero_probes );
+
+	info(
+		"\n===\nPROBE RESULTS for %f pc utilization on %d buckets:\naverage probe length was %f, average of non zero was %f, biggest was %d. Num that were zero: %d\n Tombstone:Used: %d:%d\n",
+		utilisation * 100.0f, number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count
+	);
+
+	hashmap_destroy( hashmap );
 }
 
-static Hashmap64* g_hashmap64 = NULL;
+static Hashmap* g_hashmap = NULL;
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_create, &g_hashmap64, 10 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_create, &g_hashmap, 10 );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Dan",     27 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Mum",     53 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Dad",     62 );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_set_and_get_value, g_hashmap64, "Grandad", 89 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dan",     27 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Tom",     27 ); //Don't forget your buddy :) -- never <3
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Mum",     53 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dad",     62 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Grandad", 89 );
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap64_reset, g_hashmap64 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
+
+TEMPER_TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
+	Hashmap* map = hashmap_create( 10, 0.5f, true );
+	u64 key = 10;
+	u32 value = 10;
+
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	hashmap_set_value( map, key++, value++ );
+	// Should caust a regrow
+	hashmap_set_value( map, key++, value++ );
+	TEMPER_CHECK_TRUE_A( map->capacity == 15 );
+
+	// In the new map, 10 is a value bucket index
+	TEMPER_CHECK_TRUE( hashmap_internal_combine_at_index( map, 10 ) == 10 );
+	// 15 isn't so it should wrap around
+	TEMPER_CHECK_TRUE( hashmap_internal_combine_at_index( map, 0 ) == 15 );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.3f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f );
 
 /*
 ================================================================================================
@@ -908,25 +918,26 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_ring_full,  &g_test_ring, false );
 
 TEMPER_TEST_PARAMETRIC( test_file_open_or_create, TEMPER_FLAG_SHOULD_RUN, File* file, const char* filename ) {
 	TEMPER_CHECK_TRUE( filename );
+	TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 
 	*file = file_open_or_create( filename );
 
-	TEMPER_CHECK_TRUE( file->ptr );
+	TEMPER_CHECK_TRUE( file->ptr != INVALID_HANDLE_VALUE );
 	TEMPER_CHECK_TRUE( file->offset == 0 );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_open, TEMPER_FLAG_SHOULD_RUN, File* file, const char* filename, const bool8 should_exist ) {
 	TEMPER_CHECK_TRUE( file );
-	TEMPER_CHECK_TRUE( !file->ptr );
+	TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 
 	*file = file_open( filename );
 
-	bool8 file_exists = file->ptr != NULL;
+	bool8 file_exists = file->ptr != INVALID_HANDLE_VALUE;
 
 	if ( should_exist ) {
-		TEMPER_CHECK_TRUE( file->ptr != NULL );
+		TEMPER_CHECK_TRUE( file->ptr != INVALID_HANDLE_VALUE );
 	} else {
-		TEMPER_CHECK_TRUE( file->ptr == NULL );
+		TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 	}
 
 	TEMPER_CHECK_TRUE( file_exists == should_exist );
@@ -941,7 +952,7 @@ TEMPER_TEST_PARAMETRIC( test_file_close, TEMPER_FLAG_SHOULD_RUN, File* file ) {
 
 	TEMPER_CHECK_TRUE( closed );
 
-	TEMPER_CHECK_TRUE( !file->ptr );
+	TEMPER_CHECK_TRUE( file->ptr == INVALID_HANDLE_VALUE );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_write_entire, TEMPER_FLAG_SHOULD_RUN, const char* filename, const char* data_to_write ) {
@@ -971,7 +982,7 @@ TEMPER_TEST_PARAMETRIC( test_file_write, TEMPER_FLAG_SHOULD_RUN, File* file, con
 
 	// read that data back and check that it was actually written
 	{
-		char* data_read_from_file = cast( char* ) malloc( ( num_bytes_to_write + 1 ) * sizeof( char ) );
+		char* data_read_from_file = cast( char*, malloc( ( num_bytes_to_write + 1 ) * sizeof( char ) ) );
 
 		bool8 read = file_read( file, offset, num_bytes_to_write, data_read_from_file );
 		data_read_from_file[num_bytes_to_write] = 0;
@@ -1031,7 +1042,7 @@ TEMPER_TEST_PARAMETRIC( test_file_get_size, TEMPER_FLAG_SHOULD_RUN, const char* 
 
 	file_close( &file );
 
-	TEMPER_CHECK_TRUE( !file.ptr );
+	TEMPER_CHECK_TRUE( file.ptr == INVALID_HANDLE_VALUE );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_rename, TEMPER_FLAG_SHOULD_RUN, const char* filename_old, const char* filename_new ) {
@@ -1108,7 +1119,7 @@ TEMPER_TEST_PARAMETRIC( test_file_delete, TEMPER_FLAG_SHOULD_RUN, const char* fi
 
 	// now check it doesnt actually exist anymore
 	file = file_open( filename );
-	TEMPER_CHECK_TRUE( !file.ptr );
+	TEMPER_CHECK_TRUE( file.ptr == INVALID_HANDLE_VALUE );
 }
 
 TEMPER_TEST_PARAMETRIC( test_folder_exists, TEMPER_FLAG_SHOULD_RUN, const char* path, const bool8 should_exist ) {
@@ -1160,7 +1171,7 @@ TEMPER_TEST_PARAMETRIC( test_folder_delete, TEMPER_FLAG_SHOULD_RUN, const char* 
 
 #define TEST_LINE_OVERWRITE		"this file has now been overwritten"
 
-static File						g_test_file = {};
+static File						g_test_file = { INVALID_HANDLE_VALUE };
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_open, &g_test_file, TEST_FILENAME, false );
 
@@ -1304,7 +1315,7 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 TEMPER_TEST_PARAMETRIC( random_float_within_range, TEMPER_FLAG_SHOULD_RUN, const float32 low, const float32 high ) {
-	For ( u64, i, 0, 1000000 ) {
+	For ( u32, i, 0, 1000000 ) {
 		float32 random_float = random_float32( low, high );
 
 		TEMPER_CHECK_TRUE( random_float >= low );
@@ -1343,7 +1354,7 @@ TEMPER_TEST( test_library_load, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEMPER_TEST( test_library_get_proc_address, TEMPER_FLAG_SHOULD_RUN ) {
-	GetDLLNameFunc fp_get_dll_name = cast( GetDLLNameFunc ) library_get_proc_address( g_test_dll, "get_dll_name" );
+	GetDLLNameFunc fp_get_dll_name = cast( GetDLLNameFunc, library_get_proc_address( g_test_dll, "get_dll_name" ) );
 	TEMPER_CHECK_TRUE( fp_get_dll_name != NULL );
 
 	const char* name = fp_get_dll_name();
@@ -1359,15 +1370,47 @@ TEMPER_TEST( test_library_unload, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 
+/*
+================================================================================================
+
+	Process
+
+================================================================================================
+*/
+
+TEMPER_TEST( test_process, TEMPER_FLAG_SHOULD_RUN ) {
+	Array<const char*> args;
+	args.add( "\"%ProgramFiles(x86)%\\Microsoft Visual Studio\\Installer\\vswhere.exe\"" );
+	args.add( "-latest" );
+	args.add( "-products" );
+	args.add( "*" );
+	args.add( "-requires" );
+	args.add( "Microsoft.VisualStudio.Component.VC.Tools.x86.x64" );
+	args.add( "-property" );
+	args.add( "installationPath" );
+
+	Process* process = process_create( &args, NULL );
+
+	char buffer[1024] = { 0 };
+	while ( process_read_stdout( process, buffer, 1024 ) ) {
+		printf( "%s", buffer );
+	}
+
+	s32 exit_code = process_join( process );
+
+	TEMPER_CHECK_TRUE( exit_code == 0 );
+}
+
+
 //================================================================
 
 
 #define TEST_PADDING "................................................................"
 
 static void on_before_test( const temperTestInfo_t* test_info ) {
-	const int pad_length_max = cast( int ) strlen( TEST_PADDING );
+	const int pad_length_max = cast( int, strlen( TEST_PADDING ) );
 
-	const int dot_length = pad_length_max - cast( int ) strlen( test_info->testNameStr );
+	const int dot_length = pad_length_max - cast( int, strlen( test_info->testNameStr ) );
 	assert( dot_length );
 
 	printf( "%s %*.*s ", test_info->testNameStr, dot_length, dot_length, TEST_PADDING );
@@ -1397,7 +1440,7 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 
 int main( int argc, char** argv ) {
 	// TODO(DM): 19/1/2023: this wants to be in a test
-	core_init( MEM_KILOBYTES( 1 ), MEM_KILOBYTES( 1 ) );
+	core_init();
 	defer( core_shutdown() );
 
 	g_temperTestContext.callbacks.OnBeforeTest = on_before_test;
@@ -1405,5 +1448,7 @@ int main( int argc, char** argv ) {
 
 	TEMPER_RUN( argc, argv );
 
-	return TEMPER_GET_EXIT_CODE();
+	int exitCode = TEMPER_GET_EXIT_CODE();
+
+	return exitCode;
 }

@@ -28,30 +28,34 @@ SOFTWARE.
 
 #ifdef CORE_SUC
 
-#include "int_truncation.cpp"
-
 #if defined( _WIN64 )
 	#include "core.win64.suc.cpp"
+#elif __linux__
+	#include "core.linux.suc.cpp"
 #else
 	#error Unrecognised platform.
 #endif
 
+#include <typecast.inl>
 #include <array.inl>
 #include <ring.inl>
 #include "allocation_context.cpp"
-#include "allocator_generic.cpp"
+#include "memory_tracking.cpp"
 #include "allocator_linear.cpp"
 #include "cmd_line_args.cpp"
+#include "core_string.cpp"
+#include "debug.cpp"
+#include "file.cpp"
 #include "hashmap.cpp"
 #include "math.cpp"
 #include "random.cpp"
+#include "paths.cpp"
 #include "string_helpers.cpp"
 #include "string_builder.cpp"
 #include "temp_storage.cpp"
 
 // things we use external libraries for
-#include "process.subprocess.cpp"
+#include "core_process.subprocess.cpp"
 #include "hash.xxhash.cpp"
-#include "profiler.null.cpp"
 
 #endif // CORE_SUC

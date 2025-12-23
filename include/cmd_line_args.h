@@ -29,6 +29,12 @@ SOFTWARE.
 #pragma once
 
 #include "core_types.h"
+#include "dll_export.h"
+
+#ifdef __linux__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
+#endif
 
 struct CommandLineArgs {
 	char**					data;
@@ -37,5 +43,9 @@ struct CommandLineArgs {
 
 extern CommandLineArgs		g_cmd_line_args;
 
-void						set_command_line_args( int argc, char** argv );
-CommandLineArgs				get_command_line_args( void );
+CORE_API void				set_command_line_args( int argc, char** argv );
+CORE_API CommandLineArgs	get_command_line_args( void );
+
+#ifdef __linux__
+#pragma clang diagnostic pop
+#endif //__linux__

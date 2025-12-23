@@ -26,12 +26,50 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include <profiler.h>
-#include <core_types.h>
+#ifdef __linux__
 
-void profiler_frame_marker_internal() {
+#include <timer.h>
+
+#include <time.h>
+
+/*
+================================================================================================
+
+	Timer
+
+================================================================================================
+*/
+
+// TODO(DM): how do we get clock cycles on linux?
+// this isnt it!
+s64 time_cycles( void ) {
+	struct timespec now;
+	clock_gettime( CLOCK_MONOTONIC, &now );
+
+	int64_t clocks = cast( int64_t, now.tv_sec * 1000000000 + now.tv_nsec );
+
+	return clocks;
 }
 
-void profiler_scope_named_internal( const char* name ) {
-	unused( name );
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
+
+float64 time_seconds( void ) {
+	return cast( float64, time_cycles() / 1000000000.0 );
 }
+
+float64 time_ms( void ) {
+	return cast( float64, time_cycles() / 1000000.0 );
+}
+
+float64 time_us( void ) {
+	return cast( float64, time_cycles() / 1000.0 );
+}
+
+float64 time_ns( void ) {
+	return cast( float64, time_cycles() );
+}
+
+#pragma clang diagnostic pop
+
+#endif // __linux__
