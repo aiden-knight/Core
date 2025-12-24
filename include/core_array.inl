@@ -26,54 +26,75 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include <debug.h>
+#pragma once
 
-#include <stdio.h>
-#include <stdarg.h>
+#include "core_array.h"
+
+#include "core_math.h"
+
+#include "malloc.h"
 
 #if defined( __clang__ )
 #pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
 #endif
 
-void warning( const char* fmt, ... ) {
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
-
-	printf( "WARNING: " );
-
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
-
-	va_list args;
-	va_start( args, fmt );
-	vfprintf( stderr, fmt, args );
-	va_end( args );
+template<class T>
+void Array<T>::init() {
+	data = NULL;
+	count = 0;
+	alloced = 0;
 }
 
-void error( const char* fmt, ... ) {
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
-
-	printf( "ERROR: " );
-
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
-
-	va_list args;
-	va_start( args, fmt );
-	vfprintf( stderr, fmt, args );
-	va_end( args );
+template<class T>
+void Array<T>::deinit() {
+	if ( data ) {
+		free( data );
+		data = NULL;
+	}
 }
 
-void fatal_error( const char* fmt, ... ) {
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
+template<class T>
+void Array<T>::add( const T& element ) {
+	add_range( &element, 1 );
+}
 
-	printf( "FATAL ERROR: " );
+template<class T>
+void Array<T>::add_range( const T* ptr, const u64 num_items ) {
+	reserve( count + num_items );
+	memcpy( data + count, ptr, num_items * sizeof( T ) );
+	count += num_items;
+}
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
+template<class T>
+void Array<T>::add_range( const Array<T>* array ) {
+	if ( array->count > 0 ) {
+		add_range( array->data, array->count );
+	}
+}
 
-	va_list args;
-	va_start( args, fmt );
-	vfprintf( stderr, fmt, args );
-	va_end( args );
+template<class T>
+void Array<T>::reserve( const u64 bytes ) {
+	if ( bytes > alloced ) {
+		alloced = next_multiple_of_4_up( bytes );
+
+		data = cast( T*, realloc( data, alloced * sizeof( T ) ) );
+	}
+}
+
+template<class T>
+T& Array<T>::operator[]( const u64 index ) {
+	assert( index < count );
+	return data[index];
+}
+
+template<class T>
+const T& Array<T>::operator[]( const u64 index ) const {
+	assert( index < count );
+	return data[index];
 }
 
 #if defined( __clang__ )

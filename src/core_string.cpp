@@ -27,113 +27,53 @@ SOFTWARE.
 */
 
 #include <core_string.h>
-
-#include <allocation_context.h>
 #include <debug.h>
-#include <typecast.inl>
 
-#include <stdio.h>
-#include <stdarg.h>
 #include <string.h>
 
-static void string_reserve_internal( String* dst, const u64 length ) {
-	if ( length > dst->count ) {
-		dst->allocator = ( dst->allocator == NULL ) ? mem_get_current_allocator() : dst->allocator;
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
 
-		mem_push_allocator( dst->allocator );
-		defer( mem_pop_allocator() );
-
-		dst->original_data = cast( char*, mem_realloc( dst->data, length * sizeof( char ) ) );
-		dst->data = dst->original_data;
-	}
-}
-
-static void string_copy_internal( String* dst, const String* src ) {
-	string_copy_from_c_string( dst, src->data, src->count );
-}
-
-/*
-================================================================================================
-
-	String
-
-================================================================================================
-*/
-
-String::String( const char* str ) {
-	string_copy_from_c_string( this, str, strlen( str ) );
-}
-
-String::String( const String& str ) {
-	string_copy_internal( this, &str );
-}
-
-String::~String() {
-	if ( original_data ) {
-		assert( allocator != nullptr );
-
-		mem_push_allocator( allocator );
-
-		mem_free( original_data );
-		original_data = NULL;
-
-		mem_pop_allocator();
-	}
-}
-
-String& String::operator=( const char* str ) {
-	string_copy_from_c_string( this, str, strlen( str ) );
-	return *this;
-}
-
-String& String::operator=( const String& str ) {
-	string_copy_internal( this, &str );
-	return *this;
-}
-
-char String::operator[]( const u64 index ) {
-	assert( index < count );
-	return data[index];
-}
-
-char String::operator[]( const u64 index ) const {
-	assert( index < count );
-	return data[index];
-}
-
-//================================================================
-
-bool8 string_equals( const String* lhs, const String* rhs ) {
+bool8 string_equals( const char* lhs, const char* rhs ) {
 	assert( lhs );
 	assert( rhs );
 
-	return strcmp( lhs->data, rhs->data ) == 0;
+	u64 lhs_len = strlen( lhs );
+	return lhs_len == strlen( rhs ) && strncmp( lhs, rhs, lhs_len ) == 0;
 }
 
-void string_copy_from_c_string( String* dst, const char* src, const u64 length ) {
-	string_reserve_internal( dst, length + 1 );
+bool8 string_starts_with( const char* str, const char* prefix ) {
+	assert( str );
+	assert( prefix );
 
-	dst->count = length;
-
-	memcpy( dst->original_data, src, length );
-	dst->original_data[length] = 0;
-
-	dst->data = dst->original_data;
+	return strncmp( str, prefix, strlen( prefix ) ) == 0;
 }
 
-void string_printf( String* dst, const char* fmt, ... ) {
-	va_list args;
-	va_start( args, fmt );
-	defer( va_end( args ) );
+bool8 string_ends_with( const char* str, const char end ) {
+	assert( str );
 
-	u64 length = cast( u64, string_vsnprintf( NULL, 0, fmt, args ) );
-
-	string_reserve_internal( dst, length + 1 );
-
-	dst->count = length;
-
-	vsnprintf( dst->original_data, dst->count + 1, fmt, args );
-	dst->original_data[length] = 0;
-
-	dst->data = dst->original_data;
+	return str[strlen( str ) - 1] == end;
 }
+
+bool8 string_ends_with( const char* str, const char* suffix ) {
+	assert( str );
+	assert( suffix );
+
+	u64 suffix_length = strlen( suffix );
+	return strncmp( str + strlen( str ) - suffix_length, suffix, suffix_length ) == 0;
+}
+
+bool8 string_contains( const char* str, const char* substring ) {
+	assert( str );
+	assert( substring );
+
+	return strstr( str, substring ) != NULL;
+}
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif

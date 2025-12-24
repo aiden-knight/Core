@@ -26,7 +26,7 @@ SOFTWARE.
 ===========================================================================
 */
 
-#if defined( _WIN32 ) && !defined( CORE_USE_SUBPROCESS )
+#ifdef _WIN32
 
 #include <core_process.h>
 
@@ -35,7 +35,9 @@ SOFTWARE.
 #include <string_builder.h>
 #include <array.inl>
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <Windows.h>
 
 /*
@@ -216,4 +218,4 @@ u32 process_read_stdout( Process* process, char* out_buffer, const u32 count ) {
 	return bytes_read;
 }
 
-#endif // defined( _WIN32 ) && !defined( CORE_USE_SUBPROCESS )
+#endif // _WIN32

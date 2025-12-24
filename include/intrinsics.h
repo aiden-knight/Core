@@ -25,18 +25,16 @@ SOFTWARE.
 
 ===========================================================================
 */
-
 #pragma once
 
 #include "int_types.h"
 #include "dll_export.h"
 
-struct CommandLineArgs {
-	s32		count;
-	char**	data;
-};
+/*
+================================================================================================
 
-extern CommandLineArgs		g_cmd_line_args;
+	This header file contains a series of wrappers for intrinsics, except these functions have
+	much better names that actually tell you what they do in actual English!
 
-CORE_API void				set_command_line_args( int argc, char** argv );
-CORE_API CommandLineArgs	get_command_line_args( void );
+================================================================================================
+*/

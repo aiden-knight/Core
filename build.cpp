@@ -58,8 +58,9 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 	// tests
 	//
 	BuildConfig tests_common = {
-		.source_files			= { "tests/tests.cpp" },
-		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS", "CORE_MEMORY_TRACKING" },
+		.binary_name			= "core-tests",
+		.source_files			= { "tests/tests.cpp", "src/*.cpp" },
+		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS" },
 		.additional_includes	= { "include" },
 		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
 		.warning_levels			= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
@@ -67,70 +68,42 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 		.warnings_as_errors		= true
 	};
 
-	BuildConfig tests_common_non_suc = tests_common;
-	tests_common_non_suc.binary_name = "core-tests-non-suc";
-	tests_common_non_suc.source_files.push_back( "src/*.cpp" );
+	BuildConfig tests_debug = tests_common;
+	tests_debug.depends_on = { test_dll_debug };
+	tests_debug.name = "win64-debug";
+	tests_debug.binary_folder = "bin/win64/debug";
+	tests_debug.defines.push_back( "_DEBUG" );
+	tests_debug.additional_libs.push_back( "msvcrtd.lib" );
+	add_build_config( options, &tests_debug );
 
-	// non SUC configs
-	BuildConfig tests_win64_debug_non_suc = tests_common_non_suc;
-	tests_win64_debug_non_suc.depends_on = { test_dll_debug };
-	tests_win64_debug_non_suc.name = "win64-debug-non-suc";
-	tests_win64_debug_non_suc.binary_folder = "bin/win64/debug";
-	tests_win64_debug_non_suc.defines.push_back( "_DEBUG" );
-	tests_win64_debug_non_suc.additional_libs.push_back( "msvcrtd.lib" );
-	add_build_config( options, &tests_win64_debug_non_suc );
-
-	BuildConfig tests_win64_release_non_suc = tests_common_non_suc;
-	tests_win64_release_non_suc.depends_on = { test_dll_release };
-	tests_win64_release_non_suc.name = "win64-release-non-suc";
-	tests_win64_release_non_suc.binary_folder = "bin/win64/release";
-	tests_win64_release_non_suc.optimization_level = OPTIMIZATION_LEVEL_O3;
-	tests_win64_release_non_suc.defines.push_back( "NDEBUG" );
-	tests_win64_release_non_suc.additional_libs.push_back( "msvcrt.lib" );
-	add_build_config( options, &tests_win64_release_non_suc );
-
-
-	// SUC configs
-	BuildConfig tests_common_suc = tests_common;
-	tests_common_suc.binary_name = "core-tests-suc";
-	tests_common_suc.defines.push_back( "CORE_SUC" );
-
-	BuildConfig tests_win64_debug_suc = tests_common_suc;
-	tests_win64_debug_suc.depends_on = { test_dll_debug };
-	tests_win64_debug_suc.name = "win64-debug-suc";
-	tests_win64_debug_suc.binary_folder = tests_win64_debug_non_suc.binary_folder;
-	tests_win64_debug_suc.defines.push_back( "_DEBUG" );
-	tests_win64_debug_suc.additional_libs.push_back( "msvcrtd.lib" );
-	add_build_config( options, &tests_win64_debug_suc );
-
-	BuildConfig tests_win64_release_suc = tests_common_suc;
-	tests_win64_release_suc.depends_on = { test_dll_release };
-	tests_win64_release_suc.name = "win64-release-suc";
-	tests_win64_release_suc.binary_folder = tests_win64_release_non_suc.binary_folder;
-	tests_win64_release_suc.defines.push_back( "NDEBUG" );
-	tests_win64_release_suc.additional_libs.push_back( "msvcrt.lib" );
-	tests_win64_release_suc.optimization_level = OPTIMIZATION_LEVEL_O3;
-	add_build_config( options, &tests_win64_release_suc );
+	BuildConfig tests_release = tests_common;
+	tests_release.depends_on = { test_dll_release };
+	tests_release.name = "win64-release";
+	tests_release.binary_folder = "bin/win64/release";
+	tests_release.optimization_level = OPTIMIZATION_LEVEL_O3;
+	tests_release.defines.push_back( "NDEBUG" );
+	tests_release.additional_libs.push_back( "msvcrt.lib" );
+	add_build_config( options, &tests_release );
 
 
 	//
 	// visual studio
 	//
 	options->generate_solution = true;
-	options->solution.name = "Core";
-	options->solution.path = "visual_studio";
-	options->solution.platforms = { "x64" };
-	options->solution.projects = {
-		{
-			.name = "core",
-			.code_folders = { "src", "include", "tests" },
-			.file_extensions = { "cpp", "c", "h", "inl" },
-			.configs = {
-				{ "debug-suc",       tests_win64_debug_suc,       { /* debugger arguments */ } },
-				{ "release-suc",     tests_win64_release_suc,     { /* debugger arguments */ } },
-				{ "debug-non-suc",   tests_win64_debug_non_suc,   { /* debugger arguments */ } },
-				{ "release-non-suc", tests_win64_release_non_suc, { /* debugger arguments */ } }
-			}
+	options->solution = {
+		.name = "Core",
+		.path = "visual_studio",
+		.platforms = { "x64" },
+		.projects = {
+			{
+				.name = "core",
+				.code_folders = { "src", "include", "tests" },
+				.file_extensions = { "cpp", "c", "h", "inl" },
+				.configs = {
+					{ "debug",   tests_debug,   { /* debugger arguments */ } },
+					{ "release", tests_release, { /* debugger arguments */ } }
+				}
+			},
 		},
 	};
 }

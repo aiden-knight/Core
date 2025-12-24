@@ -28,44 +28,20 @@ SOFTWARE.
 
 #pragma once
 
-#include "core_types.h"
+#include "int_types.h"
 #include "dll_export.h"
 
-struct Allocator;
+// Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
+CORE_API bool8	string_equals( const char* lhs, const char* rhs );
 
-/*
-================================================================================================
+// Returns true if the first characters of string 'str' are EXACTLY the same as string 'prefix'.  Case sensitive.
+CORE_API bool8	string_starts_with( const char* str, const char* prefix );
 
-	String
+// Returns true if the last character of 'str' is the valueo of 'end'.  Case sensitive.
+CORE_API bool8	string_ends_with( const char* str, const char end );
 
-	Container type used to represent text.
+// Returns true if the last characters of 'str' are EXACTLY the same as string 'suffix'.  Case sensitive.
+CORE_API bool8	string_ends_with( const char* str, const char* suffix );
 
-	This string type only calls realloc() when making the string hold a larger piece of text,
-	but unlike std::string this string type doesn't allow for appending additional data on the
-	end of it.  If you want to do that, use StringBuilder.
-
-================================================================================================
-*/
-
-struct CORE_API String {
-	char*		original_data = NULL;
-	char*		data = NULL;
-	u64			count = 0;
-	Allocator*	allocator = NULL;
-
-				String() {}
-				String( const char* str );
-				String( const String& str );
-				~String();
-
-	String&		operator=( const char* str );
-	String&		operator=( const String& str );
-
-	char		operator[]( const u64 index );
-	char		operator[]( const u64 index ) const;
-};
-
-CORE_API bool8	string_equals( const String* lhs, const String* rhs );
-
-CORE_API void	string_copy_from_c_string( String* dst, const char* src, const u64 src_length );
-CORE_API void	string_printf( String* dst, const char* fmt, ... );
+// Returns true if string 'str' has EXACTLY the contents of 'substring' somewhere in it.  Case sensitive.
+CORE_API bool8	string_contains( const char* str, const char* substring );

@@ -26,56 +26,44 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include <temp_storage.h>
+#pragma once
 
-#include <linear_allocator.h>
-#include <typecast.inl>
+#include "int_types.h"
 
-#include <debug.h>
 /*
 ================================================================================================
 
-	temp storage
+	Core Helpers
+
+	TODO(DM): 23/12/2025: core_helpers.h doesnt seem like the right name for this header
 
 ================================================================================================
 */
 
-//Note(TOM): these two functions break out of the usual allocator interface with
-// tell and rewind. RTTI checks might be a good idea
-u64 mem_tell_temp_storage( void ) {
-	assert( g_core_ptr );
-	assert( g_core_ptr->temp_storage.data );
+// returns bit position 'x'
+#define bit( x )						( 1ULL << (x) )
 
-	LinearAllocator* linear_allocator = cast( LinearAllocator*, g_core_ptr->temp_storage.data );
-	return linear_allocator_tell( linear_allocator );
-}
+// returns number of elements in static array
+#define count_of( x )					( sizeof( (x) ) / sizeof( (x)[0] ) )
 
-void mem_rewind_temp_storage( const u64 position ) {
-	assert( g_core_ptr );
-	assert( g_core_ptr->temp_storage.data );
+// use this to avoid compiler warning about unused variable if you need to keep it
+#define unused( x )						( (void) (x) )
 
-	LinearAllocator* linear_allocator = cast( LinearAllocator*, g_core_ptr->temp_storage.data );
+// for loop helper macro
+// DM: these exist because I'm getting bored of typing the whole thing out every time and it feels like boiler-plate
+#define For( Type, it, start, count )	for ( Type it = (start); it < (count); it++ )
 
-	linear_allocator_rewind( linear_allocator, position );
-}
+// reverse for loop helper macro
+#define RFor( Type, it, start, count )	for ( Type it = (count); it-- > (start); )
 
-void mem_reset_temp_storage() {
-	assert( g_core_ptr );
-	assert( g_core_ptr->temp_storage.data );
+// returns the amount of padding required to align x up to the next aligned address
+// TODO(DM): 23/12/2025:
+//	make this into a real function
+//	does this want to be here or in core_math.h?
+#define padding_up( x, alignment )		( (alignment) - 1 ) & ~( (alignment) - 1 )
 
-	g_core_ptr->temp_storage.reset( g_core_ptr->temp_storage.data );
-}
-
-void* mem_temp_alloc_internal( const u64 size ) {
-	assert( g_core_ptr );
-	assert( g_core_ptr->temp_storage.data );
-
-	return g_core_ptr->temp_storage.allocate( g_core_ptr->temp_storage.data, size );
-}
-
-void* mem_temp_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ) {
-	assert( g_core_ptr );
-	assert( g_core_ptr->temp_storage.data );
-
-	return g_core_ptr->temp_storage.allocate_aligned( g_core_ptr->temp_storage.data, size, alignment );
-}
+// returns the input 'x' that has been aligned up by 'alignment' to the next largest value, in bytes
+// TODO(DM): 23/12/2025:
+//	make this into a real function
+//	does this want to be here or in core_math.h?
+#define align_up( x, alignment )		( (x) + padding_up( x, alignment ) )

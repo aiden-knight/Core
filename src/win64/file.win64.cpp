@@ -39,7 +39,9 @@ SOFTWARE.
 #include <paths.h>
 #include <array.inl>
 
+#ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
+#endif
 #include <Windows.h>
 
 /*
@@ -63,21 +65,6 @@ static File open_file_internal( const char* filename, const DWORD access_flags, 
 	//printf( "%s last error: 0x%08X\n", __FUNCTION__, GetLastError() );
 
 	return { cast( u64, handle ), 0 };
-}
-
-static bool8 create_folder_internal( const char* path ) {
-	assert( path );
-
-	if ( folder_exists( path ) ) {
-		return true;
-	}
-
-	SECURITY_ATTRIBUTES attributes = {};
-	attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
-
-	bool8 result = cast( bool8, CreateDirectoryA( path, &attributes ) );
-
-	return result;
 }
 
 //================================================================
@@ -337,6 +324,21 @@ bool8 file_exists( const char* filename ) {
 	assert( filename );
 
 	return GetFileAttributes( filename ) != INVALID_FILE_ATTRIBUTES;
+}
+
+bool8 create_folder_internal( const char* path ) {
+	assert( path );
+
+	if ( folder_exists( path ) ) {
+		return true;
+	}
+
+	SECURITY_ATTRIBUTES attributes = {};
+	attributes.nLength = sizeof( SECURITY_ATTRIBUTES );
+
+	bool8 result = cast( bool8, CreateDirectoryA( path, &attributes ) );
+
+	return result;
 }
 
 bool8 folder_delete( const char* path ) {
