@@ -31,6 +31,31 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+/*
+================================================================================================
+
+	String
+
+	Container type used to hold a contiguous block of text.
+
+	This string type only calls realloc() when making the string hold a larger piece of text,
+	but unlike std::strings, Core Strings can't be appended or resized.  If you want to do
+	that, use StringBuilder.
+
+================================================================================================
+*/
+
+struct String {
+	char*		data;
+	u64			count;
+};
+
+CORE_API void	string_zero( String* out_str );
+
+CORE_API void	string_set( String* out_str, const char* str );
+
+CORE_API void	string_free( String* str );
+
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
 CORE_API bool8	string_equals( const char* lhs, const char* rhs );
 

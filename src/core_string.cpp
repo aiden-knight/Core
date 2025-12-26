@@ -28,15 +28,42 @@ SOFTWARE.
 
 #include <core_string.h>
 #include <debug.h>
+#include <typecast.inl>
 
 #include <string.h>
+#include <malloc.h>
+#include <stdlib.h>
 
 #if defined( __clang__ )
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#pragma clang diagnostic ignored "-Wc++20-designator"
+#pragma clang diagnostic ignored "-Wreorder-init-list"
 #endif
+
+void string_zero( String* out_str ) {
+	out_str->data = NULL;
+	out_str->count = 0;
+}
+
+void string_set( String* out_str, const char* str ) {
+	assert( out_str );
+	assert( str );
+
+	u64 length = strlen( str );
+
+	out_str->data = cast( char*, realloc( out_str->data, length ) );
+	memcpy( out_str->data, str, length );
+}
+
+void string_free( String* str ) {
+	if ( str->data ) {
+		free( str->data );
+		str->data = NULL;
+	}
+}
 
 bool8 string_equals( const char* lhs, const char* rhs ) {
 	assert( lhs );

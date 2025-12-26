@@ -31,6 +31,19 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+/*
+================================================================================================
+
+	String Builder
+
+	Use this if you want to dynamically append content to a string.
+
+	Every time you append to a StringBuilder it puts that string into a "buffer".  Buffers are
+	stored in a linked list.
+
+================================================================================================
+*/
+
 // TODO(DM): 23/12/2025: add 4KB static char array and use that if the string fits in that
 struct StringBuilderBuffer {
 	u32						length;

@@ -64,4 +64,4 @@ CORE_API void		hasher_reset( Hasher* hasher, const u64 seed );
 //	hasher_hash64
 CORE_API void		hasher_hash( Hasher* hasher, const void* ptr, const u64 size );
 
-CORE_API u64		hasher_get( Hasher* hasher );
+CORE_API u64		hasher_get_hash( Hasher* hasher );

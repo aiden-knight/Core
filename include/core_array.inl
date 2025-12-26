@@ -43,14 +43,14 @@ SOFTWARE.
 #endif
 
 template<class T>
-void Array<T>::init() {
+void Array<T>::zero() {
 	data = NULL;
 	count = 0;
 	alloced = 0;
 }
 
 template<class T>
-void Array<T>::deinit() {
+void Array<T>::free() {
 	if ( data ) {
 		free( data );
 		data = NULL;

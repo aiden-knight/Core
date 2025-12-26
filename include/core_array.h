@@ -36,8 +36,8 @@ struct Array {
 	u64			count;
 	u64			alloced;
 
-	void		init();
-	void		deinit();
+	void		zero();
+	void		free();
 
 	void		add( const T& element );
 	void		add_range( const T* ptr, const u64 count );

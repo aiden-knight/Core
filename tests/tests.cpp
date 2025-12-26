@@ -109,6 +109,27 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 /*
 ================================================================================================
 
+	String
+
+================================================================================================
+*/
+
+TEMPER_TEST_PARAMETRIC( string_set_from_c_string, TEMPER_FLAG_SHOULD_RUN, const char* string ) {
+	String actual_string;
+	string_set( &actual_string, string );
+
+	TEMPER_CHECK_TRUE( string_equals( actual_string.data, string ) );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "this is only a test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "" );
+TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "." );
+
+
+/*
+================================================================================================
+
 	hash32 and hash64
 
 ================================================================================================

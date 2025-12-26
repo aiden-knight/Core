@@ -97,7 +97,7 @@ void hasher_hash( Hasher* hasher, const void* ptr, const u64 size ) {
 	XXH64_update( hasher->state, ptr, size );
 }
 
-u64 hasher_get( Hasher* hasher ) {
+u64 hasher_get_hash( Hasher* hasher ) {
 	return XXH64_digest( hasher->state );
 }
 

@@ -30,10 +30,9 @@ SOFTWARE.
 
 #include <core_process.h>
 
-#include <allocation_context.h>
 #include <typecast.inl>
 #include <string_builder.h>
-#include <array.inl>
+#include <core_array.inl>
 
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -61,12 +60,7 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 
 	unused( environment_variables );
 
-	//TODO(TOM): Figure out how to configure the file IO allocator
-	Allocator* platform_allocator = g_core_ptr->allocator_stack[0];
-	mem_push_allocator( platform_allocator );
-	defer( mem_pop_allocator() );
-
-	Process* process = cast( Process*, mem_alloc( sizeof( Process ) ) );
+	Process* process = cast( Process*, malloc( sizeof( Process ) ) );
 
 	SECURITY_ATTRIBUTES sec_attr = { sizeof( SECURITY_ATTRIBUTES ), NULL, TRUE };
 
@@ -169,7 +163,7 @@ void process_destroy( Process* process ) {
 		process->event_stdout = NULL;
 	}
 
-	mem_free( process );
+	free( process );
 	process = NULL;
 }
 
