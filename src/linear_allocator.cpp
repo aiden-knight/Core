@@ -28,55 +28,84 @@ SOFTWARE.
 
 #include "linear_allocator.h"
 
-#include "typecast.inl"
-#include "core_helpers.h"
+#include <typecast.inl>
+#include <core_helpers.h>
+#include <core_memory.h>
+#include <core_math.h>
+#include <os.h>
 
+#include <stdio.h>
 #include <malloc.h>
+#include <memory.h>
 
-LinearAllocator* linear_allocator_create( const u64 size_bytes ) {
-	assert( size_bytes );
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
 
-	LinearAllocator* allocator = cast( LinearAllocator*, malloc( sizeof( LinearAllocator ) + size_bytes ) );
+LinearAllocator *linear_allocator_create( const u64 reserved_bytes ) {
+	assert( reserved_bytes );
 
-	allocator->offset = 0;
-	allocator->size_bytes = 0;
-	allocator->ptr = cast( u8*, allocator + sizeof( u64 ) + sizeof( u64 ) );
+	// TODO(DM): 29/12/2025: alloc the whole allocator plus its entire arena in one virtual alloc call
+	LinearAllocator *allocator = cast( LinearAllocator *, malloc( sizeof( LinearAllocator ) ) );
+	memset( allocator, 0, sizeof( LinearAllocator ) );
+	allocator->ptr = cast( u8 *, virtual_reserve( reserved_bytes ) );
+	allocator->reserved_bytes = reserved_bytes;
+	allocator->virtual_memory_page_size = os_get_virtual_memory_page_size();
 
 	return allocator;
 }
 
-void linear_allocator_destroy( LinearAllocator* allocator ) {
+void linear_allocator_destroy( LinearAllocator *allocator ) {
 	assert( allocator );
+
+	virtual_free( allocator->ptr );
 
 	free( allocator );
 	allocator = NULL;
 }
 
-u8* linear_allocator_alloc( LinearAllocator* allocator, const u64 size_bytes, const u32 alignment ) {
+void* linear_allocator_alloc( LinearAllocator *allocator, const u64 size_bytes, const u32 alignment ) {
 	assert( allocator );
 	assert( size_bytes );
 
 	allocator->offset = align_up( allocator->offset, alignment );
 
-	u8* ptr = allocator->ptr + allocator->offset;
+	if ( allocator->offset >= allocator->comitted_bytes || allocator->offset + size_bytes > allocator->comitted_bytes ) {
+		u64 actual_comitted_size = max( size_bytes, allocator->virtual_memory_page_size );
+
+		//printf( "Virtual allocator comitting another %llu bytes\n", actual_comitted_size );
+
+		virtual_commit( allocator->ptr + allocator->offset, actual_comitted_size );
+
+		allocator->comitted_bytes = align_up( allocator->offset + size_bytes, allocator->virtual_memory_page_size );
+	}
+
+	u8 *ptr = allocator->ptr + allocator->offset;
 
 	allocator->offset += size_bytes;
 
 	return ptr;
 }
 
-void linear_allocator_reset( LinearAllocator* allocator ) {
+void linear_allocator_reset( LinearAllocator *allocator ) {
 	allocator->offset = 0;
 }
 
-u64 linear_allocator_tell( LinearAllocator* allocator ) {
+u64 linear_allocator_tell( LinearAllocator *allocator ) {
 	return allocator->offset;
 }
 
-void linear_allocator_rewind_to( LinearAllocator* allocator, const u64 offset ) {
+void linear_allocator_rewind_to( LinearAllocator *allocator, const u64 offset ) {
 	allocator->offset = offset;
 }
 
-void linear_allocator_rewind_by( LinearAllocator* allocator, const u64 bytes ) {
+void linear_allocator_rewind_by( LinearAllocator *allocator, const u64 bytes ) {
 	allocator->offset -= bytes;
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

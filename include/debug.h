@@ -33,10 +33,20 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #endif
 
+#include "int_types.h"
 #include "dll_export.h"
 
 // DM!!! write your own assert macro again, but better!
 #include <assert.h>
+
+#ifdef _WIN32
+	#define debug_break			__debugbreak
+#elif defined(__linux__)
+	#include <signal.h>
+	#define debug_break()		raise( SIGTRAP )
+#else
+	#error Unrecognised platform!
+#endif
 
 enum ConsoleTextColor {
 	CONSOLE_TEXT_COLOR_DEFAULT	= 0,
@@ -47,11 +57,13 @@ enum ConsoleTextColor {
 	CONSOLE_TEXT_COLOR_LIGHT_GRAY,
 };
 
+CORE_API s32	get_last_error_code();
+
 CORE_API void	set_console_text_color( const ConsoleTextColor color );
 
-CORE_API void	warning( const char* fmt, ... );
-CORE_API void	error( const char* fmt, ... );
-CORE_API void	fatal_error( const char* fmt, ... );
+CORE_API void	warning( const char *fmt, ... );
+CORE_API void	error( const char *fmt, ... );
+CORE_API void	fatal_error( const char *fmt, ... );
 
 #if defined( __clang__ )
 #pragma clang diagnostic pop

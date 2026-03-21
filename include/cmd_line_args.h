@@ -31,12 +31,21 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
+#endif
+
 struct CommandLineArgs {
 	s32		count;
-	char**	data;
+	char	**data;
 };
 
 extern CommandLineArgs		g_cmd_line_args;
 
-CORE_API void				set_command_line_args( int argc, char** argv );
+CORE_API void				set_command_line_args( int argc, char **argv );
 CORE_API CommandLineArgs	get_command_line_args( void );
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

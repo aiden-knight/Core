@@ -26,7 +26,28 @@ SOFTWARE.
 ===========================================================================
 */
 
-#pragma once
+#ifdef CORE_SUC
 
-void	core_init_platform();
-void	core_shutdown_platform();
+#if defined( _WIN32 )
+	#include "win64/core.win64.suc.cpp"
+#elif defined( __linux__ )
+	#include "win64/core.linux.suc.cpp"
+#else
+	#error Unrecognised platform!
+#endif
+
+#include "cmd_line_args.cpp"
+#include "core_math.cpp"
+#include "core_string.cpp"
+#include "debug.cpp"
+#include "file.cpp"
+#include "hash.cpp"
+#include "hashmap.cpp"
+#include "intrinsics.clang.cpp"
+#include "linear_allocator.cpp"
+#include "paths.cpp"
+#include "random.cpp"
+#include "string_builder.cpp"
+#include "temp_storage.cpp"
+
+#endif // CORE_SUC

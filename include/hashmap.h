@@ -67,22 +67,22 @@ struct Hashmap {
 	u32				last_linear_probe;
 	float32			max_utilisation;
 	bool8			should_grow;
-	HashmapBucket*	buckets;
+	HashmapBucket	*buckets;
 };
 
-CORE_API Hashmap*	hashmap_create( u32 starting_capacity, float32 normalized_max_utilisation = 0.5f, bool8 should_grow = true );
-CORE_API void		hashmap_destroy( Hashmap* map );
+CORE_API Hashmap	*hashmap_create( u32 starting_capacity, float32 normalized_max_utilisation = 0.5f, bool8 should_grow = true );
+CORE_API void		hashmap_destroy( Hashmap *map );
 
-CORE_API void		hashmap_reset( Hashmap* map );
+CORE_API void		hashmap_reset( Hashmap *map );
 
 // Returns the value associated with the key if the key has a value, otherwise returns 0.
-CORE_API u32		hashmap_get_value( const Hashmap* map, const u64 key );
+CORE_API u32		hashmap_get_value( const Hashmap *map, const u64 key );
 
-CORE_API void		hashmap_set_value( Hashmap* map, const u64 key, const u32 value );
-CORE_API void		hashmap_remove_key( Hashmap* map, const u64 key );
+CORE_API void		hashmap_set_value( Hashmap *map, const u64 key, const u32 value );
+CORE_API void		hashmap_remove_key( Hashmap *map, const u64 key );
 
 CORE_API u64		hashmap_internal_combine( const u32 hi, const u32 lo );
-CORE_API u64		hashmap_internal_combine_at_index( const Hashmap* map, const u32 index );
+CORE_API u64		hashmap_internal_combine_at_index( const Hashmap *map, const u32 index );
 CORE_API u32		hashmap_internal_get_lo_part( const u64 key );
 CORE_API u32		hashmap_internal_get_hi_part( const u64 key );
 

@@ -25,54 +25,41 @@ SOFTWARE.
 
 ===========================================================================
 */
+#ifdef _WIN32
 
-#pragma once
+#include <core_memory.h>
 
-#include <stdint.h>
-#include <float.h>
+#include <debug.h>
 
-/*
-================================================================================================
+#ifndef WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
 
-	Integer Types
+#ifndef NOMINMAX
+	#define NOMINMAX
+#endif
 
-================================================================================================
-*/
+#include <Windows.h>
 
-typedef int8_t		s8;
-typedef int16_t		s16;
-typedef int32_t		s32;
-typedef int64_t		s64;
+void *virtual_reserve( const u64 size_bytes ) {
+	assert( size_bytes > 0 );
 
-typedef uint8_t		u8;
-typedef uint16_t	u16;
-typedef uint32_t	u32;
-typedef uint64_t	u64;
+	return VirtualAlloc( NULL, size_bytes, MEM_RESERVE, PAGE_NOACCESS );
+}
 
-typedef float		float32;
-typedef double		float64;
+void *virtual_commit( void *ptr, const u64 size_bytes ) {
+	assert( ptr );
+	assert( size_bytes > 0 );
 
-typedef u8			bool8;
+	return VirtualAlloc( ptr, size_bytes, MEM_COMMIT, PAGE_READWRITE );
+}
 
-#define S8_MIN		INT8_MIN
-#define S8_MAX		INT8_MAX
-#define S16_MIN		INT16_MIN
-#define S16_MAX		INT16_MAX
-#define S32_MIN		INT32_MIN
-#define S32_MAX		INT32_MAX
-#define S64_MIN		INT64_MIN
-#define S64_MAX		INT64_MAX
+void virtual_decommit( void *ptr, const u64 size_bytes ) {
+	VirtualFree( ptr, size_bytes, MEM_DECOMMIT );
+}
 
-#define U8_MAX		UINT8_MAX
-#define U16_MAX		UINT16_MAX
-#define U32_MAX		UINT32_MAX
-#define U64_MAX		UINT64_MAX
+void virtual_free( void *ptr ) {
+	VirtualFree( ptr, 0, MEM_RELEASE );
+}
 
-#define FLOAT32_MIN	FLT_MIN
-#define FLOAT32_MAX	FLT_MAX
-
-#define FLOAT64_MIN	DBL_MIN
-#define FLOAT64_MAX	DBL_MAX
-
-// returns bit position 'x'
-#define bit( x )	( 1ULL << (x) )
+#endif // _WIN32

@@ -26,12 +26,6 @@ SOFTWARE.
 ===========================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
-
 #include <hash.h>
 
 #include <typecast.inl>
@@ -41,8 +35,15 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Weverything"
 #define XXH_ASSUME assert
 #define XXH_ASSERT assert
-#include "3rdparty/xxhash/xxhash.c"
+#include "xxhash/xxhash.c"
 #pragma clang diagnostic pop
+
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
 
 /*
 ================================================================================================
@@ -52,11 +53,11 @@ SOFTWARE.
 ================================================================================================
 */
 
-u32 hash32( const void* data, const u64 length, const u32 seed ) {
+u32 hash32( const void *data, const u64 length, const u32 seed ) {
 	return XXH32( data, length, seed );
 }
 
-u64 hash64( const void* data, const u64 length, const u64 seed ) {
+u64 hash64( const void *data, const u64 length, const u64 seed ) {
 	return XXH64( data, length, seed );
 }
 
@@ -68,8 +69,8 @@ struct Hasher {
 	XXH64_state_t*	state;
 };
 
-Hasher* hasher_create( const u64 seed ) {
-	Hasher* hasher = cast( Hasher*, malloc( sizeof( Hasher ) ) );
+Hasher *hasher_create( const u64 seed ) {
+	Hasher *hasher = cast( Hasher *, malloc( sizeof( Hasher ) ) );
 	memset( hasher, 0, sizeof( Hasher ) );
 
 	hasher->state = XXH64_createState();
@@ -79,7 +80,7 @@ Hasher* hasher_create( const u64 seed ) {
 	return hasher;
 }
 
-void hasher_destroy( Hasher* hasher ) {
+void hasher_destroy( Hasher *hasher ) {
 	XXH64_freeState( hasher->state );
 	hasher->state = NULL;
 
@@ -87,17 +88,17 @@ void hasher_destroy( Hasher* hasher ) {
 	hasher = NULL;
 }
 
-void hasher_reset( Hasher* hasher, const u64 seed ) {
+void hasher_reset( Hasher *hasher, const u64 seed ) {
 	XXH_errorcode result = XXH64_reset( hasher->state, seed );
 	assert( result != XXH_ERROR );
 	unused( result );
 }
 
-void hasher_hash( Hasher* hasher, const void* ptr, const u64 size ) {
+void hasher_hash( Hasher *hasher, const void *ptr, const u64 size ) {
 	XXH64_update( hasher->state, ptr, size );
 }
 
-u64 hasher_get_hash( Hasher* hasher ) {
+u64 hasher_get_hash( Hasher *hasher ) {
 	return XXH64_digest( hasher->state );
 }
 

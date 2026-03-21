@@ -51,16 +51,17 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wc++98-compat"
 #pragma clang diagnostic ignored "-Wdouble-promotion"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
-Hashmap* hashmap_create( const u32 starting_capacity, float32 normalized_max_utilisation, bool8 should_grow ) {
+Hashmap *hashmap_create( const u32 starting_capacity, float32 normalized_max_utilisation, bool8 should_grow ) {
 	assert( starting_capacity );
 	assert( normalized_max_utilisation > 0.0f );
 	assert( normalized_max_utilisation <= 1.0f );
 
-	Hashmap* map = cast( Hashmap*, malloc( sizeof( Hashmap ) ) );
+	Hashmap *map = cast( Hashmap *, malloc( sizeof( Hashmap ) ) );
 	map->capacity = starting_capacity;
-	map->buckets = cast( HashmapBucket*, malloc( starting_capacity * sizeof( HashmapBucket ) ) );
+	map->buckets = cast( HashmapBucket *, malloc( starting_capacity * sizeof( HashmapBucket ) ) );
 	map->should_grow = should_grow;
 	map->max_utilisation = normalized_max_utilisation;
 
@@ -69,7 +70,7 @@ Hashmap* hashmap_create( const u32 starting_capacity, float32 normalized_max_uti
 	return map;
 }
 
-void hashmap_destroy( Hashmap* map ) {
+void hashmap_destroy( Hashmap *map ) {
 	assert( map );
 
 	free( map->buckets );
@@ -79,12 +80,12 @@ void hashmap_destroy( Hashmap* map ) {
 	map = NULL;
 }
 
-inline void set_key_at_index( Hashmap* map, u32 index, u64 key ) {
+inline void set_key_at_index( Hashmap *map, u32 index, u64 key ) {
 	map->buckets[index].key_hi = hashmap_internal_get_hi_part( key );
 	map->buckets[index].key_lo = hashmap_internal_get_lo_part( key );
 }
 
-void hashmap_reset( Hashmap* map ) {
+void hashmap_reset( Hashmap *map ) {
 	For ( u32, i, 0, map->capacity ) {
 		set_key_at_index( map, trunc_cast( u32, i ), HASHMAP_UNUSED_BUCKET );
 		map->buckets[i].value = HASHMAP_INVALID_VALUE;
@@ -94,24 +95,24 @@ void hashmap_reset( Hashmap* map ) {
 	map->tombstone_count = 0;
 }
 
-inline u32 try_get_index_of_hash( const Hashmap* map, const u64 key ) {
+inline u32 try_get_index_of_hash( const Hashmap *map, const u64 key ) {
 	u32 i = key % map->capacity;
 
 	// Note(Tom): I think this is a legit use of const cast since it's purely for telemetry
-	const_cast<Hashmap*>( map )->last_linear_probe = 0;
-	
+	const_cast<Hashmap *>( map )->last_linear_probe = 0;
+
 	u64 recombined_hash = hashmap_internal_combine_at_index( map, i );
 
 	while ( recombined_hash != key && recombined_hash != HASHMAP_UNUSED_BUCKET && map->last_linear_probe < map->capacity ) {
 		i = ( i + 1 ) % map->capacity;
 		recombined_hash = hashmap_internal_combine_at_index( map, i );
-		const_cast<Hashmap*>( map )->last_linear_probe++;
+		const_cast<Hashmap *>( map )->last_linear_probe++;
 	}
 
 	return i;
 }
 
-u32 hashmap_get_value( const Hashmap* map, const u64 key ) {
+u32 hashmap_get_value( const Hashmap *map, const u64 key ) {
 	assert( key != HASHMAP_UNUSED_BUCKET && "Key cannot equal empty bucket value (0)" );
 	assert( key != HASHMAP_TOMBSTONE_BUCKET && "Key cannot equal Tombstone (u32 MAX)" );
 
@@ -127,7 +128,7 @@ u32 hashmap_get_value( const Hashmap* map, const u64 key ) {
 	return map->buckets[i].value;
 }
 
-void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
+void hashmap_set_value( Hashmap *map, const u64 key, const u32 value ) {
 	u32 i = try_get_index_of_hash( map, key );
 	u64 key_at_location = hashmap_internal_combine_at_index( map, i );
 
@@ -147,7 +148,7 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 
 				u32 old_capacity = map->capacity;
 				map->capacity = max( cast( u32, cast( float32, map->capacity ) * 1.5f ), 2U );
-				map->buckets = cast( HashmapBucket*, malloc( map->capacity * sizeof( HashmapBucket ) ) );
+				map->buckets = cast( HashmapBucket *, malloc( map->capacity * sizeof( HashmapBucket ) ) );
 				// Note(Tom): I don't love that this isn't a memset anymore. this isn's possible if we keep caring about values of unused buckets: unused value != empty bucket.
 				// I suggest we start leaving them untouched. Yes they have stale old data in them, but so long as people are using set that should never be an issue
 				// (we're testing this right?)
@@ -174,7 +175,7 @@ void hashmap_set_value( Hashmap* map, const u64 key, const u32 value ) {
 	map->buckets[i].value = value;
 }
 
-void hashmap_remove_key( Hashmap* map, const u64 key ) {
+void hashmap_remove_key( Hashmap *map, const u64 key ) {
 	assert( key != HASHMAP_UNUSED_BUCKET && "Key cannot equal empty bucket value (0)" );
 	assert( key != HASHMAP_TOMBSTONE_BUCKET && "Key cannot equal Tombstone (u32 MAX)" );
 
@@ -208,7 +209,7 @@ u64 hashmap_internal_combine( const u32 hi, const u32 lo ) {
 	return ( cast( u64, lo ) << 32 ) | hi;
 }
 
-u64 hashmap_internal_combine_at_index( const Hashmap* map, const u32 index ) {
+u64 hashmap_internal_combine_at_index( const Hashmap *map, const u32 index ) {
 	return hashmap_internal_combine( map->buckets[index].key_hi, map->buckets[index].key_lo );
 }
 

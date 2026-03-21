@@ -41,6 +41,11 @@ SOFTWARE.
 ================================================================================================
 */
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+
 void random_generate_seed() {
 	srand( cast( u32, time( NULL ) ) );
 }
@@ -52,3 +57,7 @@ float32 random_float32() {
 float32 random_float32( const float32 min, const float32 max ) {
 	return min + cast( float32, rand() ) / cast( float32, cast(float32, RAND_MAX) / ( max - min ) );
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif

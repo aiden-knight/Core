@@ -28,68 +28,92 @@ SOFTWARE.
 
 #include <builder.h>
 
-BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
-	//
-	// test_dll
-	//
-	BuildConfig test_dll_common = {
-		.source_files			= { "tests/test_dll.c" },
-		.defines				= { "TEST_DLL_EXPORTS" },
-		.binary_name			= "test_dll",
-		.binary_type			= BINARY_TYPE_DYNAMIC_LIBRARY,
-		.warnings_as_errors		= true
+static bool HasCommandLineArg( CommandLineArgs *args, const char *arg ) {
+	for ( int argIndex = 0; argIndex < args->argc; argIndex++ ) {
+		if ( strcmp( args->argv[argIndex], arg ) == 0 ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArgs *args ) {
+	options->consolidateCompilerArgs = true;
+
+	BuildConfig testDLL = {
+		.name				= "test-dll",
+		.languageVersion	= LANGUAGE_VERSION_C99,
+		.sourceFiles		= { "tests/test_dll.c" },
+		.defines			= { "TEST_DLL_EXPORTS" },
+		.intermediateFolder	= "intermediate",
+		.binaryName			= "test_dll",
+		.binaryType			= BINARY_TYPE_DYNAMIC_LIBRARY,
+		.warningsAsErrors	= true
 	};
 
-	BuildConfig test_dll_debug = test_dll_common;
-	test_dll_debug.name = "test-dll-debug";
-	test_dll_debug.defines.push_back( "_DEBUG" );
-	test_dll_debug.additional_libs.push_back( "msvcrtd.lib" );
-	test_dll_debug.binary_folder = "bin/win64/debug";
+	if ( HasCommandLineArg( args, "--release" ) ) {
+		testDLL.optimizationLevel = OPTIMIZATION_LEVEL_O3;
+		testDLL.binaryFolder = "bin/release";
+		testDLL.defines.push_back( "NDEBUG" );
+#ifdef _WIN32
+		testDLL.additionalLibs.push_back( "msvcrt.lib" );
+#endif
+	} else {
+		testDLL.binaryFolder = "bin/debug";
+		testDLL.defines.push_back( "_DEBUG" );
+#ifdef _WIN32
+		testDLL.additionalLibs.push_back( "msvcrtd.lib" );
+#endif
+	}
 
-	BuildConfig test_dll_release = test_dll_common;
-	test_dll_release.name = "test-dll-release";
-	test_dll_release.optimization_level = OPTIMIZATION_LEVEL_O3;
-	test_dll_release.defines.push_back( "NDEBUG" );
-	test_dll_release.additional_libs.push_back( "msvcrt.lib" );
-	test_dll_release.binary_folder = "bin/win64/release";
+	AddBuildConfig( options, &testDLL );
 
 
 	//
 	// tests
 	//
-	BuildConfig tests_common = {
-		.binary_name			= "core-tests",
-		.source_files			= { "tests/tests.cpp", "src/*.cpp" },
-		.defines				= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS" },
-		.additional_includes	= { "include" },
-		.additional_libs		= { "DbgHelp.lib", "Shlwapi.lib" },
-		.warning_levels			= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
-		.ignore_warnings		= { "-Wno-switch-default" },
-		.warnings_as_errors		= true
+	BuildConfig tests = {
+		.name				= "tests",
+		.languageVersion	= LANGUAGE_VERSION_CPP20,
+		.dependsOn			= { testDLL },
+		.intermediateFolder	= "intermediate",
+		.binaryName			= "core-tests",
+		.sourceFiles		= { "tests/tests.cpp", "src/*.cpp" },
+		.defines			= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS" },
+		.additionalIncludes	= { "include" },
+#if defined( _WIN32 )
+		.additionalLibs		= { "DbgHelp.lib", "Shlwapi.lib" },
+#elif defined( __linux__ )
+		.additionalLibs		= { "stdc++" },
+#endif
+		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
+		.ignoreWarnings		= { "-Wno-switch-default" },
+		.warningsAsErrors	= true
 	};
 
-	BuildConfig tests_debug = tests_common;
-	tests_debug.depends_on = { test_dll_debug };
-	tests_debug.name = "win64-debug";
-	tests_debug.binary_folder = "bin/win64/debug";
-	tests_debug.defines.push_back( "_DEBUG" );
-	tests_debug.additional_libs.push_back( "msvcrtd.lib" );
-	add_build_config( options, &tests_debug );
+	if ( HasCommandLineArg( args, "--release" ) ) {
+		tests.optimizationLevel = OPTIMIZATION_LEVEL_O3;
+		tests.binaryFolder = "bin/release";
+		tests.defines.push_back( "NDEBUG" );
+#ifdef _WIN32
+		tests.additionalLibs.push_back( "msvcrt.lib" );
+#endif
+	} else {
+		tests.binaryFolder = "bin/debug";
+		tests.defines.push_back( "_DEBUG" );
+#ifdef _WIN32
+		tests.additionalLibs.push_back( "msvcrtd.lib" );
+#endif
+	}
 
-	BuildConfig tests_release = tests_common;
-	tests_release.depends_on = { test_dll_release };
-	tests_release.name = "win64-release";
-	tests_release.binary_folder = "bin/win64/release";
-	tests_release.optimization_level = OPTIMIZATION_LEVEL_O3;
-	tests_release.defines.push_back( "NDEBUG" );
-	tests_release.additional_libs.push_back( "msvcrt.lib" );
-	add_build_config( options, &tests_release );
+	AddBuildConfig( options, &tests );
 
 
 	//
 	// visual studio
 	//
-	options->generate_solution = true;
+	// options->generateSolution = true;
 	options->solution = {
 		.name = "Core",
 		.path = "visual_studio",
@@ -97,11 +121,10 @@ BUILDER_CALLBACK void set_builder_options( BuilderOptions* options ) {
 		.projects = {
 			{
 				.name = "core",
-				.code_folders = { "src", "include", "tests" },
-				.file_extensions = { "cpp", "c", "h", "inl" },
+				.codeFolders = { "src", "include", "tests" },
 				.configs = {
-					{ "debug",   tests_debug,   { /* debugger arguments */ } },
-					{ "release", tests_release, { /* debugger arguments */ } }
+					{ "debug",   tests, {             }, { /* debugger arguments */ } },
+					{ "release", tests, { "--release" }, { /* debugger arguments */ } }
 				}
 			},
 		},

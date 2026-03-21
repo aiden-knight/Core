@@ -37,7 +37,7 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
 #endif
 
-void warning( const char* fmt, ... ) {
+void warning( const char *fmt, ... ) {
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "WARNING: " );
@@ -50,7 +50,7 @@ void warning( const char* fmt, ... ) {
 	va_end( args );
 }
 
-void error( const char* fmt, ... ) {
+void error( const char *fmt, ... ) {
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "ERROR: " );
@@ -63,7 +63,7 @@ void error( const char* fmt, ... ) {
 	va_end( args );
 }
 
-void fatal_error( const char* fmt, ... ) {
+void fatal_error( const char *fmt, ... ) {
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "FATAL ERROR: " );

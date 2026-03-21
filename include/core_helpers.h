@@ -40,9 +40,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-// returns bit position 'x'
-#define bit( x )						( 1ULL << (x) )
-
 // returns number of elements in static array
 #define count_of( x )					( sizeof( (x) ) / sizeof( (x)[0] ) )
 
@@ -67,3 +64,8 @@ SOFTWARE.
 //	make this into a real function
 //	does this want to be here or in core_math.h?
 #define align_up( x, alignment )		( (x) + padding_up( x, alignment ) )
+
+// memory conversion helpers
+#define MEM_KILOBYTES( x )	( cast( u64, (x) ) * 1000 )
+#define MEM_MEGABYTES( x )	( MEM_KILOBYTES( x ) * 1000 )
+#define MEM_GIGABYTES( x )	( MEM_MEGABYTES( x ) * 1000 )

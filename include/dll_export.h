@@ -38,7 +38,7 @@ SOFTWARE.
 
 	If you're familiar with exporting functions to DLLs then you already know what's happening
 	in this header.
-	
+
 	All you really need to know as the user is this: If you're using Core in a program that
 	compiles out to a dynamic library then you want to #define both CORE_DLL and CORE_EXPORTS
 	in your build system somewhere.
@@ -53,5 +53,9 @@ SOFTWARE.
 		#define CORE_API	__declspec( dllimport )
 	#endif
 #else
-	#define CORE_API
+	#ifdef CORE_EXPORTS
+		#define CORE_API	__attribute__( ( visibility( "default" ) ) )
+	#else
+		#define CORE_API
+	#endif
 #endif

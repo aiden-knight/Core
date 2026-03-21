@@ -44,21 +44,30 @@ SOFTWARE.
 ================================================================================================
 */
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wpadded"
+#endif
+
 // TODO(DM): 23/12/2025: add 4KB static char array and use that if the string fits in that
 struct StringBuilderBuffer {
 	u32						length;
-	char*					data;
-	StringBuilderBuffer*	next;
+	char					*data;
+	StringBuilderBuffer		*next;
 };
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 struct StringBuilder {
-	StringBuilderBuffer*	head;
-	StringBuilderBuffer*	tail;
+	StringBuilderBuffer	*head;
+	StringBuilderBuffer	*tail;
 };
 
-CORE_API void			string_builder_reset( StringBuilder* builder );
-CORE_API void			string_builder_destroy( StringBuilder* builder );
+CORE_API void			string_builder_reset( StringBuilder *builder );
+CORE_API void			string_builder_destroy( StringBuilder *builder );
 
-CORE_API void			string_builder_appendf( StringBuilder* builder, const char* fmt, ... );
+CORE_API void			string_builder_appendf( StringBuilder *builder, const char *fmt, ... );
 
-CORE_API const char*	string_builder_to_string( StringBuilder* builder );
+CORE_API const char		*string_builder_to_string( StringBuilder *builder );

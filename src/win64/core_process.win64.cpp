@@ -33,10 +33,17 @@ SOFTWARE.
 #include <typecast.inl>
 #include <string_builder.h>
 #include <core_array.inl>
+#include <core_helpers.h>
+#include <defer.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
 #endif
+
+#ifndef NOMINMAX
+	#define NOMINMAX
+#endif
+
 #include <Windows.h>
 
 /*
@@ -47,6 +54,15 @@ SOFTWARE.
 ================================================================================================
 */
 
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wmissing-field-initializers"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
+
 struct Process {
 	PROCESS_INFORMATION	process_info;
 	HANDLE				stdout_read;
@@ -54,13 +70,13 @@ struct Process {
 	HANDLE				event_stdout;
 };
 
-Process* process_create( Array<const char*>* args, Array<const char*>* environment_variables, const ProcessFlags flags ) {
+Process* process_create( Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags ) {
 	assert( args );
 	assert( args->count > 0 );
 
 	unused( environment_variables );
 
-	Process* process = cast( Process*, malloc( sizeof( Process ) ) );
+	Process *process = cast( Process *, malloc( sizeof( Process ) ) );
 
 	SECURITY_ATTRIBUTES sec_attr = { sizeof( SECURITY_ATTRIBUTES ), NULL, TRUE };
 
@@ -75,7 +91,7 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 	start_info.hStdOutput = process->stdout_write;
 	start_info.hStdError = NULL;//process->write_handle;
 
-	char* combined_args = NULL;
+	char *combined_args = NULL;
 	{
 		u64 offset = 0;
 
@@ -87,10 +103,10 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 		combined_args_length += args->count - 1;	// one space between each argument
 		combined_args_length += 1;					// null terminator
 
-		combined_args = cast( char*, mem_alloc( combined_args_length * sizeof( char ) ) );
+		combined_args = cast( char *, malloc( combined_args_length * sizeof( char ) ) );
 
 		For ( u64, arg_index, 0, args->count ) {
-			const char* arg = ( *args )[arg_index];
+			const char *arg = ( *args )[arg_index];
 
 			u64 arg_len = strlen( arg );
 
@@ -102,7 +118,7 @@ Process* process_create( Array<const char*>* args, Array<const char*>* environme
 		}
 		combined_args[combined_args_length - 1] = 0;
 	}
-	defer( mem_free( combined_args ) );
+	defer { free( combined_args ); };
 
 	if ( flags & PROCESS_FLAG_ASYNC ) {
 		process->event_stdout = CreateEvent( &sec_attr, 1, 1, NULL );
@@ -183,7 +199,7 @@ s32 process_join( Process* process ) {
 	return trunc_cast( s32, exit_code );
 }
 
-u32 process_read_stdout( Process* process, char* out_buffer, const u32 count ) {
+u32 process_read_stdout( Process *process, char *out_buffer, const u32 count ) {
 	assert( process );
 	assert( out_buffer );
 	assert( count > 0 );
@@ -211,5 +227,9 @@ u32 process_read_stdout( Process* process, char* out_buffer, const u32 count ) {
 
 	return bytes_read;
 }
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif
 
 #endif // _WIN32

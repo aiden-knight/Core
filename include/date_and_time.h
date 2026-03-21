@@ -42,4 +42,4 @@ struct DateAndTime {
 };
 
 // Makes an OS-level call to get the date and time.
-CORE_API void	date_and_time_get( DateAndTime* out_date_and_time );
+CORE_API void	date_and_time_get( DateAndTime *out_date_and_time );

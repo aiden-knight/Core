@@ -29,8 +29,9 @@ SOFTWARE.
 #include <paths.h>
 
 #include <core_helpers.h>
-#include <temp_storage.h>
+//#include <temp_storage.h>
 #include <typecast.inl>
+#include <core_string.h>
 
 #include <string.h>
 
@@ -39,12 +40,13 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
-static const char* get_last_slash( const char* path ) {
-	const char* last_slash = NULL;
-	const char* last_back_slash = strrchr( path, '\\' );
-	const char* last_forward_slash = strrchr( path, '/' );
+static const char *get_last_slash( const char *path ) {
+	const char *last_slash = NULL;
+	const char *last_back_slash = strrchr( path, '\\' );
+	const char *last_forward_slash = strrchr( path, '/' );
 
 	if ( !last_back_slash && !last_forward_slash ) {
 		return NULL;
@@ -67,8 +69,8 @@ static const char* get_last_slash( const char* path ) {
 ================================================================================================
 */
 
-const char* path_remove_file_from_path( const char* path ) {
-	const char* last_slash = get_last_slash( path );
+const char *path_remove_file_from_path( const char *path ) {
+	const char *last_slash = get_last_slash( path );
 
 	if ( !last_slash ) {
 		return NULL;
@@ -76,15 +78,11 @@ const char* path_remove_file_from_path( const char* path ) {
 
 	u64 path_length = cast( u64, last_slash ) - cast( u64, path );
 
-	char* result = cast( char*, mem_temp_alloc( ( path_length + 1 ) * sizeof( char ) ) );
-	strncpy( result, path, path_length * sizeof( char ) );
-	result[path_length] = 0;
-
-	return result;
+	return temp_c_string( path, path_length );
 }
 
-const char* path_remove_path_from_file( const char* path ) {
-	const char* last_slash = get_last_slash( path );
+const char *path_remove_path_from_file( const char *path ) {
+	const char *last_slash = get_last_slash( path );
 
 	if ( !last_slash ) {
 		last_slash = path;
@@ -95,8 +93,8 @@ const char* path_remove_path_from_file( const char* path ) {
 	return last_slash;
 }
 
-const char* path_remove_file_extension( const char* filename ) {
-	const char* dot = strrchr( filename, '.' );
+const char *path_remove_file_extension( const char *filename ) {
+	const char *dot = strrchr( filename, '.' );
 
 	if ( !dot ) {
 		return filename;
@@ -104,11 +102,7 @@ const char* path_remove_file_extension( const char* filename ) {
 
 	u64 result_length = cast( u64, dot ) - cast( u64, filename );
 
-	char* result = cast( char*, mem_temp_alloc( ( result_length + 1 ) * sizeof( char ) ) );
-	strncpy( result, filename, result_length * sizeof( char ) );
-	result[result_length] = 0;
-
-	return result;
+	return temp_c_string( filename, result_length );
 }
 
 #if defined( __clang__ )

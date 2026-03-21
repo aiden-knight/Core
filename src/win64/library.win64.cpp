@@ -34,8 +34,13 @@ SOFTWARE.
 #include <typecast.inl>
 
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
 #endif
+
+#ifndef NOMINMAX
+	#define NOMINMAX
+#endif
+
 #include <Windows.h>
 
 /*
@@ -46,36 +51,40 @@ SOFTWARE.
 ================================================================================================
 */
 
-Library library_load( const char* name ) {
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+Library library_load( const char *name ) {
 	assert( name );
 
-	HMODULE library = LoadLibraryA( name );
-
-	assertf( library, "Failed to load dynamic library \"%s\": 0x%X", name, GetLastError() );
-
-	return { library };
+	return { LoadLibraryA( name ) };
 }
 
-void library_unload( Library* library ) {
+bool8 library_unload( Library *library ) {
 	assert( library && library->ptr );
 
-	BOOL freed = FreeLibrary( cast( HMODULE, library->ptr ) );
-
-	assert( freed );
-	unused( freed );
+	if ( !FreeLibrary( cast( HMODULE, library->ptr ) ) ) {
+		return false;
+	}
 
 	library->ptr = NULL;
+
+	return true;
 }
 
-void* library_get_proc_address( const Library library, const char* func_name ) {
+void* library_get_symbol( const Library library, const char *symbol_name ) {
 	assert( library.ptr );
-	assert( func_name );
+	assert( symbol_name );
 
-	FARPROC proc_addr = GetProcAddress( cast( HMODULE, library.ptr ), func_name );
+	FARPROC symbol = GetProcAddress( cast( HMODULE, library.ptr ), symbol_name );
 
-	//assert( proc_addr );
-
-	return cast( void*, proc_addr );
+	return cast( void *, symbol );
 }
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif
 
 #endif // _WIN32

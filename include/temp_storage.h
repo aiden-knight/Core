@@ -33,9 +33,9 @@ SOFTWARE.
 #include "dll_export.h"
 
 
-CORE_API void	mem_reset_temp_storage( void );
-CORE_API u64	mem_tell_temp_storage( void );
-CORE_API void	mem_rewind_temp_storage( const u64 position );
+CORE_API void	mem_init_temp_storage( const u64 size_bytes );
+CORE_API void	mem_shutdown_temp_storage();
 
-CORE_API void*	mem_temp_alloc( const u64 size );
-CORE_API void*	mem_temp_alloc_aligned( const u64 size, const MemoryAlignment alignment );
+CORE_API void*	mem_temp_alloc( const u64 size_bytes, const u32 alignment = 8 );
+
+CORE_API void	mem_reset_temp_storage();

@@ -28,8 +28,6 @@ SOFTWARE.
 
 #include <core_math.h>
 
-#include <intrinsics.h>
-
 #include <math.h>
 
 #if defined( __clang__ )
@@ -49,7 +47,15 @@ u32 min( const u32 a, const u32 b ) {
 	return ( a < b ) ? a : b;
 }
 
+u64 min( const u64 a, const u64 b ) {
+	return ( a < b ) ? a : b;
+}
+
 u32 max( const u32 a, const u32 b ) {
+	return ( a > b ) ? a : b;
+}
+
+u64 max( const u64 a, const u64 b ) {
 	return ( a > b ) ? a : b;
 }
 

@@ -33,18 +33,20 @@ SOFTWARE.
 #include "../include/core_string.h"
 #include "../include/core_math.h"
 #include "../include/debug.h"
-
 #include "../include/hash.h"
 #include "../include/hashmap.h"
 #include "../include/random.h"
 #include "../include/timer.h"
 #include "../include/string_builder.h"
+#include "../include/paths.inl"
 
 #include "../include/core_array.inl"
 
 #define TEMPER_IMPLEMENTATION
 #define TEMPERDEV_ASSERT assert
+#ifndef NOMINMAX
 #define NOMINMAX
+#endif
 #include "temper/temper.h"
 
 
@@ -115,8 +117,9 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 TEMPER_TEST_PARAMETRIC( string_set_from_c_string, TEMPER_FLAG_SHOULD_RUN, const char* string ) {
-	String actual_string;
-	string_set( &actual_string, string );
+	String actual_string = {};
+	// string_set( &actual_string, string );
+	string_copy_from_c_string( &actual_string, string );
 
 	TEMPER_CHECK_TRUE( string_equals( actual_string.data, string ) );
 }
@@ -186,11 +189,11 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 // TODO(TOM): 23/12/2025: evaluate the tests
 
 TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
-	u32 lo_part = 0xFAFAFAFA;
-	u32 hi_part = 0xAFAFAFAF;
+	u32 lo_part = 0xDEADBEEF;
+	u32 hi_part = 0xBAADF00D;
 
 	u64 combined = hashmap_internal_combine( hi_part, lo_part );
-	TEMPER_CHECK_TRUE_A( combined == 0xFAFAFAFAAFAFAFAF );
+	TEMPER_CHECK_TRUE_A( combined == 0xDEADBEEFBAADF00D );
 	TEMPER_CHECK_TRUE_A( hashmap_internal_get_hi_part( combined ) == hi_part );
 	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part( combined ) == lo_part );
 }
@@ -345,9 +348,8 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	}
 
 	// get a bunch of random hashes and grab the results
-	Array<u32> linear_probe_length;
-	linear_probe_length.init();
-	defer { linear_probe_length.deinit(); };
+	Array<u32> linear_probe_length = {};
+	defer { linear_probe_length.free(); };
 
 	linear_probe_length.reserve( intended_fill );
 
@@ -531,8 +533,8 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	defer { string_builder_destroy( &builder ); };
 
 	string_builder_appendf( &builder, "this " );
-	string_builder_appendf( &builder, "is " );
-	string_builder_appendf( &builder, "only " );
+	string_builder_appendf( &builder, "is" );
+	string_builder_appendf( &builder, " only " );
 	string_builder_appendf( &builder, "a " );
 	string_builder_appendf( &builder, "test" );
 

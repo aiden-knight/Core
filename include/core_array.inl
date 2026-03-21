@@ -31,8 +31,10 @@ SOFTWARE.
 #include "core_array.h"
 
 #include "core_math.h"
+#include "typecast.inl"
 
-#include "malloc.h"
+#include <malloc.h>
+#include <memory.h>
 
 #if defined( __clang__ )
 #pragma clang diagnostic push
@@ -52,25 +54,30 @@ void Array<T>::zero() {
 template<class T>
 void Array<T>::free() {
 	if ( data ) {
-		free( data );
+		::free( data );
 		data = NULL;
 	}
 }
 
 template<class T>
-void Array<T>::add( const T& element ) {
+void Array<T>::reset() {
+	count = 0;
+}
+
+template<class T>
+void Array<T>::add( const T &element ) {
 	add_range( &element, 1 );
 }
 
 template<class T>
-void Array<T>::add_range( const T* ptr, const u64 num_items ) {
+void Array<T>::add_range( const T *ptr, const u64 num_items ) {
 	reserve( count + num_items );
 	memcpy( data + count, ptr, num_items * sizeof( T ) );
 	count += num_items;
 }
 
 template<class T>
-void Array<T>::add_range( const Array<T>* array ) {
+void Array<T>::add_range( const Array<T> *array ) {
 	if ( array->count > 0 ) {
 		add_range( array->data, array->count );
 	}
@@ -79,10 +86,16 @@ void Array<T>::add_range( const Array<T>* array ) {
 template<class T>
 void Array<T>::reserve( const u64 bytes ) {
 	if ( bytes > alloced ) {
-		alloced = next_multiple_of_4_up( bytes );
+		alloced = next_power_of_2_up( bytes );
 
 		data = cast( T*, realloc( data, alloced * sizeof( T ) ) );
 	}
+}
+
+template<class T>
+void Array<T>::resize( const u64 new_count ) {
+	reserve( new_count );
+	this->count = new_count;
 }
 
 template<class T>

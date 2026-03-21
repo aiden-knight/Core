@@ -30,11 +30,22 @@ SOFTWARE.
 
 #include <debug.h>
 
+#include <typecast.inl>
+
 #ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
+	#define WIN32_LEAN_AND_MEAN
+#endif
+
+#ifndef NOMINMAX
+	#define NOMINMAX
 #endif
 
 #include <Windows.h>
+
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wswitch-default"
+#endif
 
 void set_console_text_color( const ConsoleTextColor color ) {
 	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );
@@ -54,5 +65,13 @@ void set_console_text_color( const ConsoleTextColor color ) {
 
 	SetConsoleTextAttribute( handle, color_code );
 }
+
+s32 get_last_error_code() {
+	return trunc_cast( s32, GetLastError() );
+}
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif
 
 #endif // _WIN32

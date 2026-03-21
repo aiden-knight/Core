@@ -51,10 +51,18 @@ extern "C" {
 
 #define TEST_DLL_NAME "TestDLL"
 
-#ifdef TEST_DLL_EXPORTS
-#define TEST_DLL_API extern __declspec( dllexport )
+#if defined( _WIN32 )
+	#ifdef TEST_DLL_EXPORTS
+		#define TEST_DLL_API extern __declspec( dllexport )
+	#else
+		#define TEST_DLL_API extern __declspec( dllimport )
+	#endif
 #else
-#define TEST_DLL_API extern __declspec( dllimport )
+	#ifdef TEST_DLL_EXPORTS
+		#define TEST_DLL_API extern __attribute__( ( visibility( "default" ) ) )
+	#else
+		#define TEST_DLL_API extern
+	#endif
 #endif
 
 TEST_DLL_API const char* get_dll_name( void );

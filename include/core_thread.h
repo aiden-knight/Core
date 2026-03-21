@@ -28,51 +28,23 @@ SOFTWARE.
 
 #pragma once
 
-#include <stdint.h>
-#include <float.h>
+#include "int_types.h"
+#include "dll_export.h"
 
-/*
-================================================================================================
+struct Thread {
+	void	*ptr;
+};
 
-	Integer Types
+typedef s32 ( *ThreadFunc )( void *data );
 
-================================================================================================
-*/
+// Creates and immediately executes a thread that runs 'thread_func' with 'data' passed through.
+CORE_API Thread	thread_create( ThreadFunc thread_func, void *data );
 
-typedef int8_t		s8;
-typedef int16_t		s16;
-typedef int32_t		s32;
-typedef int64_t		s64;
+// Waits for the thread to stop running, then destroys it.
+CORE_API void	thread_destroy( Thread *thread );
 
-typedef uint8_t		u8;
-typedef uint16_t	u16;
-typedef uint32_t	u32;
-typedef uint64_t	u64;
+// Waits (blocking) for the thread to stop executing.  Returns when that happens.
+CORE_API void	thread_wait_for_idle( Thread *thread );
 
-typedef float		float32;
-typedef double		float64;
-
-typedef u8			bool8;
-
-#define S8_MIN		INT8_MIN
-#define S8_MAX		INT8_MAX
-#define S16_MIN		INT16_MIN
-#define S16_MAX		INT16_MAX
-#define S32_MIN		INT32_MIN
-#define S32_MAX		INT32_MAX
-#define S64_MIN		INT64_MIN
-#define S64_MAX		INT64_MAX
-
-#define U8_MAX		UINT8_MAX
-#define U16_MAX		UINT16_MAX
-#define U32_MAX		UINT32_MAX
-#define U64_MAX		UINT64_MAX
-
-#define FLOAT32_MIN	FLT_MIN
-#define FLOAT32_MAX	FLT_MAX
-
-#define FLOAT64_MIN	DBL_MIN
-#define FLOAT64_MAX	DBL_MAX
-
-// returns bit position 'x'
-#define bit( x )	( 1ULL << (x) )
+// Sleeps the thread for the specified time in seconds.
+CORE_API void	thread_sleep( const float64 seconds );

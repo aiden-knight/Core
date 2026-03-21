@@ -47,14 +47,16 @@ SOFTWARE.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
-void file_free_buffer( char** buffer ) {
+void file_free_buffer( char **buffer ) {
 	free( *buffer );
 	*buffer = NULL;
 }
 
-bool8 file_read_entire( const char* filename, char** outBuffer, u64* out_file_length ) {
+bool8 file_read_entire( const char *filename, char **outBuffer, u64 *out_file_length ) {
 	assert( filename );
 	assert( !*outBuffer && "Specified out-buffer MUST be null because this function news it." );
 
@@ -69,7 +71,7 @@ bool8 file_read_entire( const char* filename, char** outBuffer, u64* out_file_le
 		return 0;
 	}
 
-	char* temp = cast( char*, malloc( file_size + 1 ) );
+	char *temp = cast( char *, malloc( file_size + 1 ) );
 
 	bool8 read = file_read( &file, 0, file_size, temp );
 
@@ -86,7 +88,7 @@ bool8 file_read_entire( const char* filename, char** outBuffer, u64* out_file_le
 	return read;
 }
 
-bool8 file_read( File* file, const u64 size, void* out_data ) {
+bool8 file_read( File *file, const u64 size, void *out_data ) {
 	bool8 read = file_read( file, file->offset, size, out_data );
 
 	if ( read ) {
@@ -96,7 +98,7 @@ bool8 file_read( File* file, const u64 size, void* out_data ) {
 	return read;
 }
 
-bool8 file_write_entire( const char* filename, const void* data, const u64 size ) {
+bool8 file_write_entire( const char *filename, const void *data, const u64 size ) {
 	assert( filename );
 	assert( data );
 
@@ -117,7 +119,7 @@ bool8 file_write_entire( const char* filename, const void* data, const u64 size 
 	return true;
 }
 
-bool8 file_write( File* file, const void* data, const u64 size ) {
+bool8 file_write( File *file, const void *data, const u64 size ) {
 	bool8 written = file_write( file, data, file->offset, size );
 
 	if ( written ) {
@@ -127,16 +129,16 @@ bool8 file_write( File* file, const void* data, const u64 size ) {
 	return written;
 }
 
-bool8 file_write( File* file, const char* data ) {
+bool8 file_write( File *file, const char *data ) {
 	return file_write( file, data, strlen( data ) * sizeof( char ) );
 }
 
-bool8 file_write_line( File* file, const char* line ) {
+bool8 file_write_line( File *file, const char *line ) {
 	bool8 main_write = file_write( file, line );
 	return main_write && file_write( file, "\n" );
 }
 
-bool8 folder_create_if_it_doesnt_exist( const char* path ) {
+bool8 folder_create_if_it_doesnt_exist( const char *path ) {
 	assert( path );
 
 	if ( folder_exists( path ) ) {

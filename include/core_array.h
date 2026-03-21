@@ -32,19 +32,23 @@ SOFTWARE.
 
 template<class T>
 struct Array {
-	T*			data;
+	T			*data;
 	u64			count;
 	u64			alloced;
 
 	void		zero();
 	void		free();
 
-	void		add( const T& element );
-	void		add_range( const T* ptr, const u64 count );
-	void		add_range( const Array<T>* array );
+	void		reset();
+
+	void		add( const T &element );
+	void		add_range( const T *ptr, const u64 count );
+	void		add_range( const Array<T> *array );
 
 	void		reserve( const u64 new_alloced );
 
-	T&			operator[]( const u64 index );
-	const T&	operator[]( const u64 index ) const;
+	void		resize( const u64 count );
+
+	T			&operator[]( const u64 index );
+	const T		&operator[]( const u64 index ) const;
 };

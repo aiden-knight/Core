@@ -25,11 +25,12 @@ SOFTWARE.
 
 ===========================================================================
 */
-
 #ifdef _WIN32
 
-#include <date_and_time.h>
+#include <core_thread.h>
+
 #include <debug.h>
+#include <typecast.inl>
 
 #ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -41,27 +42,61 @@ SOFTWARE.
 
 #include <Windows.h>
 
-/*
-================================================================================================
+struct ThreadBootstrapData {
+	ThreadFunc	thread_func;
+	void		*data;
+};
 
-	DateAndTime
+static DWORD thread_bootstrap( void *data ) {
+	assert( data );
 
-================================================================================================
-*/
+	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, data );
 
-void date_and_time_get( DateAndTime *out_date_and_time ) {
-	assert( out_date_and_time );
+	assert( bootstrap_data->thread_func );
+	assert( bootstrap_data->data );
 
-	SYSTEMTIME system_time = {};
-	GetSystemTime( &system_time );
+	s32 thread_return_code = bootstrap_data->thread_func( bootstrap_data->data );
 
-	out_date_and_time->second = system_time.wSecond;
-	out_date_and_time->minute = system_time.wMinute;
-	out_date_and_time->hour = system_time.wHour;
+	return cast( DWORD, thread_return_code );
+}
 
-	out_date_and_time->day_of_month = system_time.wDay;
-	out_date_and_time->month = system_time.wMonth;
-	out_date_and_time->year = system_time.wYear;
+Thread thread_create( ThreadFunc thread_func, void *data ) {
+	assert( thread_func );
+	assert( data );
+
+	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, data, 0, 0 );
+
+	if ( handle == INVALID_HANDLE_VALUE ) {
+		return { NULL };
+	}
+
+	return { handle };
+}
+
+void thread_destroy( Thread *thread ) {
+	assert( thread );
+	assert( thread->ptr );
+
+	// TODO(DM): 03/02/2026: is this expected behaviour user-side?
+	// do we make users do this themselves?
+	thread_wait_for_idle( thread );
+
+	CloseHandle( cast( HANDLE, thread->ptr ) );
+	thread->ptr = NULL;
+}
+
+void thread_wait_for_idle( Thread *thread ) {
+	HANDLE handle = cast( HANDLE, thread->ptr );
+
+	DWORD exit_code = WaitForSingleObjectEx( handle, INFINITE, TRUE );
+
+	assert( exit_code != WAIT_FAILED );
+}
+
+void thread_sleep( const float64 seconds ) {
+	DWORD ms = cast( DWORD, seconds ) * 1000;
+
+	Sleep( ms );
 }
 
 #endif // _WIN32

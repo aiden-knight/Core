@@ -28,14 +28,12 @@ SOFTWARE.
 
 #ifdef __linux__
 
-#include "../../include/file.h"
-#include "../../include/core_types.h"
-#include "../../include/core_types.h"
 #include <file.h>
 #include "../file_local.h"
-
 #include <paths.h>
-#include <array.inl>
+#include <core_array.inl>
+#include <defer.h>
+#include <core_string.h>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -43,6 +41,7 @@ SOFTWARE.
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <errno.h>
 
 /*
 ================================================================================================
@@ -52,7 +51,14 @@ SOFTWARE.
 ================================================================================================
 */
 
-static File open_file_internal( const char* filename, int flags ) {
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
+
+static File open_file_internal( const char *filename, int flags ) {
 	assert( filename );
 
 	int handle = open( filename, flags, S_IRWXU | S_IRWXG | S_IRWXO );
@@ -63,13 +69,13 @@ static File open_file_internal( const char* filename, int flags ) {
 	return { trunc_cast( u64, handle ), 0 };
 }
 
-File file_open( const char* filename ) {
+File file_open( const char *filename ) {
 	assert( filename );
 
 	return open_file_internal( filename, O_RDWR );
 }
 
-File file_open_or_create( const char* filename, const bool8 keep_existing_content ) {
+File file_open_or_create( const char *filename, const bool8 keep_existing_content ) {
 	assert( filename );
 
 	int flags = O_CREAT | O_RDWR;
@@ -96,16 +102,16 @@ bool8 file_close( File* file ) {
 	return true;
 }
 
-bool8 file_copy( const char* original_path, const char* new_path ) {
+bool8 file_copy( const char *original_path, const char *new_path ) {
 	assert( original_path );
 	assert( new_path );
 
-	char* buffer = NULL;
+	char *buffer = NULL;
 	if ( !file_read_entire( original_path, &buffer ) ) {
 		return false;
 	}
 
-	defer( file_free_buffer( &buffer ) );
+	defer { file_free_buffer( &buffer ); };
 
 	if ( !file_write_entire( new_path, buffer, strlen( buffer ) ) ) {
 		return false;
@@ -114,16 +120,18 @@ bool8 file_copy( const char* original_path, const char* new_path ) {
 	return true;
 }
 
-bool8 file_rename( const char* old_filename, const char* new_filename ) {
+bool8 file_rename( const char *old_filename, const char *new_filename ) {
 	assert( old_filename );
 	assert( new_filename );
 
 	int result = rename( old_filename, new_filename );
-	int err = errno;
+	if ( !result ) {
+		int err = errno;
+		fatal_error( "Failed to rename file \"%s\" to \"%s\": %s.\n", strerror( err ) );
+		return false;
+	}
 
-	assertf( result, "Failed to rename file \"%s\" to \"%s\": %s.\n", strerror( err ) );
-
-	return result == 0;
+	return true;
 }
 
 bool8 file_read( File* file, const u64 offset, const u64 size, void* out_data ) {
@@ -132,9 +140,6 @@ bool8 file_read( File* file, const u64 offset, const u64 size, void* out_data ) 
 	assert( out_data );
 
 	ssize_t bytes_read = pread( trunc_cast( int, file->handle ), out_data, size, trunc_cast( off_t, offset ) );
-	int err = errno;
-
-	assertf( trunc_cast( u64, bytes_read ) == size, "Failed to read %llu bytes of file at offset %llu: %s.\n", size, offset, strerror( err ) );
 
 	return trunc_cast( u64, bytes_read ) == size;
 }
@@ -145,25 +150,24 @@ bool8 file_write( File* file, const void* data, const u64 offset, const u64 size
 	assert( size );
 
 	ssize_t bytes_written = pwrite( trunc_cast( int, file->handle ), data, size, trunc_cast( off_t, offset ) );
-	int err = errno;
-
-	assertf( trunc_cast( u64, bytes_written ) == size, "Failed to write %llu bytes of file at offset %llu.  Error code %d: %s.\n", size, offset, err, strerror( err ) );
 
 	return trunc_cast( u64, bytes_written ) == size;
 }
 
-bool8 file_delete( const char* filename ) {
+bool8 file_delete( const char *filename ) {
 	assert( filename );
 
 	int result = remove( filename );
-	int err = errno;
 
-	assertf( result == 0, "Failed to delete file \"%s\": %s.\n", strerror( err ) );
+	if ( result != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to delete file \"%s\": %s.\n", strerror( err ) );
+	}
 
 	return result == 0;
 }
 
-bool8 file_get_size( const char* filename, u64* out_size ) {
+bool8 file_get_size( const char *filename, u64 *out_size ) {
 	assert( filename );
 	assert( out_size );
 
@@ -177,7 +181,7 @@ bool8 file_get_size( const char* filename, u64* out_size ) {
 	return true;
 }
 
-bool8 file_get_last_write_time( const char* filename, u64* out_last_write_time ) {
+bool8 file_get_last_write_time( const char *filename, u64 *out_last_write_time ) {
 	assert( filename );
 	assert( out_last_write_time );
 
@@ -191,22 +195,22 @@ bool8 file_get_last_write_time( const char* filename, u64* out_last_write_time )
 	return true;
 }
 
-bool8 file_get_all_files_in_folder( const char* path, const bool8 recursive, const bool8 visit_folders, FileVisitCallback visit_callback, void* user_data ) {
+bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, const bool8 visit_folders, FileVisitCallback visit_callback, void *user_data ) {
 	assert( path );
 	assert( visit_callback );
 
-	Array<const char*> directories;
+	Array<const char *> directories;
 	directories.add( path );
 
 	u32 dir_index = 0;
 
 	while ( dir_index < directories.count ) {
-		const char* directory = directories[dir_index];
+		const char *directory = directories[dir_index];
 
 		//printf( "Scanning directory \"%s\"\n", directory );
 
-		DIR* dir = opendir( directory );
-		defer( closedir( dir ) );
+		DIR *dir = opendir( directory );
+		defer { closedir( dir ); };
 
 		dir_index += 1;
 
@@ -216,13 +220,13 @@ bool8 file_get_all_files_in_folder( const char* path, const bool8 recursive, con
 			return false;
 		}
 
-		struct dirent* entry = NULL;
+		struct dirent *entry = NULL;
 		while ( ( entry = readdir( dir ) ) != NULL ) {
 			if ( string_equals( entry->d_name, "." ) || string_equals( entry->d_name, ".." ) ) {
 				continue;
 			}
 
-			const char* full_filename = tprintf( "%s%c%s", directory, PATH_SEPARATOR, entry->d_name );
+			const char *full_filename = temp_printf( "%s%c%s", directory, PATH_SEPARATOR, entry->d_name );
 
 			struct stat file_stat = {};
 			if ( stat( full_filename, &file_stat ) != 0 ) {
@@ -232,9 +236,9 @@ bool8 file_get_all_files_in_folder( const char* path, const bool8 recursive, con
 			}
 
 			FileInfo file_info = {
-				.is_directory		= S_ISDIR( file_stat.st_mode ),
-				.last_write_time	= trunc_cast( u64, file_stat.st_mtime ),
 				.size_bytes			= trunc_cast( u64, file_stat.st_size ),
+				.last_write_time	= trunc_cast( u64, file_stat.st_mtime ),
+				.is_directory		= S_ISDIR( file_stat.st_mode ),
 				.filename			= entry->d_name,
 				.full_filename		= full_filename,
 			};
@@ -256,35 +260,37 @@ bool8 file_get_all_files_in_folder( const char* path, const bool8 recursive, con
 	return true;
 }
 
-bool8 file_exists( const char* filename ) {
+bool8 file_exists( const char *filename ) {
 	assert( filename );
 
 	return access( filename, 0 ) == 0;
 }
 
-bool8 create_folder_internal( const char* path ) {
+bool8 create_folder_internal( const char *path ) {
 	int result = mkdir( path, S_IRWXU | S_IRWXG | S_IRWXO );
 	int err = errno;
 
 	if ( ( result != 0 ) && ( err != EEXIST ) ) {
-		assertf( result == 0, "ERROR: Failed to create directory \"%s\": %s\n", path, strerror( err ) );
+		fatal_error( "ERROR: Failed to create directory \"%s\": %s\n", path, strerror( err ) );
 	}
 
 	return result == 0;
 }
 
-bool8 folder_delete( const char* path ) {
+bool8 folder_delete( const char *path ) {
 	assert( path );
 
 	int result = rmdir( path );
-	int err = errno;
 
-	assertf( result == 0, "Failed to delete folder \"%s\": %s.\n", strerror( err ) );
+	if ( result != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to delete folder \"%s\": %s.\n", strerror( err ) );
+	}
 
 	return result == 0;
 }
 
-bool8 folder_exists( const char* path ) {
+bool8 folder_exists( const char *path ) {
 	assert( path );
 
 	DIR* dir = opendir( path );
@@ -297,8 +303,13 @@ bool8 folder_exists( const char* path ) {
 		return false;
 	}
 
-	assertf( false, "Failed to check if the folder exists: %s\n", strerror( err ) );
+	fatal_error( "Failed to check if the folder exists: %s\n", strerror( err ) );
+
 	return false;
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #endif // __linux__

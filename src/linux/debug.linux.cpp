@@ -26,53 +26,44 @@ SOFTWARE.
 ===========================================================================
 */
 
-#pragma once
+#ifdef __linux__
 
-#include <stdint.h>
-#include <float.h>
+#include <debug.h>
 
-/*
-================================================================================================
+#include <stdio.h>
+#include <errno.h>
 
-	Integer Types
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
 
-================================================================================================
-*/
+void set_console_text_color( const ConsoleTextColor color ) {
+	const char* color_linux = NULL;
 
-typedef int8_t		s8;
-typedef int16_t		s16;
-typedef int32_t		s32;
-typedef int64_t		s64;
+	switch ( color ) {
+		case CONSOLE_TEXT_COLOR_DEFAULT:		color_linux = "\033[0m"; break;
+		case CONSOLE_TEXT_COLOR_RED:			color_linux = "\033[0;31m"; break;
+		case CONSOLE_TEXT_COLOR_YELLOW:			color_linux = "\033[0;32m"; break;
+		case CONSOLE_TEXT_COLOR_BLUE:			color_linux = "\033[1;34m"; break;
+		case CONSOLE_TEXT_COLOR_BRIGHT_BLUE:	color_linux = "\033[1;94m"; break;
+		case CONSOLE_TEXT_COLOR_LIGHT_GRAY:		color_linux = "\033[1;37m"; break;
+	}
 
-typedef uint8_t		u8;
-typedef uint16_t	u16;
-typedef uint32_t	u32;
-typedef uint64_t	u64;
+	assert( color_linux != NULL );
 
-typedef float		float32;
-typedef double		float64;
+	printf( "%s", color_linux );
+}
 
-typedef u8			bool8;
+s32 get_last_error_code() {
+	// errno is a global and therefore not thread safe
+	// so it MUST ALWAYS be cached ASAP
+	int err = errno;
+	return err;
+}
 
-#define S8_MIN		INT8_MIN
-#define S8_MAX		INT8_MAX
-#define S16_MIN		INT16_MIN
-#define S16_MAX		INT16_MAX
-#define S32_MIN		INT32_MIN
-#define S32_MAX		INT32_MAX
-#define S64_MIN		INT64_MIN
-#define S64_MAX		INT64_MAX
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
-#define U8_MAX		UINT8_MAX
-#define U16_MAX		UINT16_MAX
-#define U32_MAX		UINT32_MAX
-#define U64_MAX		UINT64_MAX
-
-#define FLOAT32_MIN	FLT_MIN
-#define FLOAT32_MAX	FLT_MAX
-
-#define FLOAT64_MIN	DBL_MIN
-#define FLOAT64_MAX	DBL_MAX
-
-// returns bit position 'x'
-#define bit( x )	( 1ULL << (x) )
+#endif // __linux__

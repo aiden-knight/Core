@@ -31,6 +31,10 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+#ifndef NOMINMAX
+#define NOMINMAX
+#endif
+
 /*
 ================================================================================================
 
@@ -47,8 +51,17 @@ CORE_API bool8	float32_equals( const float32 a, const float32 b );
 // Returns true if 'a' is within an epsilon range to 'b', otherwise returns false.
 CORE_API bool8	float64_equals( const float64 a, const float64 b );
 
+// Returns whichever value is smallest.
 CORE_API u32	min( const u32 a, const u32 b );
+
+// Returns whichever value is smallest.
+CORE_API u64	min( const u64 a, const u64 b );
+
+// Returns whichever value is largest.
 CORE_API u32	max( const u32 a, const u32 b );
+
+// Returns whichever value is largest.
+CORE_API u64	max( const u64 a, const u64 b );
 
 // Returns the number of zeros on the left hand side of 'number' when viewed in base 2.
 CORE_API s32	get_num_leading_zeros( const u64 number );

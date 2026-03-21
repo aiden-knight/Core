@@ -59,6 +59,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #if defined( __clang__ )
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wpadded"
 #endif
 
 ///Defer following code until enclosing scope is exited

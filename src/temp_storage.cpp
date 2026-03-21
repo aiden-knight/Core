@@ -41,24 +41,30 @@ SOFTWARE.
 ================================================================================================
 */
 
-//Note(TOM): these two functions break out of the usual allocator interface with
-// tell and rewind. RTTI checks might be a good idea
-u64 mem_tell_temp_storage( void ) {
-	return linear_allocator_tell( linear_allocator );
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+static LinearAllocator *g_temp_storage = NULL;
+
+void mem_init_temp_storage( const u64 size_bytes ) {
+	g_temp_storage = linear_allocator_create( size_bytes );
 }
 
-void mem_rewind_temp_storage( const u64 position ) {
-	linear_allocator_rewind( linear_allocator, position );
+void mem_shutdown_temp_storage() {
+	linear_allocator_destroy( g_temp_storage );
+	g_temp_storage = NULL;
+}
+
+void* mem_temp_alloc( const u64 size_bytes, const u32 alignment ) {
+	return linear_allocator_alloc( g_temp_storage, size_bytes, alignment );
 }
 
 void mem_reset_temp_storage() {
-	g_core_ptr->temp_storage.reset( g_core_ptr->temp_storage.data );
+	linear_allocator_reset( g_temp_storage );
 }
 
-void* mem_temp_alloc_internal( const u64 size ) {
-	return g_core_ptr->temp_storage.allocate( g_core_ptr->temp_storage.data, size );
-}
-
-void* mem_temp_alloc_aligned_internal( const u64 size, const MemoryAlignment alignment ) {
-	return g_core_ptr->temp_storage.allocate_aligned( g_core_ptr->temp_storage.data, size, alignment );
-}
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif

@@ -51,15 +51,17 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wformat-nonliteral"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
-void string_builder_reset( StringBuilder* builder ) {
+void string_builder_reset( StringBuilder *builder ) {
 	assert( builder );
 
-	StringBuilderBuffer* current = builder->head;
+	StringBuilderBuffer *current = builder->head;
 
 	while ( current ) {
-		StringBuilderBuffer* next = current->next;
+		StringBuilderBuffer *next = current->next;
 
 		free( current->data );
 		current->data = NULL;
@@ -71,16 +73,47 @@ void string_builder_reset( StringBuilder* builder ) {
 	}
 }
 
-void string_builder_destroy( StringBuilder* builder ) {
+void string_builder_destroy( StringBuilder *builder ) {
 	string_builder_reset( builder );
 }
 
-static void string_builder_appendfv( StringBuilder* builder, const char* fmt, va_list args ) {
+// static void string_builder_appendfv( StringBuilder *builder, const char *fmt, va_list args ) {
+// 	assert( builder );
+// 	assert( fmt );
+// 	assert( args );
+
+// 	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, malloc( sizeof( StringBuilderBuffer ) ) );
+// 	//buffer->next = NULL;
+// 	memset( buffer, 0, sizeof( StringBuilderBuffer ) );
+
+// 	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
+
+// 	buffer->data = cast( char*, malloc( trunc_cast( u64, ( buffer->length + 1 ) ) * sizeof( char ) ) );
+// 	vsnprintf( buffer->data, buffer->length + 1, fmt, args );
+// 	buffer->data[buffer->length] = 0;
+
+// 	// if no head then this is the first element
+// 	if ( !builder->head ) {
+// 		builder->head = buffer;
+// 		builder->tail = buffer;
+// 	}
+
+// 	builder->tail->next = buffer;
+// 	builder->tail = buffer;
+// 	builder->tail->next = NULL;
+// }
+
+void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	assert( builder );
 	assert( fmt );
-	assert( args );
 
-	StringBuilderBuffer* buffer = cast( StringBuilderBuffer*, malloc( sizeof( StringBuilderBuffer ) ) );
+	va_list args;
+	va_start( args, fmt );
+
+#if 0
+	string_builder_appendfv( builder, fmt, args );
+#else
+	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, malloc( sizeof( StringBuilderBuffer ) ) );
 	//buffer->next = NULL;
 	memset( buffer, 0, sizeof( StringBuilderBuffer ) );
 
@@ -99,26 +132,17 @@ static void string_builder_appendfv( StringBuilder* builder, const char* fmt, va
 	builder->tail->next = buffer;
 	builder->tail = buffer;
 	builder->tail->next = NULL;
-}
-
-void string_builder_appendf( StringBuilder* builder, const char* fmt, ... ) {
-	assert( builder );
-	assert( fmt );
-
-	va_list args;
-	va_start( args, fmt );
-
-	string_builder_appendfv( builder, fmt, args );
+#endif
 
 	va_end( args );
 }
 
-const char* string_builder_to_string( StringBuilder* builder ) {
+const char* string_builder_to_string( StringBuilder *builder ) {
 	char* result = NULL;
 	u64 total_length = 0;
 	u64 offset = 0;
 
-	StringBuilderBuffer* current = builder->head;
+	StringBuilderBuffer *current = builder->head;
 
 	if ( !current ) {
 		return NULL;
