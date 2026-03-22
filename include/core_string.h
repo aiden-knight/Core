@@ -59,8 +59,6 @@ CORE_API void				string_copy( String *dst, String *src );
 CORE_API void				string_copy_from_c_string( String *out_str, const char *c_str );
 CORE_API void				string_copy_from_c_string( String *out_str, const char *c_str, const u64 length );
 
-CORE_API void				string_free( String *str );
-
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
 CORE_API bool8				string_equals( const char *lhs, const char *rhs );
 

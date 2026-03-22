@@ -101,13 +101,6 @@ void string_copy_from_c_string( String *out_str, const char *c_str, const u64 le
 	out_str->count = length;
 }
 
-void string_free( String *str ) {
-	if ( str->data ) {
-		free( str->data );
-		str->data = NULL;
-	}
-}
-
 bool8 string_equals( const char *lhs, const char *rhs ) {
 	assert( lhs );
 	assert( rhs );
