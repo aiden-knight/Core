@@ -32,7 +32,10 @@ SOFTWARE.
 //#include <temp_storage.h>
 #include <typecast.inl>
 #include <core_string.h>
+#include <string_builder.h>
+#include <defer.h>
 
+#include <stdarg.h>
 #include <string.h>
 
 #if defined( __clang__ )
@@ -41,6 +44,7 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
 #pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wc++98-compat"
 #endif
 
 static const char *get_last_slash( const char *path ) {
@@ -103,6 +107,33 @@ const char *path_remove_file_extension( const char *filename ) {
 	u64 result_length = cast( u64, dot ) - cast( u64, filename );
 
 	return temp_c_string( filename, result_length );
+}
+
+static const char *path_join_internalv( const int count, va_list args ) {
+	StringBuilder builder = {};
+	string_builder_reset( &builder );
+	defer { string_builder_destroy( &builder ); };
+
+	For ( int, arg_index, 0, count ) {
+		if ( arg_index > 0 ) {
+			string_builder_appendf( &builder, PATH_SEPARATOR );
+		}
+
+		const char* part = va_arg( args, const char * );
+
+		string_builder_appendf( &builder, part );
+	}
+
+	return string_builder_to_string( &builder );
+}
+
+const char *path_join_internal( const int count, ... ) {
+	va_list args;
+	va_start( args, count );
+	const char *result = path_join_internalv( count, args );
+	va_end( args );
+
+	return result;
 }
 
 #if defined( __clang__ )

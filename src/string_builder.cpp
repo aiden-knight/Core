@@ -119,7 +119,7 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 
 	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
 
-	buffer->data = cast( char*, malloc( trunc_cast( u64, ( buffer->length + 1 ) ) * sizeof( char ) ) );
+	buffer->data = cast( char *, malloc( ( buffer->length + 1 ) * sizeof( char ) ) );
 	vsnprintf( buffer->data, buffer->length + 1, fmt, args );
 	buffer->data[buffer->length] = 0;
 

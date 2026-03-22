@@ -38,9 +38,9 @@ SOFTWARE.
 #include "../include/random.h"
 #include "../include/timer.h"
 #include "../include/string_builder.h"
-#include "../include/paths.inl"
 
 #include "../include/core_array.inl"
+#include <paths.h>
 
 #define TEMPER_IMPLEMENTATION
 #define TEMPERDEV_ASSERT assert
@@ -53,7 +53,7 @@ SOFTWARE.
 /*
 ================================================================================================
 
-	IntAndFloat Types
+	core types
 
 ================================================================================================
 */
@@ -450,6 +450,27 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 */
 
 // TODO(DM): 23/12/2025: the API is fine, just rewrite the tests
+
+
+/*
+================================================================================================
+
+	Paths
+
+================================================================================================
+*/
+
+TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
+#ifdef _WIN32
+	const char *expected_path = "C:\\Users\\your_mother\\videos";
+#else
+	const char *expected_path = "C:/Users/your_mother/videos";
+#endif
+
+	const char *actual_path = path_join( "C", "Users", "your_mother", "videos" );
+
+	TEMPER_CHECK_TRUE( string_equals( expected_path, actual_path ) );
+}
 
 
 /*
