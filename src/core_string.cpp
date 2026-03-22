@@ -98,6 +98,7 @@ void string_copy_from_c_string( String *out_str, const char *c_str, const u64 le
 	string_realloc_internal( out_str, length + 1 );
 	memcpy( out_str->data, c_str, length );
 	out_str->data[length] = 0;
+	out_str->count = length;
 }
 
 void string_free( String *str ) {
