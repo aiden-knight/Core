@@ -144,18 +144,74 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST_PARAMETRIC( string_set_from_c_string, TEMPER_FLAG_SHOULD_RUN, const char* string ) {
-	String actual_string = {};
-	// string_set( &actual_string, string );
-	string_copy_from_c_string( &actual_string, string );
+TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
+	String msg = {};
 
-	TEMPER_CHECK_TRUE( string_equals( actual_string.data, string ) );
+	TEMPER_CHECK_TRUE( msg.count == 0 );
+	TEMPER_CHECK_TRUE( msg.data == NULL );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "test" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "this is only a test" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "" );
-TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "." );
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+
+TEMPER_TEST( test_string_zero, TEMPER_FLAG_SHOULD_RUN ) {
+	String msg;
+
+	TEMPER_CHECK_TRUE( msg.count != 0 );
+	TEMPER_CHECK_TRUE( msg.data != NULL );
+
+	string_zero( &msg );
+
+	TEMPER_CHECK_TRUE( msg.count == 0 );
+	TEMPER_CHECK_TRUE( msg.data == NULL );
+}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+TEMPER_TEST_PARAMETRIC( test_string_copy_from_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+	String msg = {};
+	string_copy_from_c_string( &msg, str );
+
+	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "this is only a test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "." );
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
+
+TEMPER_TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+	String msg = {};
+	string_copy_from_c_string( &msg, str );
+
+	String actual_copy = {};
+	string_copy( &actual_copy, &msg );
+
+	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, str ) );
+	TEMPER_CHECK_TRUE( actual_copy.count == strlen( str ) );
+
+	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, msg.data ) );
+	TEMPER_CHECK_TRUE( actual_copy.count == msg.count );
+}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "A" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "This is a test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "This test . has a dot in it" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "What about \t escape\n characters?" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "      " );
 
 
 /*
@@ -177,13 +233,13 @@ TEMPER_INVOKE_PARAMETRIC_TEST( string_set_from_c_string, "." );
 // tests to check for collisions?
 // hash the same thing over and over again to make sure its stable?
 
-TEMPER_TEST_PARAMETRIC( hash_string_equals_hash32, TEMPER_FLAG_SHOULD_RUN, const char* string, const u32 seed, const u32 expected_hash ) {
+TEMPER_TEST_PARAMETRIC( hash_string_equals_hash32, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed, const u32 expected_hash ) {
 	const u64 string_length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash32( string, string_length, seed ) == expected_hash );
 }
 
-TEMPER_TEST_PARAMETRIC( hash_string_equals_hash64, TEMPER_FLAG_SHOULD_RUN, const char* string, const u64 seed, const u64 expected_hash ) {
+TEMPER_TEST_PARAMETRIC( hash_string_equals_hash64, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed, const u64 expected_hash ) {
 	const u64 string_length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash64( string, string_length, seed ) == expected_hash );
@@ -226,7 +282,7 @@ TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part( combined ) == lo_part );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** hashmap, const u32 count ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap **hashmap, const u32 count ) {
 	TEMPER_CHECK_TRUE( hashmap );
 	TEMPER_CHECK_TRUE( !*hashmap );
 
@@ -243,7 +299,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap** h
 	}
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap, const char* name, const u32 age ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap, const char *name, const u32 age ) {
 	//LogVerbosity previous_log_verbosity = get_log_verbosity();
 	//set_log_verbosity( LOG_VERBOSITY_ERROR ); //Hiding warnings from getting values that don't exist as this is intentionally checking this behaviour
 
@@ -261,7 +317,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, 
 	//set_log_verbosity( previous_log_verbosity );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	u32 old_count = hashmap->capacity;
@@ -280,7 +336,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap* has
 	TEMPER_CHECK_TRUE_A(hashmap->tombstone_count == 0U);
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap* hashmap ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	hashmap_reset( hashmap );
@@ -460,9 +516,9 @@ TEMPER_TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.75f );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.3f );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.3f  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f  );
 
 #if defined( __clang__ )
 #pragma clang diagnostic pop
@@ -821,7 +877,7 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 	}
 }
 
-int main( int argc, char** argv ) {
+int main( int argc, char **argv ) {
 	// TODO(DM): 21/03/2026: this is currently holding up any test that makes use of temp storage
 	mem_init_temp_storage( 1024 );
 	defer { mem_shutdown_temp_storage(); };
