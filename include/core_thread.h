@@ -44,7 +44,7 @@ CORE_API Thread	thread_create( ThreadFunc thread_func, void *data );
 CORE_API void	thread_destroy( Thread *thread );
 
 // Waits (blocking) for the thread to stop executing.  Returns when that happens.
-CORE_API void	thread_wait_for_idle( Thread *thread );
+CORE_API s32	thread_wait( Thread *thread );
 
 // Sleeps the thread for the specified time in seconds.
 CORE_API void	thread_sleep( const float64 seconds );

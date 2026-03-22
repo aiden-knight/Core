@@ -85,12 +85,14 @@ void thread_destroy( Thread *thread ) {
 	thread->ptr = NULL;
 }
 
-void thread_wait_for_idle( Thread *thread ) {
+s32 thread_wait( Thread *thread ) {
 	HANDLE handle = cast( HANDLE, thread->ptr );
 
 	DWORD exit_code = WaitForSingleObjectEx( handle, INFINITE, TRUE );
 
 	assert( exit_code != WAIT_FAILED );
+
+	return exit_code;
 }
 
 void thread_sleep( const float64 seconds ) {
