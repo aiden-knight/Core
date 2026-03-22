@@ -31,6 +31,7 @@ SOFTWARE.
 #include "../include/int_types.h"
 #include "../include/typecast.inl"
 #include "../include/core_helpers.h"
+#include "../include/linear_allocator.h"
 #include "../include/defer.h"
 #include "../include/core_string.h"
 #include "../include/core_math.h"
@@ -41,8 +42,10 @@ SOFTWARE.
 #include "../include/timer.h"
 #include "../include/string_builder.h"
 #include "../include/library.h"
+#include "../include/temp_storage.h"
 
 #include "../include/core_array.inl"
+#include <cmath>
 #include <paths.h>
 
 #define TEMPER_IMPLEMENTATION
@@ -98,6 +101,28 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 #if defined( __clang__ )
 #pragma clang diagnostic pop
 #endif
+
+
+/*
+================================================================================================
+
+	linear allocator
+
+================================================================================================
+*/
+
+// TODO(DM): 21/03/2026: write these!
+
+
+/*
+================================================================================================
+
+	temp storage
+
+================================================================================================
+*/
+
+// TODO(DM): 21/03/2026: write these!
 
 
 /*
@@ -463,6 +488,53 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 ================================================================================================
 */
 
+TEMPER_TEST_PARAMETRIC( test_path_remove_file_from_path, TEMPER_FLAG_SHOULD_RUN, const char *path, const char *expected_path_without_file ) {
+	const char *actual_path_without_file = path_remove_file_from_path( path );
+
+	if ( expected_path_without_file == NULL ) {
+		TEMPER_CHECK_TRUE( expected_path_without_file == NULL && actual_path_without_file == NULL );
+	} else {
+		TEMPER_CHECK_TRUE( string_equals( expected_path_without_file, actual_path_without_file ) );
+	}
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "/usr/bin/cat.jpg",                   "/usr/bin"              );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "./some/path/program.d/settings.cfg", "./some/path/program.d" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "./script.sh",                        "."                     );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "game.exe",                           NULL                    );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "file",                               NULL                    );
+
+TEMPER_TEST_PARAMETRIC( test_path_remove_file_extension, TEMPER_FLAG_SHOULD_RUN, const char *file_with_extension, const char *expected_file_without_extension ) {
+	const char *actual_file_without_extension = path_remove_file_extension( file_with_extension );
+
+	TEMPER_CHECK_TRUE( string_equals( expected_file_without_extension, actual_file_without_extension ) );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "test.txt",                    "test"                    );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "cat.jpg",                     "cat"                     );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "dog.fw.png",                  "dog.fw"                  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "doom/src/r_bsp.c",            "doom/src/r_bsp"          );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "home/program.d/settings.cfg", "home/program.d/settings" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "docs/diary",                  "docs/diary"              );
+
+TEMPER_TEST_PARAMETRIC( test_path_is_absolute, TEMPER_FLAG_SHOULD_RUN, const char *path, const bool8 should_be_absolute ) {
+	TEMPER_CHECK_TRUE( path_is_absolute( path ) == should_be_absolute );
+}
+
+#if defined( __linux__ )
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "/usr/bin/",  true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "./usr/bin/", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "usr/bin/",   false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "\\usr/bin/", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, ".usr/bin/",  false );
+#elif defined( _WIN32 )
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "C:/Program Files (x86)/Steam/steamapps/common", true );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "C/Program Files (x86)/Steam/steamapps/common", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, ":/Program Files (x86)/Steam/steamapps/common", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "./Program Files (x86)/Steam/steamapps/common", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "/Program Files (x86)/Steam/steamapps/common", false );
+#endif
+
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #ifdef _WIN32
 	const char *expected_path = "C:\\Users\\your_mother\\videos";
@@ -665,6 +737,7 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 
 #if defined( __clang__ )
 #pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat"
 #pragma clang diagnostic ignored "-Wold-style-cast"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
 #endif
@@ -703,6 +776,10 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 }
 
 int main( int argc, char** argv ) {
+	// TODO(DM): 21/03/2026: this is currently holding up any test that makes use of temp storage
+	mem_init_temp_storage( 1024 );
+	defer { mem_shutdown_temp_storage(); };
+
 	g_temperTestContext.callbacks.OnBeforeTest = on_before_test;
 	g_temperTestContext.callbacks.OnAfterTest = on_after_test;
 
