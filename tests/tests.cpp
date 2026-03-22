@@ -488,6 +488,11 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 ================================================================================================
 */
 
+// TODO(DM): 22/03/2026: add tests here for:
+//	path_app_path()
+//	path_current_working_directory()
+//	path_absolute_path()
+
 TEMPER_TEST_PARAMETRIC( test_path_remove_file_from_path, TEMPER_FLAG_SHOULD_RUN, const char *path, const char *expected_path_without_file ) {
 	const char *actual_path_without_file = path_remove_file_from_path( path );
 
@@ -573,6 +578,8 @@ TEMPER_TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, con
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/diary.txt", "/home/images/cat.jpg", "../images/cat.jpg" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/diary.txt", "C:/Users/Tom/Pictures/cats.jpg", "../../Tom/Pictures/cats.jpg" );
+
+// TODO(DM): 22/03/2026: add test here for path_set_current_directory()
 
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #ifdef _WIN32
