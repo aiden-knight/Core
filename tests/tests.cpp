@@ -504,6 +504,18 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "./script.sh",  
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "game.exe",                           NULL                    );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_from_path, "file",                               NULL                    );
 
+TEMPER_TEST_PARAMETRIC( test_path_remove_path_from_file, TEMPER_FLAG_SHOULD_RUN, const char *path, const char *expected_file_without_path ) {
+	const char *actual_file_without_path = path_remove_path_from_file( path );
+
+	TEMPER_CHECK_TRUE( string_equals( expected_file_without_path, actual_file_without_path ) );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "/usr/bin/cat.jpg",                   "cat.jpg"               );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "./some/path/program.d/settings.cfg", "settings.cfg"          );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "./script.sh",                        "script.sh"             );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "game.exe",                           "game.exe"              );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "file",                               "file"                  );
+
 TEMPER_TEST_PARAMETRIC( test_path_remove_file_extension, TEMPER_FLAG_SHOULD_RUN, const char *file_with_extension, const char *expected_file_without_extension ) {
 	const char *actual_file_without_extension = path_remove_file_extension( file_with_extension );
 
