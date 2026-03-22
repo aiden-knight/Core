@@ -213,6 +213,51 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "This test . has a dot in it" )
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "What about \t escape\n characters?" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "      " );
 
+TEMPER_TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char *str, const char *expected_prefix, const bool8 should_match ) {
+	TEMPER_CHECK_TRUE( string_starts_with( str, expected_prefix ) == should_match );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "T",                  true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This",               true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This ",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This is",            true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this",               false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this is",            false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this is ",           false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "w42950tuweiojfgase", false );
+
+TEMPER_TEST_PARAMETRIC( test_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char *str, const char *expected_suffix, const bool8 should_match ) {
+	TEMPER_CHECK_TRUE( string_ends_with( str, expected_suffix ) == should_match );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "t",     true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "test",  true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", " test", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "T",     false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "tesT",  false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", " TEST", false );
+
+TEMPER_TEST_PARAMETRIC( test_string_contains, TEMPER_FLAG_SHOULD_RUN, const char *str, const char *substring, const bool8 should_contain ) {
+	TEMPER_CHECK_TRUE( string_contains( str, substring ) == should_contain );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "This is", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "is only", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", " a test", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", " ",       true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "this",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "ONLY",    false );
+
+TEMPER_TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char *str, const char replace_old, const char replace_new, const char *expected_result ) {
+	const char *actual_result = string_replace( str, replace_old, replace_new );
+
+	TEMPER_CHECK_TRUE( string_equals( actual_result, expected_result ) );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", ' ', '_', "this_is_only_a_test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 't', 'T', "This is only a TesT" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 'x', "thix ix only a text" );
+
 
 /*
 ================================================================================================
