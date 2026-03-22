@@ -79,6 +79,8 @@ CORE_API char				*path_relative_path_to( const char *pathFrom, const char *pathT
 
 CORE_API bool8				path_set_current_directory( const char *path );
 
+// DO NOT CALL THIS DIRECTLY.
+// CALL path_join INSTEAD.
 CORE_API const char			*path_join_internal( const int count, ... );
 
 #pragma clang diagnostic push

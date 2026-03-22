@@ -547,6 +547,24 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "./Program Files (x86)/Ste
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "/Program Files (x86)/Steam/steamapps/common", false );
 #endif
 
+TEMPER_TEST_PARAMETRIC( test_path_fix_slashes, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+#ifdef __linux__
+	const char *expected_fixed_path = string_replace( path, '\\', '/' );
+#else
+	const char *expected_fixed_path = string_replace( path, '/', '\\' );
+#endif
+
+	const char *actual_fixed_path = path_fix_slashes( path );
+
+	TEMPER_CHECK_TRUE( string_equals( expected_fixed_path, actual_fixed_path ) );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "C:/Users/dan\\Documents\\" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "C:/Users/dan/\\Documents" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "/usr/bin/program" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "cat.jpg" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "./" );
+
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #ifdef _WIN32
 	const char *expected_path = "C:\\Users\\your_mother\\videos";

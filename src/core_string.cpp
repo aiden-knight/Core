@@ -31,6 +31,7 @@ SOFTWARE.
 #include <typecast.inl>
 #include <temp_storage.h>
 #include <defer.h>
+#include <core_helpers.h>
 
 #include <stdio.h>
 #include <stdarg.h>
@@ -140,6 +141,18 @@ bool8 string_contains( const char *str, const char *substring ) {
 	assert( substring );
 
 	return strstr( str, substring ) != NULL;
+}
+
+const char *string_replace( const char *str, const char old_char, const char new_char ) {
+	char* result = temp_c_string( str );
+
+	For ( u32, i, 0, strlen( str ) ) {
+		if ( result[i] == old_char ) {
+			result[i] = new_char;
+		}
+	}
+
+	return result;
 }
 
 const char* temp_printf( const char* fmt, ... ) {
