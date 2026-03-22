@@ -46,7 +46,7 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #endif
 
-static LinearAllocator *g_temp_storage = NULL;
+LinearAllocator *g_temp_storage = NULL;
 
 void mem_init_temp_storage( const u64 size_bytes ) {
 	g_temp_storage = linear_allocator_create( size_bytes );

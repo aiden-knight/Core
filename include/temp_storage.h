@@ -29,9 +29,12 @@ SOFTWARE.
 #pragma once
 
 #include "int_types.h"
-#include "core_memory.h"
 #include "dll_export.h"
 
+struct LinearAllocator;
+
+
+extern LinearAllocator *g_temp_storage;
 
 CORE_API void	mem_init_temp_storage( const u64 size_bytes );
 CORE_API void	mem_shutdown_temp_storage();
