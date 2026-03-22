@@ -28,19 +28,12 @@ SOFTWARE.
 
 #include <builder.h>
 
-static bool HasCommandLineArg( CommandLineArgs *args, const char *arg ) {
-	for ( int argIndex = 0; argIndex < args->argc; argIndex++ ) {
-		if ( strcmp( args->argv[argIndex], arg ) == 0 ) {
-			return true;
-		}
-	}
-
-	return false;
-}
-
 BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArgs *args ) {
 	options->consolidateCompilerArgs = true;
 
+	//
+	// test DLL
+	//
 	BuildConfig testDLL = {
 		.name				= "test-dll",
 		.languageVersion	= LANGUAGE_VERSION_C99,
@@ -113,7 +106,6 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 	//
 	// visual studio
 	//
-	// options->generateSolution = true;
 	options->solution = {
 		.name = "Core",
 		.path = "visual_studio",
@@ -129,4 +121,8 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 			},
 		},
 	};
+
+	if ( HasCommandLineArg( args, "--sln" ) ) {
+		options->generateSolution = true;
+	}
 }
