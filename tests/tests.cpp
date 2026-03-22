@@ -26,6 +26,8 @@ SOFTWARE.
 ===========================================================================
 */
 
+#include "test_dll.h"
+
 #include "../include/int_types.h"
 #include "../include/typecast.inl"
 #include "../include/core_helpers.h"
@@ -38,6 +40,7 @@ SOFTWARE.
 #include "../include/random.h"
 #include "../include/timer.h"
 #include "../include/string_builder.h"
+#include "../include/library.h"
 
 #include "../include/core_array.inl"
 #include <paths.h>
@@ -467,7 +470,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	const char *expected_path = "C:/Users/your_mother/videos";
 #endif
 
-	const char *actual_path = path_join( "C", "Users", "your_mother", "videos" );
+	const char *actual_path = path_join( "C:", "Users", "your_mother", "videos" );
 
 	TEMPER_CHECK_TRUE( string_equals( expected_path, actual_path ) );
 }
@@ -608,7 +611,43 @@ TEMPER_INVOKE_PARAMETRIC_TEST( random_float32_within_range, 0.0f, FLOAT32_MAX );
 ================================================================================================
 */
 
-// TODO(DM): 23/12/2025: the API is fine, just rewrite the tests
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+
+TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) {
+	// load
+#if defined( _WIN32 )
+	const char *filename = "test_dll.dll";
+#else
+	const char *filename = "test_dll.so";
+#endif
+
+	Library library = library_load( filename );
+	TEMPER_CHECK_TRUE( library.ptr != NULL );
+
+	// get symbol
+	{
+		typedef const char * ( *GetDLLNameFunc )( void );
+
+		GetDLLNameFunc get_dll_name_func = cast( GetDLLNameFunc, library_get_symbol( library, "get_dll_name" ) );
+		TEMPER_CHECK_TRUE( get_dll_name_func );
+
+		const char* dll_name = get_dll_name_func();
+
+		TEMPER_CHECK_TRUE( string_equals( dll_name, TEST_DLL_NAME ) );
+	}
+
+	// unload
+	TEMPER_CHECK_TRUE( library_unload( &library ) );
+	TEMPER_CHECK_TRUE( library.ptr == NULL );
+}
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 /*
