@@ -29,7 +29,7 @@ SOFTWARE.
 #pragma once
 
 #include "int_types.h"
-#include "core_array.h"	// DM!!! what do we do about this?
+#include "core_array.h"	// DM!!! is this ok?
 #include "dll_export.h"
 
 struct Process;
