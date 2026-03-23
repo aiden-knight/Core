@@ -50,14 +50,14 @@ struct ThreadBootstrapData {
 static DWORD thread_bootstrap( void *data ) {
 	assert( data );
 
-	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, data );
+	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, data );
 
-	assert( bootstrap_data->thread_func );
-	assert( bootstrap_data->data );
+	assert( bootstrap->thread_func );
+	assert( bootstrap->data );
 
-	s32 thread_return_code = bootstrap_data->thread_func( bootstrap_data->data );
+	s32 exit_code = bootstrap->thread_func( bootstrap->data );
 
-	return cast( DWORD, thread_return_code );
+	return cast( DWORD, exit_code );
 }
 
 Thread thread_create( ThreadFunc thread_func, void *data ) {
@@ -93,12 +93,6 @@ s32 thread_wait( Thread *thread ) {
 	assert( exit_code != WAIT_FAILED );
 
 	return exit_code;
-}
-
-void thread_sleep( const float64 seconds ) {
-	DWORD ms = cast( DWORD, seconds ) * 1000;
-
-	Sleep( ms );
 }
 
 #endif // _WIN32
