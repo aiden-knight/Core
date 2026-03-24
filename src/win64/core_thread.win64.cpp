@@ -42,6 +42,16 @@ SOFTWARE.
 
 #include <Windows.h>
 
+#include <stdio.h>
+#include <malloc.h>
+
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
+#endif
+
 struct ThreadBootstrapData {
 	ThreadFunc	thread_func;
 	void		*data;
@@ -53,20 +63,27 @@ static DWORD thread_bootstrap( void *data ) {
 	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, data );
 
 	assert( bootstrap->thread_func );
-	assert( bootstrap->data );
 
 	s32 exit_code = bootstrap->thread_func( bootstrap->data );
 
-	return cast( DWORD, exit_code );
+	DWORD exit_code_dword = cast( DWORD, exit_code );
+
+	return exit_code_dword;
 }
 
 Thread thread_create( ThreadFunc thread_func, void *data ) {
 	assert( thread_func );
-	assert( data );
+	//assert( data );
 
-	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, data, 0, 0 );
+	// bootstrap data cant be local
+	// could go out of scope by the time the thread actually fires
+	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, malloc( sizeof( ThreadBootstrapData ) ) );
+	bootstrap->thread_func = thread_func;
+	bootstrap->data = data;
 
-	if ( handle == INVALID_HANDLE_VALUE ) {
+	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, bootstrap, 0, 0 );
+
+	if ( handle == NULL ) {
 		return { NULL };
 	}
 
@@ -79,20 +96,32 @@ void thread_destroy( Thread *thread ) {
 
 	// TODO(DM): 03/02/2026: is this expected behaviour user-side?
 	// do we make users do this themselves?
-	thread_wait_for_idle( thread );
+	thread_wait( thread );
 
 	CloseHandle( cast( HANDLE, thread->ptr ) );
 	thread->ptr = NULL;
 }
 
 s32 thread_wait( Thread *thread ) {
+	assert( thread );
+	assert( thread->ptr );
+
 	HANDLE handle = cast( HANDLE, thread->ptr );
 
-	DWORD exit_code = WaitForSingleObjectEx( handle, INFINITE, TRUE );
+	DWORD result = WaitForSingleObjectEx( handle, INFINITE, TRUE );
 
-	assert( exit_code != WAIT_FAILED );
+	assert( result != WAIT_FAILED );
 
-	return exit_code;
+	DWORD exit_code = S32_MAX;
+	if ( !GetExitCodeThread( handle, &exit_code ) ) {
+		// TODO(DM): 24/03/2026: handle errors etc.
+	}
+
+	return trunc_cast( s32, exit_code );
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 #endif // _WIN32
