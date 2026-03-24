@@ -1,5 +1,6 @@
 bin
 clang
 .builder
+.zed
 
 visual_studio
