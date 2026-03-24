@@ -43,6 +43,7 @@ SOFTWARE.
 #include "../include/string_builder.h"
 #include "../include/library.h"
 #include "../include/temp_storage.h"
+#include "../include/core_thread.h"
 
 #include "../include/core_array.inl"
 #include <cmath>
@@ -867,6 +868,35 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
+
+
+/*
+================================================================================================
+
+	Threads
+
+================================================================================================
+*/
+
+static s32 thread_func( void* data ) {
+	unused( data );
+
+	return 69;
+}
+
+TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
+	Thread thread = thread_create( thread_func, NULL );
+
+	TEMPER_CHECK_TRUE( thread.ptr != NULL );
+
+	s32 exit_code = thread_wait( &thread );
+
+	TEMPER_CHECK_TRUE( exit_code == 69 );
+
+	thread_destroy( &thread );
+
+	TEMPER_CHECK_TRUE( thread.ptr == NULL );
+}
 
 
 /*
