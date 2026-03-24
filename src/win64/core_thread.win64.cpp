@@ -77,6 +77,8 @@ Thread thread_create( ThreadFunc thread_func, void *data ) {
 
 	// bootstrap data cant be local
 	// could go out of scope by the time the thread actually fires
+	// TODO(DM): 24/03/2026: do we just pass allocator here so people can specify what allocator this goes on to?
+	// if NULL allocator then just malloc?
 	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, malloc( sizeof( ThreadBootstrapData ) ) );
 	bootstrap->thread_func = thread_func;
 	bootstrap->data = data;
