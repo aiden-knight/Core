@@ -35,7 +35,7 @@ SOFTWARE.
 #include <defer.h>
 #include <temp_storage.h>
 #include <typecast.inl>
-#include <paths.inl>
+#include <paths.h>
 #include <core_array.inl>
 #include <core_string.h>
 
@@ -61,6 +61,8 @@ SOFTWARE.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wc++20-designator"
+#pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
 #endif
 
 static File open_file_internal( const char *filename, const DWORD access_flags, const DWORD creation_disposition ) {
@@ -270,7 +272,7 @@ bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, con
 	assert( path );
 	assert( visit_callback );
 
-	Array<const char * directories;	// TODO(DM): 02/10/2025: allocate this on temp storage
+	Array<const char *> directories;	// TODO(DM): 02/10/2025: allocate this on temp storage
 	directories.add( path );
 
 	u32 dir_index = 0;
@@ -296,9 +298,9 @@ bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, con
 
 		while ( 1 ) {
 			FileInfo file_info = {
-				.is_directory		= cast( bool8, find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ),
-				.last_write_time	= ( trunc_cast( u64, find_data.ftLastWriteTime.dwHighDateTime ) << 32 ) | find_data.ftLastWriteTime.dwLowDateTime,
 				.size_bytes			= ( trunc_cast( u64, find_data.nFileSizeHigh ) << 32 ) | find_data.nFileSizeLow,
+				.last_write_time	= ( trunc_cast( u64, find_data.ftLastWriteTime.dwHighDateTime ) << 32 ) | find_data.ftLastWriteTime.dwLowDateTime,
+				.is_directory		= cast( bool8, find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ),
 				.filename			= find_data.cFileName,
 				.full_filename		= path_join( dir, file_info.filename ),
 			};

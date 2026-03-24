@@ -590,6 +590,11 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 ================================================================================================
 */
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 // TODO(DM): 22/03/2026: add tests here for:
 //	path_app_path()
 //	path_current_working_directory()
@@ -694,6 +699,10 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 
 	TEMPER_CHECK_TRUE( string_equals( expected_path, actual_path ) );
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 /*
@@ -878,6 +887,11 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 ================================================================================================
 */
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
 static s32 thread_func( void* data ) {
 	unused( data );
 
@@ -891,12 +905,17 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 
 	s32 exit_code = thread_wait( &thread );
 
-	TEMPER_CHECK_TRUE( exit_code == 69 );
+	s32 expected_exit_code = 69;
+	TEMPER_CHECK_TRUE_M( exit_code == expected_exit_code, "Thread was expected to return with exit code %d actually returned with %d.\n", expected_exit_code, exit_code );
 
 	thread_destroy( &thread );
 
 	TEMPER_CHECK_TRUE( thread.ptr == NULL );
 }
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
 
 
 /*
@@ -963,6 +982,12 @@ int main( int argc, char **argv ) {
 	TEMPER_RUN( argc, argv );
 
 	int exitCode = TEMPER_GET_EXIT_CODE();
+
+#if _DEBUG
+	if ( exitCode != 0 ) {
+		debug_break();
+	}
+#endif
 
 	return exitCode;
 }
