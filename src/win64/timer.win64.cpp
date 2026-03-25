@@ -41,6 +41,11 @@ SOFTWARE.
 
 #include <Windows.h>
 
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#endif
+
 /*
 ================================================================================================
 
@@ -81,5 +86,9 @@ float64 time_ns( void ) {
 }
 
 #pragma clang diagnostic pop
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif
 
 #endif // _WIN32

@@ -31,6 +31,7 @@ SOFTWARE.
 
 #include <debug.h>
 #include <typecast.inl>
+#include <core_helpers.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
 	#define WIN32_LEAN_AND_MEAN
@@ -50,6 +51,7 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wc++98-compat"
 #pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
 struct ThreadBootstrapData {
@@ -113,6 +115,7 @@ s32 thread_wait( Thread *thread ) {
 	DWORD result = WaitForSingleObjectEx( handle, INFINITE, TRUE );
 
 	assert( result != WAIT_FAILED );
+	unused( result );
 
 	DWORD exit_code = S32_MAX;
 	if ( !GetExitCodeThread( handle, &exit_code ) ) {

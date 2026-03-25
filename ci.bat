@@ -1,17 +1,17 @@
 @echo off
 
-builder.exe build.cpp --config=win64-debug-suc
+builder.exe build.cpp --config=tests
 echo ----------------------------------------------------------------
 echo.
 
-builder.exe build.cpp --config=win64-release-suc
+.\\bin\\debug\\core-tests.exe
 echo ----------------------------------------------------------------
 echo.
 
-builder.exe build.cpp --config=win64-debug-non-suc
+builder.exe build.cpp --config=tests --release
 echo ----------------------------------------------------------------
 echo.
 
-builder.exe build.cpp --config=win64-release-non-suc
+.\\bin\\release\\core-tests.exe
 echo ----------------------------------------------------------------
 echo.

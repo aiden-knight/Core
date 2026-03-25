@@ -59,6 +59,12 @@ struct File {
 	u64		offset;
 };
 
+enum FileVisitFlags {
+	FILE_VISIT_RECURSIVE	= bit( 0 ),
+	FILE_VISIT_FILES		= bit( 1 ),
+	FILE_VISIT_FOLDERS		= bit( 2 ),
+};
+
 // TODO(DM): 05/10/2025: support for symlinks
 struct FileInfo {
 	u64			size_bytes;
@@ -134,7 +140,7 @@ CORE_API bool8	file_get_last_write_time( const char *filename, u64 *out_last_wri
 // For each file found, 'visit_callback' gets called.
 // If 'visit_folders' is true then 'visit_callback' will also fire for each folder that gets visited.
 // 'user_data' can be NULL.
-CORE_API bool8	file_get_all_files_in_folder( const char *path, const bool8 recursive, const bool8 visit_folders, FileVisitCallback visit_callback, void *user_data );
+CORE_API bool8	file_get_all_files_in_folder( const char *path, const FileVisitFlags visit_flags, FileVisitCallback visit_callback, void *user_data );
 
 // Returns true if the file actually exists on the file system, otherwise returns false.
 CORE_API bool8	file_exists( const char *filename );

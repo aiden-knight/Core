@@ -64,40 +64,77 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 
 
 	//
+	// core
+	//
+	BuildConfig core = {
+		.name				= "core",
+		.binaryType			= BINARY_TYPE_DYNAMIC_LIBRARY,
+		.intermediateFolder	= "intermediate",
+		.binaryName			= "core",
+		.sourceFiles		= { "src/*.cpp" },
+		.defines			= { "CORE_EXPORTS" },
+		.additionalIncludes = { "include" },
+		.additionalLibs		= { "Shlwapi.lib" },
+		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
+		.warningsAsErrors	= true,
+	};
+
+	if ( HasCommandLineArg( args, "--release" ) ) {
+		core.optimizationLevel = OPTIMIZATION_LEVEL_O3;
+		core.binaryFolder = "bin/release";
+		core.defines.push_back( "NDEBUG" );
+#ifdef _WIN32
+		core.additionalLibs.push_back( "msvcrt.lib" );
+#endif
+	} else {
+		core.binaryFolder = "bin/debug";
+		core.defines.push_back( "_DEBUG" );
+#ifdef _WIN32
+		core.additionalLibs.push_back( "msvcrtd.lib" );
+#endif
+	}
+
+	AddBuildConfig( options, &core );
+
+
+	//
 	// tests
 	//
 	BuildConfig tests = {
 		.name				= "tests",
-		.languageVersion	= LANGUAGE_VERSION_CPP20,
-		.dependsOn			= { testDLL },
+		.dependsOn			= { core, testDLL },
 		.intermediateFolder	= "intermediate",
 		.binaryName			= "core-tests",
-		.sourceFiles		= { "tests/tests.cpp", "src/*.cpp" },
+		.sourceFiles		= { "tests/tests.cpp" },
 		.defines			= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS" },
 		.additionalIncludes	= { "include" },
-#if defined( _WIN32 )
-		.additionalLibs		= { "DbgHelp.lib", "Shlwapi.lib" },
-#elif defined( __linux__ )
-		.additionalLibs		= { "stdc++" },
-#endif
+		.additionalLibs		= { "core" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings		= { "-Wno-switch-default" },
 		.warningsAsErrors	= true
 	};
 
+#if defined( _WIN32 )
+	tests.additionalLibs.push_back( "DbgHelp.lib" );
+#elif defined( __linux__ )
+	tests.additionalLibs.push_back( "stdc++" );
+#endif
+
 	if ( HasCommandLineArg( args, "--release" ) ) {
 		tests.optimizationLevel = OPTIMIZATION_LEVEL_O3;
 		tests.binaryFolder = "bin/release";
 		tests.defines.push_back( "NDEBUG" );
-#ifdef _WIN32
-		tests.additionalLibs.push_back( "msvcrt.lib" );
-#endif
+		tests.additionalLibPaths.push_back( "bin/release" );
+//#ifdef _WIN32
+//		tests.additionalLibs.push_back( "msvcrt.lib" );
+//#endif
 	} else {
 		tests.binaryFolder = "bin/debug";
 		tests.defines.push_back( "_DEBUG" );
-#ifdef _WIN32
-		tests.additionalLibs.push_back( "msvcrtd.lib" );
-#endif
+		tests.additionalLibPaths.push_back( "bin/debug" );
+//#ifdef _WIN32
+//		tests.additionalLibs.push_back( "msvcrtd.lib" );
+//#endif
 	}
 
 	AddBuildConfig( options, &tests );
@@ -113,11 +150,19 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.projects = {
 			{
 				.name = "core",
-				.codeFolders = { "src", "include", "tests" },
+				.codeFolders = { "src", "include" },
+				.configs = {
+					{ "debug",   core,  {             }, { /* debugger arguments */ } },
+					{ "release", core,  { "--release" }, { /* debugger arguments */ } },
+				},
+			},
+
+			{
+				.name = "tests",
 				.configs = {
 					{ "debug",   tests, {             }, { /* debugger arguments */ } },
-					{ "release", tests, { "--release" }, { /* debugger arguments */ } }
-				}
+					{ "release", tests, { "--release" }, { /* debugger arguments */ } },
+				},
 			},
 		},
 	};

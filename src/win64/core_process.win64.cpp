@@ -62,6 +62,7 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
 #pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
 struct Process {
@@ -196,6 +197,7 @@ s32 process_join( Process* process ) {
 	BOOL got_exit_code = GetExitCodeProcess( process->process_info.hProcess, &exit_code );
 
 	assert( got_exit_code );
+	unused( got_exit_code );
 
 	return trunc_cast( s32, exit_code );
 }

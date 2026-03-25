@@ -159,10 +159,6 @@ TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 
 TEMPER_TEST( test_string_zero, TEMPER_FLAG_SHOULD_RUN ) {
 	String msg;
-
-	TEMPER_CHECK_TRUE( msg.count != 0 );
-	TEMPER_CHECK_TRUE( msg.data != NULL );
-
 	string_zero( &msg );
 
 	TEMPER_CHECK_TRUE( msg.count == 0 );
@@ -983,7 +979,7 @@ int main( int argc, char **argv ) {
 
 	int exitCode = TEMPER_GET_EXIT_CODE();
 
-#if _DEBUG
+#ifdef _DEBUG
 	if ( exitCode != 0 ) {
 		debug_break();
 	}

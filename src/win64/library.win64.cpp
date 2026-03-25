@@ -55,6 +55,7 @@ SOFTWARE.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
 Library library_load( const char *name ) {

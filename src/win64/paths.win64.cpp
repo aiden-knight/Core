@@ -61,6 +61,7 @@ SOFTWARE.
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
+#pragma clang diagnostic ignored "-Wold-style-cast"
 #endif
 
 const char *path_app_path() {
@@ -105,6 +106,7 @@ const char *path_canonicalise( const char *path ) {
 
 	BOOL success = PathCanonicalizeA( result, path_copy );
 	assert( success );
+	unused( success );
 
 	result[max_path_length - 1] = 0;
 
