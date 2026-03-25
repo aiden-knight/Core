@@ -32,6 +32,11 @@ SOFTWARE.
 #include "core_array.h"	// DM!!! is this ok?
 #include "dll_export.h"
 
+#ifdef __clang__
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
+#endif
+
 struct Process;
 
 enum ProcessFlagBits {
@@ -48,3 +53,7 @@ CORE_API void		process_destroy( Process *process );
 CORE_API s32		process_join( Process *process );
 
 CORE_API u32		process_read_stdout( Process *process, char *out_buffer, const u32 count );
+
+#ifdef __clang__
+#pragma clang diagnostic pop
+#endif
