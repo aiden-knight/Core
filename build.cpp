@@ -50,13 +50,13 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		testDLL.binaryFolder = "bin/release";
 		testDLL.defines.push_back( "NDEBUG" );
 #ifdef _WIN32
-		testDLL.additionalLibs.push_back( "msvcrt.lib" );
+		testDLL.additionalLibs.push_back( "msvcrt" );
 #endif
 	} else {
 		testDLL.binaryFolder = "bin/debug";
 		testDLL.defines.push_back( "_DEBUG" );
 #ifdef _WIN32
-		testDLL.additionalLibs.push_back( "msvcrtd.lib" );
+		testDLL.additionalLibs.push_back( "msvcrtd" );
 #endif
 	}
 
@@ -74,7 +74,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.sourceFiles		= { "src/*.cpp" },
 		.defines			= { "CORE_EXPORTS" },
 		.additionalIncludes = { "include" },
-		.additionalLibs		= { "Shlwapi.lib" },
+		.additionalLibs		= { "Shlwapi" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.warningsAsErrors	= true,
 	};
@@ -84,13 +84,13 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		core.binaryFolder = "bin/release";
 		core.defines.push_back( "NDEBUG" );
 #ifdef _WIN32
-		core.additionalLibs.push_back( "msvcrt.lib" );
+		core.additionalLibs.push_back( "msvcrt" );
 #endif
 	} else {
 		core.binaryFolder = "bin/debug";
 		core.defines.push_back( "_DEBUG" );
 #ifdef _WIN32
-		core.additionalLibs.push_back( "msvcrtd.lib" );
+		core.additionalLibs.push_back( "msvcrtd" );
 #endif
 	}
 
@@ -115,7 +115,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 	};
 
 #if defined( _WIN32 )
-	tests.additionalLibs.push_back( "DbgHelp.lib" );
+	tests.additionalLibs.push_back( "DbgHelp" );
 #elif defined( __linux__ )
 	tests.additionalLibs.push_back( "stdc++" );
 #endif
@@ -126,14 +126,14 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		tests.defines.push_back( "NDEBUG" );
 		tests.additionalLibPaths.push_back( "bin/release" );
 //#ifdef _WIN32
-//		tests.additionalLibs.push_back( "msvcrt.lib" );
+//		tests.additionalLibs.push_back( "msvcrt" );
 //#endif
 	} else {
 		tests.binaryFolder = "bin/debug";
 		tests.defines.push_back( "_DEBUG" );
 		tests.additionalLibPaths.push_back( "bin/debug" );
 //#ifdef _WIN32
-//		tests.additionalLibs.push_back( "msvcrtd.lib" );
+//		tests.additionalLibs.push_back( "msvcrtd" );
 //#endif
 	}
 
