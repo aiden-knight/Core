@@ -83,10 +83,14 @@ static File open_file_internal( const char *filename, const DWORD access_flags, 
 
 //================================================================
 
-File file_open( const char *filename ) {
+File file_open( const char *filename, const FileAccessFlags access_flags ) {
 	assert( filename );
 
-	return open_file_internal( filename, GENERIC_READ | GENERIC_WRITE, OPEN_EXISTING );
+	DWORD access_flags_win = 0;
+	if ( access_flags & FILE_ACCESS_READ )  access_flags_win |= GENERIC_READ;
+	if ( access_flags & FILE_ACCESS_WRITE ) access_flags_win |= GENERIC_WRITE;
+
+	return open_file_internal( filename, access_flags_win, OPEN_EXISTING );
 }
 
 File file_open_or_create( const char *filename, const bool8 keep_existing_content ) {
@@ -273,7 +277,8 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 	assert( path );
 	assert( visit_callback );
 
-	Array<const char *> directories;	// TODO(DM): 02/10/2025: allocate this on temp storage
+	Array<const char *> directories;
+	directories.init( g_temp_storage );
 	directories.add( path );
 
 	u32 dir_index = 0;

@@ -31,6 +31,8 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+struct LinearAllocator;
+
 /*
 ================================================================================================
 
@@ -38,18 +40,19 @@ SOFTWARE.
 
 	Container type used to hold a contiguous block of text.
 
-	This string type only calls realloc() when making the string hold a larger piece of text,
-	but unlike std::strings, Core Strings can't be appended or resized.  If you want to do
+	Unlike std::strings, Core Strings can't be appended or resized.  If you want to do
 	that, use StringBuilder.
 
 ================================================================================================
 */
 
 struct String {
+	LinearAllocator			*allocator;
 	char					*data;
 	u64						count;
 };
 
+CORE_API void				string_init( String *out_str, LinearAllocator *allocator );
 CORE_API void				string_zero( String *out_str );
 
 CORE_API void				string_printf( String *out_str, const char *fmt, ... );

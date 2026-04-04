@@ -31,9 +31,9 @@ SOFTWARE.
 #include "core_array.h"
 
 #include "core_math.h"
+#include "linear_allocator.h"
 #include "typecast.inl"
 
-#include <malloc.h>
 #include <memory.h>
 
 #if defined( __clang__ )
@@ -45,19 +45,21 @@ SOFTWARE.
 #endif
 
 template<class T>
-void Array<T>::zero() {
+void Array<T>::init( LinearAllocator *alloc ) {
+	allocator = alloc;
 	data = NULL;
 	count = 0;
 	alloced = 0;
 }
 
 template<class T>
-void Array<T>::free() {
-	if ( data ) {
-		::free( data );
-		data = NULL;
-	}
+void Array<T>::zero() {
+	allocator = NULL;
+	data = NULL;
+	count = 0;
+	alloced = 0;
 }
+
 
 template<class T>
 void Array<T>::reset() {
@@ -84,11 +86,15 @@ void Array<T>::add_range( const Array<T> *array ) {
 }
 
 template<class T>
-void Array<T>::reserve( const u64 bytes ) {
-	if ( bytes > alloced ) {
-		alloced = next_power_of_2_up( bytes );
+void Array<T>::reserve( const u64 new_alloced ) {
+	if ( new_alloced > alloced ) {
+		alloced = next_power_of_2_up( new_alloced );
 
-		data = cast( T*, realloc( data, alloced * sizeof( T ) ) );
+		T *new_data = cast( T*, linear_allocator_alloc( allocator, alloced * sizeof( T ) ) );
+		if ( count > 0 ) {
+			memcpy( new_data, data, count * sizeof( T ) );
+		}
+		data = new_data;
 	}
 }
 

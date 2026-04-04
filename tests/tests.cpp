@@ -145,17 +145,19 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
+#endif
+
 TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 	String msg = {};
 
 	TEMPER_CHECK_TRUE( msg.count == 0 );
 	TEMPER_CHECK_TRUE( msg.data == NULL );
 }
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
 
 TEMPER_TEST( test_string_zero, TEMPER_FLAG_SHOULD_RUN ) {
 	String msg;
@@ -165,12 +167,12 @@ TEMPER_TEST( test_string_zero, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( msg.data == NULL );
 }
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
 TEMPER_TEST_PARAMETRIC( test_string_copy_from_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
 	String msg = {};
+	string_init( &msg, allocator );
 	string_copy_from_c_string( &msg, str );
 
 	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
@@ -181,16 +183,16 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "this is only a t
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "." );
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
-
 TEMPER_TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
 	String msg = {};
+	string_init( &msg, allocator );
 	string_copy_from_c_string( &msg, str );
 
 	String actual_copy = {};
+	string_init( &actual_copy, allocator );
 	string_copy( &actual_copy, &msg );
 
 	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, str ) );
@@ -199,10 +201,6 @@ TEMPER_TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *st
 	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, msg.data ) );
 	TEMPER_CHECK_TRUE( actual_copy.count == msg.count );
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "A" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "This is a test" );
@@ -254,6 +252,10 @@ TEMPER_TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", ' ', '_', "this_is_only_a_test" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 't', 'T', "This is only a TesT" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 'x', "thix ix only a text" );
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif
 
 
 /*
@@ -474,8 +476,11 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	}
 
 	// get a bunch of random hashes and grab the results
+	LinearAllocator *probe_allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( probe_allocator ); };
+
 	Array<u32> linear_probe_length = {};
-	defer { linear_probe_length.free(); };
+	linear_probe_length.init( probe_allocator );
 
 	linear_probe_length.reserve( intended_fill );
 

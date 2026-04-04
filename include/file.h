@@ -48,6 +48,7 @@ SOFTWARE.
 
 #if defined( __clang__ )
 #pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
 #pragma clang diagnostic ignored "-Wpadded"
 #endif
@@ -65,6 +66,12 @@ enum FileVisitFlags {
 	FILE_VISIT_FOLDERS		= bit( 2 ),
 };
 
+enum FileAccessFlagBits {
+	FILE_ACCESS_READ	= bit( 0 ),
+	FILE_ACCESS_WRITE	= bit( 1 ),
+};
+typedef u32 FileAccessFlags;
+
 // TODO(DM): 05/10/2025: support for symlinks
 struct FileInfo {
 	u64			size_bytes;
@@ -77,8 +84,8 @@ struct FileInfo {
 typedef void ( *FileVisitCallback )( const FileInfo *file_info, void *user_data );
 
 
-// Opens the file for reading and writing.
-CORE_API File	file_open( const char *filename );
+// Opens the file with the specified access flags.
+CORE_API File	file_open( const char *filename, const FileAccessFlags access_flags = FILE_ACCESS_READ | FILE_ACCESS_WRITE );
 
 // If the file exists then opens it for reading and writing, otherwise creates it and then opens it.
 CORE_API File	file_open_or_create( const char *filename, const bool8 keep_existing_content = false );

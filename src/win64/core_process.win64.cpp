@@ -34,6 +34,8 @@ SOFTWARE.
 #include <string_builder.h>
 #include <core_array.inl>
 #include <core_helpers.h>
+#include <linear_allocator.h>
+#include <temp_storage.h>
 #include <defer.h>
 
 #ifndef WIN32_LEAN_AND_MEAN
@@ -72,13 +74,14 @@ struct Process {
 	HANDLE				event_stdout;
 };
 
-Process* process_create( Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags ) {
+Process* process_create( LinearAllocator *allocator, Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags ) {
+	assert( allocator );
 	assert( args );
 	assert( args->count > 0 );
 
 	unused( environment_variables );
 
-	Process *process = cast( Process *, malloc( sizeof( Process ) ) );
+	Process *process = cast( Process *, linear_allocator_alloc( allocator, sizeof( Process ) ) );
 
 	SECURITY_ATTRIBUTES sec_attr = { sizeof( SECURITY_ATTRIBUTES ), NULL, TRUE };
 
@@ -105,7 +108,7 @@ Process* process_create( Array<const char *> *args, Array<const char *> *environ
 		combined_args_length += args->count - 1;	// one space between each argument
 		combined_args_length += 1;					// null terminator
 
-		combined_args = cast( char *, malloc( combined_args_length * sizeof( char ) ) );
+		combined_args = cast( char *, mem_temp_alloc( combined_args_length * sizeof( char ) ) );
 
 		For ( u64, arg_index, 0, args->count ) {
 			const char *arg = ( *args )[arg_index];
@@ -120,7 +123,6 @@ Process* process_create( Array<const char *> *args, Array<const char *> *environ
 		}
 		combined_args[combined_args_length - 1] = 0;
 	}
-	defer { free( combined_args ); };
 
 	if ( flags & PROCESS_FLAG_ASYNC ) {
 		process->event_stdout = CreateEvent( &sec_attr, 1, 1, NULL );
@@ -180,9 +182,6 @@ void process_destroy( Process* process ) {
 		CloseHandle( process->event_stdout );
 		process->event_stdout = NULL;
 	}
-
-	free( process );
-	process = NULL;
 }
 
 s32 process_join( Process* process ) {

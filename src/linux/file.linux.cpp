@@ -34,6 +34,7 @@ SOFTWARE.
 #include <core_array.inl>
 #include <defer.h>
 #include <core_string.h>
+#include <temp_storage.h>
 
 #include <unistd.h>
 #include <fcntl.h>
@@ -69,10 +70,19 @@ static File open_file_internal( const char *filename, int flags ) {
 	return { trunc_cast( u64, handle ), 0 };
 }
 
-File file_open( const char *filename ) {
+File file_open( const char *filename, const FileAccessFlags access_flags ) {
 	assert( filename );
 
-	return open_file_internal( filename, O_RDWR );
+	int access_flags_linux;
+	if ( ( access_flags & FILE_ACCESS_READ ) && ( access_flags & FILE_ACCESS_WRITE ) ) {
+		access_flags_linux = O_RDWR;
+	} else if ( access_flags & FILE_ACCESS_WRITE ) {
+		access_flags_linux = O_WRONLY;
+	} else {
+		access_flags_linux = O_RDONLY;
+	}
+
+	return open_file_internal( filename, access_flags_linux );
 }
 
 File file_open_or_create( const char *filename, const bool8 keep_existing_content ) {
@@ -200,6 +210,7 @@ bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, con
 	assert( visit_callback );
 
 	Array<const char *> directories;
+	directories.init( g_temp_storage );
 	directories.add( path );
 
 	u32 dir_index = 0;

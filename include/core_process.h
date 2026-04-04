@@ -32,6 +32,8 @@ SOFTWARE.
 #include "core_array.h"	// DM!!! is this ok?
 #include "dll_export.h"
 
+struct LinearAllocator;
+
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
@@ -46,7 +48,7 @@ enum ProcessFlagBits {
 typedef u32 ProcessFlags;
 
 
-CORE_API Process	*process_create( Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags );
+CORE_API Process	*process_create( LinearAllocator *allocator, Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags );
 
 CORE_API void		process_destroy( Process *process );
 

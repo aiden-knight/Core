@@ -30,25 +30,28 @@ SOFTWARE.
 
 #include "int_types.h"
 
+struct LinearAllocator;
+
 template<class T>
 struct Array {
-	T			*data;
-	u64			count;
-	u64			alloced;
+	LinearAllocator	*allocator;
+	T				*data;
+	u64				count;
+	u64				alloced;
 
-	void		zero();
-	void		free();
+	void			init( LinearAllocator *alloc );
+	void			zero();
 
-	void		reset();
+	void			reset();
 
-	void		add( const T &element );
-	void		add_range( const T *ptr, const u64 count );
-	void		add_range( const Array<T> *array );
+	void			add( const T &element );
+	void			add_range( const T *ptr, const u64 count );
+	void			add_range( const Array<T> *array );
 
-	void		reserve( const u64 new_alloced );
+	void			reserve( const u64 new_alloced );
 
-	void		resize( const u64 count );
+	void			resize( const u64 count );
 
-	T			&operator[]( const u64 index );
-	const T		&operator[]( const u64 index ) const;
+	T				&operator[]( const u64 index );
+	const T			&operator[]( const u64 index ) const;
 };

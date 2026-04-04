@@ -33,11 +33,11 @@ SOFTWARE.
 #include <defer.h>
 #include <core_helpers.h>
 
+#include <linear_allocator.h>
+
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
-#include <malloc.h>
-#include <stdlib.h>
 
 #if defined( __clang__ )
 #pragma clang diagnostic push
@@ -54,7 +54,9 @@ SOFTWARE.
 
 static void string_realloc_internal( String *out_str, const u64 length ) {
 	if ( length > out_str->count ) {
-		out_str->data = cast( char *, realloc( out_str->data, length * sizeof( char ) ) );
+		char *new_data = cast( char *, linear_allocator_alloc( out_str->allocator, length * sizeof( char ) ) );
+		memcpy( new_data, out_str->data, out_str->count * sizeof( char ) );
+		out_str->data = new_data;
 	}
 }
 
@@ -66,7 +68,14 @@ static void string_realloc_internal( String *out_str, const u64 length ) {
 ================================================================================================
 */
 
+void string_init( String *out_str, LinearAllocator *allocator ) {
+	out_str->allocator = allocator;
+	out_str->data = NULL;
+	out_str->count = 0;
+}
+
 void string_zero( String *out_str ) {
+	out_str->allocator = NULL;
 	out_str->data = NULL;
 	out_str->count = 0;
 }
