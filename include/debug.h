@@ -40,9 +40,9 @@ SOFTWARE.
 #include <assert.h>
 
 #ifdef _WIN32
-	#define debug_break			__debugbreak
+	#define debug_break		__debugbreak
 #elif defined(__linux__)
-	#define debug_break()		__builtin_trap()
+	#define debug_break()	__builtin_trap()
 #else
 	#error Unrecognised platform!
 #endif
