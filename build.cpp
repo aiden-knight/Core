@@ -72,7 +72,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.intermediateFolder	= "intermediate",
 		.binaryName			= "core",
 		.sourceFiles		= { "src/*.cpp" },
-		.defines			= { "CORE_EXPORTS" },
+		.defines			= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
 		.additionalIncludes = { "include" },
 		.additionalLibs		= { "Shlwapi" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
