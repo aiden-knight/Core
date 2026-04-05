@@ -51,13 +51,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 Library library_load( const char *name ) {
 	assert( name );
 
@@ -84,9 +77,5 @@ void* library_get_symbol( const Library library, const char *symbol_name ) {
 
 	return cast( void *, symbol );
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

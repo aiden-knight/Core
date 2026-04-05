@@ -39,11 +39,6 @@ SOFTWARE.
 	#define NOMINMAX
 #endif
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
-
 #include <Windows.h>
 
 void *virtual_reserve( const u64 size_bytes ) {
@@ -66,9 +61,5 @@ void virtual_decommit( void *ptr, const u64 size_bytes ) {
 void virtual_free( void *ptr ) {
 	VirtualFree( ptr, 0, MEM_RELEASE );
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

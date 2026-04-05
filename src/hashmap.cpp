@@ -45,15 +45,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wdouble-promotion"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 Hashmap *hashmap_create( const u32 starting_capacity, float32 normalized_max_utilisation, bool8 should_grow ) {
 	assert( starting_capacity );
 	assert( normalized_max_utilisation > 0.0f );
@@ -220,7 +211,3 @@ u32 hashmap_internal_get_lo_part( const u64 key ) {
 u32 hashmap_internal_get_hi_part( const u64 key ) {
 	return trunc_cast( u32, key & 0xFFFFFFFF );
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

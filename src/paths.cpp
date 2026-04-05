@@ -38,15 +38,6 @@ SOFTWARE.
 #include <stdarg.h>
 #include <string.h>
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
-
 static const char *get_last_slash( const char *path ) {
 	const char *last_slash = NULL;
 	const char *last_back_slash = strrchr( path, '\\' );
@@ -135,7 +126,3 @@ const char *path_join_internal( const int count, ... ) {
 
 	return result;
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

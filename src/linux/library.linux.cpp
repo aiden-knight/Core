@@ -44,12 +44,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
-#endif
-
 Library library_load( const char *name ) {
 	return Library {
 		.ptr = dlopen( name, RTLD_LAZY ),
@@ -77,9 +71,5 @@ void *library_get_symbol( const Library library, const char *symbol_name ) {
 
 	return dlsym( library.ptr, symbol_name );
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // __linux__

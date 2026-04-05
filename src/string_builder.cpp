@@ -45,16 +45,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 void string_builder_reset( StringBuilder *builder ) {
 	assert( builder );
 
@@ -172,7 +162,3 @@ const char* string_builder_to_string( StringBuilder *builder ) {
 
 	return result;
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

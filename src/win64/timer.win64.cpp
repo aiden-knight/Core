@@ -41,11 +41,6 @@ SOFTWARE.
 
 #include <Windows.h>
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 /*
 ================================================================================================
 
@@ -66,9 +61,6 @@ s64 time_cycles( void ) {
 	return now.QuadPart;
 }
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
-
 float64 time_seconds( void ) {
 	return cast( float64, time_cycles() ) / cast( float64, get_frequency() );
 }
@@ -84,11 +76,5 @@ float64 time_us( void ) {
 float64 time_ns( void ) {
 	return cast( float64, time_cycles() * 1000000000 ) / get_frequency();
 }
-
-#pragma clang diagnostic pop
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

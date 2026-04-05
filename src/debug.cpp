@@ -31,12 +31,6 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdarg.h>
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
-
 void warning( const char *fmt, ... ) {
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
 
@@ -76,6 +70,3 @@ void fatal_error( const char *fmt, ... ) {
 	va_end( args );
 }
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

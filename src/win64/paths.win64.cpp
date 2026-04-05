@@ -57,13 +57,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 const char *path_app_path() {
 	char *app_full_path = cast( char *, mem_temp_alloc( MAX_PATH * sizeof( char ) ) );
 	GetModuleFileNameA( NULL, app_full_path, MAX_PATH );
@@ -153,9 +146,5 @@ bool8 path_set_current_directory( const char *path ) {
 
 	return cast( bool8, SetCurrentDirectory( path ) );
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

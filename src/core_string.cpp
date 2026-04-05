@@ -39,19 +39,6 @@ SOFTWARE.
 #include <stdarg.h>
 #include <string.h>
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#pragma clang diagnostic ignored "-Wc++20-designator"
-#pragma clang diagnostic ignored "-Wreorder-init-list"
-#pragma clang diagnostic ignored "-Wformat-nonliteral"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
-
 static void string_realloc_internal( String *out_str, const u64 length ) {
 	if ( length > out_str->count ) {
 		char *new_data = cast( char *, linear_allocator_alloc( out_str->allocator, length * sizeof( char ) ) );
@@ -189,6 +176,3 @@ char *temp_c_string( const char *from, const u64 num_chars ) {
 	return result;
 }
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

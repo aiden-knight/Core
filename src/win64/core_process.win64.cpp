@@ -56,17 +56,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wmissing-field-initializers"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 struct Process {
 	PROCESS_INFORMATION	process_info;
 	HANDLE				stdout_read;
@@ -229,9 +218,5 @@ u32 process_read_stdout( Process *process, char *out_buffer, const u32 count ) {
 
 	return bytes_read;
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

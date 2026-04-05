@@ -46,14 +46,6 @@ SOFTWARE.
 #include <stdio.h>
 #include <malloc.h>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 struct ThreadBootstrapData {
 	ThreadFunc	thread_func;
 	void		*data;
@@ -124,9 +116,5 @@ s32 thread_wait( Thread *thread ) {
 
 	return trunc_cast( s32, exit_code );
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

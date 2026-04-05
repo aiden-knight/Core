@@ -42,12 +42,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wimplicit-int-float-conversion"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 // TODO(DM): how do we get clock cycles on linux?
 // this isnt it!
 s64 time_cycles( void ) {
@@ -74,9 +68,5 @@ float64 time_us( void ) {
 float64 time_ns( void ) {
 	return cast( float64, time_cycles() );
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // __linux__

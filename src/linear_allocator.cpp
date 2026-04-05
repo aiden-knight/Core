@@ -38,14 +38,6 @@ SOFTWARE.
 #include <malloc.h>
 #include <memory.h>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
-
 LinearAllocator *linear_allocator_create( const u64 reserved_bytes ) {
 	assert( reserved_bytes );
 
@@ -106,7 +98,3 @@ void linear_allocator_rewind_to( LinearAllocator *allocator, const u64 offset ) 
 void linear_allocator_rewind_by( LinearAllocator *allocator, const u64 bytes ) {
 	allocator->offset -= bytes;
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif

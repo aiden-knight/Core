@@ -42,11 +42,6 @@ SOFTWARE.
 
 #include <Windows.h>
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wswitch-default"
-#endif
-
 void set_console_text_color( const ConsoleTextColor color ) {
 	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );
 
@@ -69,9 +64,5 @@ void set_console_text_color( const ConsoleTextColor color ) {
 s32 get_last_error_code() {
 	return trunc_cast( s32, GetLastError() );
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

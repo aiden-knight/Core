@@ -52,13 +52,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
-
 static File open_file_internal( const char *filename, int flags ) {
 	assert( filename );
 
@@ -318,9 +311,5 @@ bool8 folder_exists( const char *path ) {
 
 	return false;
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // __linux__

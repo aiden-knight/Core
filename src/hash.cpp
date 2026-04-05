@@ -38,13 +38,6 @@ SOFTWARE.
 #include "xxhash/xxhash.c"
 #pragma clang diagnostic pop
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 /*
 ================================================================================================
 
@@ -102,6 +95,3 @@ u64 hasher_get_hash( Hasher *hasher ) {
 	return XXH64_digest( hasher->state );
 }
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

@@ -57,15 +57,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wc++20-designator"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wpre-c++20-compat-pedantic"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 static File open_file_internal( const char *filename, const DWORD access_flags, const DWORD creation_disposition ) {
 	assert( filename );
 
@@ -378,9 +369,5 @@ bool8 folder_exists( const char *path ) {
 
 	return ( attribs != INVALID_FILE_ATTRIBUTES ) && ( ( attribs & FILE_ATTRIBUTE_DIRECTORY ) != 0 );
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 #endif // _WIN32

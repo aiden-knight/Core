@@ -43,14 +43,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 void file_free_buffer( char **buffer ) {
 	free( *buffer );
 	*buffer = NULL;
@@ -184,7 +176,3 @@ bool8 folder_create_if_it_doesnt_exist( const char *path ) {
 		return result;
 	}
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

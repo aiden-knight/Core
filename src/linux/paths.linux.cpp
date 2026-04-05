@@ -55,13 +55,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wcast-qual"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#endif
-
 const char *path_app_path() {
 	char *result = cast( char *, mem_temp_alloc( PATH_MAX * sizeof( char ) ) );
 	s64 length = readlink( "/proc/self/exe", result, PATH_MAX );
@@ -185,9 +178,5 @@ bool8 path_set_current_directory( const char *path ) {
 
 	return true;
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // __linux__

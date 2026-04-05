@@ -33,11 +33,6 @@ SOFTWARE.
 #include <stdio.h>
 #include <errno.h>
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
-
 void set_console_text_color( const ConsoleTextColor color ) {
 	const char* color_linux = NULL;
 
@@ -61,9 +56,5 @@ s32 get_last_error_code() {
 	int err = errno;
 	return err;
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 #endif // __linux__

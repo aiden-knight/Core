@@ -41,11 +41,6 @@ SOFTWARE.
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
-
 LinearAllocator *g_temp_storage = NULL;
 
 void mem_init_temp_storage( const u64 size_bytes ) {
@@ -64,7 +59,3 @@ void* mem_temp_alloc( const u64 size_bytes, const u32 alignment ) {
 void mem_reset_temp_storage() {
 	linear_allocator_reset( g_temp_storage );
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

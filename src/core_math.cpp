@@ -30,11 +30,6 @@ SOFTWARE.
 
 #include <math.h>
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#endif
-
 bool8 float32_equals( const float32 a, const float32 b ) {
 	return fabsf( a - b ) < 0.0001f;
 }
@@ -67,6 +62,3 @@ u64 next_multiple_of_4_up( const u64 number ) {
 	return ( number + 3 ) & -4ULL;
 }
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
