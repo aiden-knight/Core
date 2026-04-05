@@ -77,3 +77,8 @@ CORE_API u64	next_power_of_2_up( const u64 number );
 
 // Returns the next multiple of 4 that is higher than or equal to 'number'.
 CORE_API u64	next_multiple_of_4_up( const u64 number );
+
+// Returns 'x' rounded up to the next multiple of 'alignment'. 'alignment' must be a power of two.
+inline u64 align_up( const u64 x, const u64 alignment ) {
+	return ( x + ( alignment - 1 ) ) & ~( alignment - 1 );
+}
