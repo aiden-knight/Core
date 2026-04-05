@@ -178,6 +178,21 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_alloc, TEMPER_FLAG_SHOULD_RUN, Lin
 	TEMPER_CHECK_TRUE( string_equals( ptr->msg, thing.msg ) );
 }
 
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator ) {
+	u8 *ptr_before = allocator->ptr;
+	u64 reserved_bytes_before = allocator->reserved_bytes;
+	u64 comitted_bytes_before = allocator->comitted_bytes;
+	u64 virtual_memory_page_size_before = allocator->virtual_memory_page_size;
+
+	linear_allocator_reset( allocator );
+
+	TEMPER_CHECK_TRUE( allocator->offset == 0 );
+	TEMPER_CHECK_TRUE( allocator->ptr == ptr_before );
+	TEMPER_CHECK_TRUE( allocator->reserved_bytes == reserved_bytes_before );
+	TEMPER_CHECK_TRUE( allocator->comitted_bytes == comitted_bytes_before );
+	TEMPER_CHECK_TRUE( allocator->virtual_memory_page_size == virtual_memory_page_size_before );
+}
+
 TEMPER_TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator ) {
 	TEMPER_CHECK_TRUE( *allocator != NULL );
 
@@ -192,6 +207,14 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_create, &g_test_linear_allo
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 1,   "hello"          } );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 2,   "world"          } );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 100, "this is a test" } );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_reset, g_test_linear_allocator );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 256,  "after reset"         } );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 512,  "still going"         } );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 1024, "another one"         } );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 2048, "keeps on allocating" } );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 4096, "last one"            } );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_test_linear_allocator );
 
