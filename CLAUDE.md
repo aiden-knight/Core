@@ -45,6 +45,7 @@ The build produces `core.dll` (the library) and `core-tests.exe` (test runner) a
 
 ### Key Design Patterns
 
+- **POD structs only**: All structs in Core's public API must be Plain Old Data — no constructors, destructors, or virtual functions. RAII is banned.
 - **Arena-first allocation**: There are no `malloc`/`free` calls in the codebase. All allocations go through a `LinearAllocator`. Short-lived allocations use `g_temp_storage` directly; long-lived allocations use a caller-provided `LinearAllocator *`. When adding new code, follow this pattern.
 - **Custom types**: All code uses typedefs from `int_types.h` (`s8`, `u8`, `s16`, `u16`, `s32`, `u32`, `s64`, `u64`, `float32`, `float64`, `bool8`) — never `int`, `float`, etc.
 - **`Array<T>`**: Primary dynamic array container (`core_array.h` / `core_array.inl`). Requires `init(LinearAllocator *)` before use.
@@ -53,7 +54,7 @@ The build produces `core.dll` (the library) and `core-tests.exe` (test runner) a
 - **`Hashmap`**: Open-addressing hash table (`hashmap.h` / `hashmap.cpp`).
 - **`LinearAllocator`**: Stack-based bump allocator — allocate forward, free everything at once.
 - **`TempStorage`**: A global scratch allocator (`g_temp_storage`) backed by a `LinearAllocator`. The per-thread design is not yet implemented.
-- **`defer.h`**: Go-style scope-exit RAII via macros.
+- **`defer.h`**: Go-style scope-exit cleanup via macros. Used internally in implementation files; not part of the public API.
 
 ### Compiler and Warning Settings
 
