@@ -56,6 +56,12 @@ The build produces `core.dll` (the library) and `core-tests.exe` (test runner) a
 - **`TempStorage`**: A global scratch allocator (`g_temp_storage`) backed by a `LinearAllocator`. The per-thread design is not yet implemented.
 - **`defer.h`**: Go-style scope-exit cleanup via macros. Used internally in implementation files; not part of the public API.
 
+### Header Inclusion Rules
+
+Headers in `include/` are only allowed to include `int_types.h` and `dll_export.h`. They must not include any other headers, including other Core headers or standard library headers. Some headers currently violate this rule and need to be fixed. When adding new headers, enforce this strictly.
+
+`.inl` files are exempt from this rule — they are template implementation files meant to be included directly in source files, not traditional headers.
+
 ### Compiler and Warning Settings
 
 Clang is the primary compiler. Warnings are set to `-Wall -Weverything -Wextra -Wpedantic` with `-Werror`. Source files use `#pragma clang diagnostic` blocks to suppress specific intentional violations (e.g., `Wpadded`, `Wzero-as-null-pointer-constant`, `Wc++98-compat-pedantic`).
