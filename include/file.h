@@ -31,10 +31,6 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-// TODO(DM): 20/03/2026: we need this on linux because otherwise NULL isnt defined for some reason
-// can we put this into int_types.h? is something broken?
-#include <stddef.h>
-
 /*
 ================================================================================================
 
