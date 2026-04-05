@@ -40,8 +40,7 @@ SOFTWARE.
 
 	File IO
 
-	Set of basic functions for interacting with Files.  All implementations are OS dependent
-	and nothing uses the CRT.
+	Set of basic functions for interacting with Files.  All implementations are OS dependent.
 
 ================================================================================================
 */
