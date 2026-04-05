@@ -168,12 +168,14 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, Li
 
 TEMPER_TEST_PARAMETRIC( test_linear_allocator_alloc, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const Thing thing ) {
 	u64 offset_before = linear_allocator_tell( allocator );
+	TEMPER_CHECK_TRUE( offset_before == allocator->offset );
 
 	Thing *ptr = cast( Thing *, linear_allocator_alloc( allocator, sizeof( Thing ) ) );
 	*ptr = thing;
 
 	TEMPER_CHECK_TRUE( ptr != NULL );
 	TEMPER_CHECK_TRUE( allocator->offset == align_up( offset_before, 8U ) + sizeof( Thing ) );
+	TEMPER_CHECK_TRUE( linear_allocator_tell( allocator ) == allocator->offset );
 	TEMPER_CHECK_TRUE( ptr->x == thing.x );
 	TEMPER_CHECK_TRUE( string_equals( ptr->msg, thing.msg ) );
 }
@@ -191,6 +193,28 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, Lin
 	TEMPER_CHECK_TRUE( allocator->reserved_bytes == reserved_bytes_before );
 	TEMPER_CHECK_TRUE( allocator->comitted_bytes == comitted_bytes_before );
 	TEMPER_CHECK_TRUE( allocator->virtual_memory_page_size == virtual_memory_page_size_before );
+}
+
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_rewind_to, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const u64 alloc_size ) {
+	u64 offset_before = allocator->offset;
+
+	linear_allocator_alloc( allocator, alloc_size );
+
+	linear_allocator_rewind_to( allocator, offset_before );
+
+	TEMPER_CHECK_TRUE( allocator->offset == offset_before );
+}
+
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_rewind_by, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const u64 alloc_size ) {
+	u64 offset_before = allocator->offset;
+
+	linear_allocator_alloc( allocator, alloc_size );
+
+	u64 offset_after = allocator->offset;
+
+	linear_allocator_rewind_by( allocator, offset_after - offset_before );
+
+	TEMPER_CHECK_TRUE( allocator->offset == offset_before );
 }
 
 TEMPER_TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator ) {
@@ -215,6 +239,14 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_alloca
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 1024, "another one"         } );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 2048, "keeps on allocating" } );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 4096, "last one"            } );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_to, g_test_linear_allocator, 64 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_to, g_test_linear_allocator, 128 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_to, g_test_linear_allocator, 256 );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_by, g_test_linear_allocator, 32 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_by, g_test_linear_allocator, 96 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_by, g_test_linear_allocator, 512 );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_test_linear_allocator );
 
