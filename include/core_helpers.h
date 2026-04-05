@@ -53,17 +53,11 @@ SOFTWARE.
 // reverse for loop helper macro
 #define RFor( Type, it, start, count )	for ( Type it = (count); it-- > (start); )
 
-// returns the amount of padding required to align x up to the next aligned address
-// TODO(DM): 23/12/2025:
-//	make this into a real function
-//	does this want to be here or in core_math.h?
-#define padding_up( x, alignment )		( (alignment) - 1 ) & ~( (alignment) - 1 )
-
 // returns the input 'x' that has been aligned up by 'alignment' to the next largest value, in bytes
 // TODO(DM): 23/12/2025:
 //	make this into a real function
 //	does this want to be here or in core_math.h?
-#define align_up( x, alignment )		( (x) + padding_up( x, alignment ) )
+#define align_up( x, alignment )		( ( (x) + ( (alignment) - 1 ) ) & ~( (alignment) - 1 ) )
 
 // memory conversion helpers
 #define MEM_KILOBYTES( x )	( cast( u64, (x) ) * 1000 )

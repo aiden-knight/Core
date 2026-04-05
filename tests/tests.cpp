@@ -107,12 +107,95 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 /*
 ================================================================================================
 
+	core helpers
+
+================================================================================================
+*/
+
+TEMPER_TEST( test_align_up, TEMPER_FLAG_SHOULD_RUN ) {
+	// already aligned - should return same value
+	TEMPER_CHECK_TRUE( align_up(  0, 8 ) ==  0 );
+	TEMPER_CHECK_TRUE( align_up(  8, 8 ) ==  8 );
+	TEMPER_CHECK_TRUE( align_up( 16, 8 ) == 16 );
+
+	// not aligned - should round up to next multiple
+	TEMPER_CHECK_TRUE( align_up(  1, 8 ) ==  8 );
+	TEMPER_CHECK_TRUE( align_up(  7, 8 ) ==  8 );
+	TEMPER_CHECK_TRUE( align_up(  9, 8 ) == 16 );
+
+	// larger alignments
+	TEMPER_CHECK_TRUE( align_up(   1, 4096 ) == 4096 );
+	TEMPER_CHECK_TRUE( align_up( 100, 4096 ) == 4096 );
+	TEMPER_CHECK_TRUE( align_up( 4096, 4096 ) == 4096 );
+	TEMPER_CHECK_TRUE( align_up( 4097, 4096 ) == 8192 );
+}
+
+
+/*
+================================================================================================
+
 	linear allocator
 
 ================================================================================================
 */
 
-// TODO(DM): 21/03/2026: write these!
+#if defined( __clang__ )
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wc++98-compat"
+#pragma clang diagnostic ignored "-Wold-style-cast"
+#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
+#endif
+
+static LinearAllocator *g_test_linear_allocator = NULL;
+
+struct Thing {
+	int			x;
+	const char	*msg;
+};
+
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator, const u64 reserved_bytes ) {
+	*allocator = linear_allocator_create( reserved_bytes );
+
+	TEMPER_CHECK_TRUE( *allocator != NULL );
+	TEMPER_CHECK_TRUE( ( *allocator )->ptr != NULL );
+	TEMPER_CHECK_TRUE( ( *allocator )->offset == 0 );
+	TEMPER_CHECK_TRUE( ( *allocator )->reserved_bytes == reserved_bytes );
+	TEMPER_CHECK_TRUE( ( *allocator )->comitted_bytes == 0 );
+	TEMPER_CHECK_TRUE( ( *allocator )->virtual_memory_page_size > 0 );
+}
+
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_alloc, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const Thing thing ) {
+	u64 offset_before = linear_allocator_tell( allocator );
+
+	Thing *ptr = cast( Thing *, linear_allocator_alloc( allocator, sizeof( Thing ) ) );
+	*ptr = thing;
+
+	TEMPER_CHECK_TRUE( ptr != NULL );
+	TEMPER_CHECK_TRUE( allocator->offset == align_up( offset_before, 8U ) + sizeof( Thing ) );
+	TEMPER_CHECK_TRUE( ptr->x == thing.x );
+	TEMPER_CHECK_TRUE( string_equals( ptr->msg, thing.msg ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator ) {
+	TEMPER_CHECK_TRUE( *allocator != NULL );
+
+	linear_allocator_destroy( *allocator );
+	*allocator = NULL;
+
+	TEMPER_CHECK_TRUE( *allocator == NULL );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_create, &g_test_linear_allocator, 1024 * 1024 );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 1,   "hello"          } );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 2,   "world"          } );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_alloc, g_test_linear_allocator, { 100, "this is a test" } );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_test_linear_allocator );
+
+#if defined( __clang__ )
+#pragma clang diagnostic pop
+#endif
 
 
 /*
