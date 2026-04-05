@@ -56,6 +56,8 @@ SOFTWARE.
 #endif
 #include "temper/temper.h"
 
+#define PRINT_HASHMAP_PROBE_RESULTS 0
+
 
 /*
 ================================================================================================
@@ -603,10 +605,12 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 
 	none_zero_mean = none_zero_mean / cast( float32, linear_probe_length.count - num_zero_probes );
 
+#if PRINT_HASHMAP_PROBE_RESULTS
 	printf(
 		"\n===\nPROBE RESULTS for %f pc utilization on %u buckets:\naverage probe length was %f, average of non zero was %f, biggest was %u. Num that were zero: %u\n Tombstone:Used: %u:%u\n",
 		utilisation * 100.0f, number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count
 	);
+#endif
 
 	hashmap_destroy( hashmap );
 }
