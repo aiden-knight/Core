@@ -1,0 +1,30 @@
+[
+  {
+    "label": "Build: core (debug)",
+    "command": "builder.exe build.cpp --config=core",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build: core (release)",
+    "command": "builder.exe build.cpp --config=core --release",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build: tests (debug)",
+    "command": "builder.exe build.cpp --config=tests",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  },
+  {
+    "label": "Build: tests (release)",
+    "command": "builder.exe build.cpp --config=tests --release",
+    "cwd": "$ZED_WORKTREE_ROOT",
+    "allow_concurrent_runs": false,
+    "reveal": "always"
+  }
+]
