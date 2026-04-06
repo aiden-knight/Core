@@ -49,13 +49,13 @@ SOFTWARE.
 ================================================================================================
 */
 
-static File open_file_internal( const char *filename, const DWORD access_flags, const DWORD creation_disposition ) {
+static File open_file_internal( const char *filename, const DWORD open_flags, const DWORD creation_disposition ) {
 	assert( filename );
 
 	DWORD file_share_flags = FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE;
 	DWORD flags_and_attribs = FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED;
 
-	HANDLE handle = CreateFileA( filename, access_flags, file_share_flags, NULL, creation_disposition, flags_and_attribs, NULL );
+	HANDLE handle = CreateFileA( filename, open_flags, file_share_flags, NULL, creation_disposition, flags_and_attribs, NULL );
 	//assertf( handle != INVALID_HANDLE_VALUE, "Failed to create/open file \"%s\": 0x%X", filename, GetLastError() );
 
 	// TODO(DM): allow setting a logging level for the file system? verbose logging?
@@ -66,14 +66,14 @@ static File open_file_internal( const char *filename, const DWORD access_flags, 
 
 //================================================================
 
-File file_open( const char *filename, const FileAccessFlags access_flags ) {
+File file_open( const char *filename, const FileOpenFlags open_flags ) {
 	assert( filename );
 
-	DWORD access_flags_win = 0;
-	if ( access_flags & FILE_ACCESS_READ )  access_flags_win |= GENERIC_READ;
-	if ( access_flags & FILE_ACCESS_WRITE ) access_flags_win |= GENERIC_WRITE;
+	DWORD open_flags_win = 0;
+	if ( open_flags & FILE_OPEN_READ )  open_flags_win |= GENERIC_READ;
+	if ( open_flags & FILE_OPEN_WRITE ) open_flags_win |= GENERIC_WRITE;
 
-	return open_file_internal( filename, access_flags_win, OPEN_EXISTING );
+	return open_file_internal( filename, open_flags_win, OPEN_EXISTING );
 }
 
 File file_open_or_create( const char *filename, const bool8 keep_existing_content ) {
@@ -82,14 +82,14 @@ File file_open_or_create( const char *filename, const bool8 keep_existing_conten
 	DWORD creation_disposition = ( keep_existing_content ) ? CREATE_NEW : CREATE_ALWAYS;
 
 	//return open_or_create_file_internal( filename, GENERIC_READ | GENERIC_WRITE, creation_disposition );
-	DWORD access_flags = GENERIC_READ | GENERIC_WRITE;
-	File file_handle = open_file_internal( filename, access_flags, creation_disposition );
+	DWORD open_flags = GENERIC_READ | GENERIC_WRITE;
+	File file_handle = open_file_internal( filename, open_flags, creation_disposition );
 
 	if ( file_handle.handle != INVALID_FILE_HANDLE ) {
 		return file_handle;
 	}
 
-	return open_file_internal( filename, access_flags, creation_disposition );
+	return open_file_internal( filename, open_flags, creation_disposition );
 }
 
 bool8 file_close( File* file ) {

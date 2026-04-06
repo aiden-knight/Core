@@ -63,19 +63,19 @@ static File open_file_internal( const char *filename, int flags ) {
 	return { trunc_cast( u64, handle ), 0 };
 }
 
-File file_open( const char *filename, const FileAccessFlags access_flags ) {
+File file_open( const char *filename, const FileOpenFlags open_flags ) {
 	assert( filename );
 
-	int access_flags_linux;
-	if ( ( access_flags & FILE_ACCESS_READ ) && ( access_flags & FILE_ACCESS_WRITE ) ) {
-		access_flags_linux = O_RDWR;
-	} else if ( access_flags & FILE_ACCESS_WRITE ) {
-		access_flags_linux = O_WRONLY;
+	int open_flags_linux;
+	if ( ( open_flags & FILE_OPEN_READ ) && ( open_flags & FILE_OPEN_WRITE ) ) {
+		open_flags_linux = O_RDWR;
+	} else if ( open_flags & FILE_OPEN_WRITE ) {
+		open_flags_linux = O_WRONLY;
 	} else {
-		access_flags_linux = O_RDONLY;
+		open_flags_linux = O_RDONLY;
 	}
 
-	return open_file_internal( filename, access_flags_linux );
+	return open_file_internal( filename, open_flags_linux );
 }
 
 File file_open_or_create( const char *filename, const bool8 keep_existing_content ) {

@@ -61,11 +61,11 @@ enum FileVisitFlags {
 	FILE_VISIT_FOLDERS		= bit( 2 ),
 };
 
-enum FileAccessFlagBits {
-	FILE_ACCESS_READ	= bit( 0 ),
-	FILE_ACCESS_WRITE	= bit( 1 ),
+enum FileOpenFlagBits {
+	FILE_OPEN_READ	= bit( 0 ),
+	FILE_OPEN_WRITE	= bit( 1 ),
 };
-typedef u32 FileAccessFlags;
+typedef u32 FileOpenFlags;
 
 // TODO(DM): 05/10/2025: support for symlinks
 struct FileInfo {
@@ -80,7 +80,7 @@ typedef void ( *FileVisitCallback )( const FileInfo *file_info, void *user_data 
 
 
 // Opens the file with the specified access flags.
-CORE_API File	file_open( const char *filename, const FileAccessFlags access_flags = FILE_ACCESS_READ | FILE_ACCESS_WRITE );
+CORE_API File	file_open( const char *filename, const FileOpenFlags open_flags = FILE_OPEN_READ | FILE_OPEN_WRITE );
 
 // If the file exists then opens it for reading and writing, otherwise creates it and then opens it.
 CORE_API File	file_open_or_create( const char *filename, const bool8 keep_existing_content = false );
