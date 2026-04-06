@@ -74,7 +74,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.sourceFiles		= { "src/*.cpp" },
 		.defines			= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
 		.additionalIncludes = { "include" },
-		.additionalLibs		= { "Shlwapi", "DbgHelp", "ucrtd" },	// TODO(DM): 06/04/2026: this makes me think the way builder default-links to certain microsoft libs is wrong
+		.additionalLibs		= { "Shlwapi", "DbgHelp" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings = {
 			"-Wno-c++98-compat",
@@ -111,12 +111,14 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		core.defines.push_back( "NDEBUG" );
 #ifdef _WIN32
 		core.additionalLibs.push_back( "msvcrt" );
+		core.additionalLibs.push_back( "ucrt" );
 #endif
 	} else {
 		core.binaryFolder = "bin/debug";
 		core.defines.push_back( "_DEBUG" );
 #ifdef _WIN32
 		core.additionalLibs.push_back( "msvcrtd" );
+		core.additionalLibs.push_back( "ucrtd" );
 #endif
 	}
 
