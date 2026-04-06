@@ -36,15 +36,23 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-// DM!!! write your own assert macro again, but better!
-#include <assert.h>
-
 #ifdef _WIN32
 	#define debug_break	__debugbreak
 #elif defined(__linux__)
 	#define debug_break	__builtin_trap
 #else
 	#error Unrecognised platform!
+#endif
+
+#ifdef _DEBUG
+	#define assert( condition ) \
+		do { \
+			if ( !(condition) ) { \
+				assert_internal( __FILE__, __LINE__, #condition ); \
+			} \
+		} while ( 0 )
+#else
+	#define assert( condition )
 #endif
 
 struct LinearAllocator;
@@ -69,6 +77,10 @@ CORE_API void					set_console_text_color( const ConsoleTextColor color );
 CORE_API void					warning( const char *fmt, ... );
 CORE_API void					error( const char *fmt, ... );
 CORE_API void					fatal_error( const char *fmt, ... );
+
+// do not call this one directly
+// call assert() instead
+CORE_API void					assert_internal( const char *file, const int line, const char *fmt, ... );
 
 #if defined( __clang__ )
 #pragma clang diagnostic pop

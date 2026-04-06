@@ -35,9 +35,11 @@ SOFTWARE.
 #include <linear_allocator.h>
 #include <temp_storage.h>
 #include <typecast.inl>
+#include <defer.h>
 
 #include <Windows.h>
 #include <DbgHelp.h>
+#include <crtdbg.h>
 
 #include <stdio.h>
 #include <string.h>
@@ -111,6 +113,39 @@ void set_console_text_color( const ConsoleTextColor color ) {
 
 s32 get_last_error_code() {
 	return trunc_cast( s32, GetLastError() );
+}
+
+void assert_internal( const char *file, const int line, const char *fmt, ... ) {
+	va_list args;
+	va_start( args, fmt );
+	defer { va_end( args ); };
+
+	va_list args_copy;
+	va_copy( args_copy, args );
+	defer { va_end( args_copy ); };
+
+	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
+	char *buffer = cast( char *, linear_allocator_alloc( g_temp_storage, ( length + 1 ) * sizeof( char ) ) );
+	vsnprintf( buffer, length + 1, fmt, args_copy );
+	buffer[length] = 0;
+
+	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
+
+	printf( "ASSERT FAILURE: %s line %d: ", file, line );
+
+	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
+
+	printf( "%s\n", buffer );
+
+	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+
+#ifdef _DEBUG
+	_CrtDbgReport( _CRT_ASSERT, file, line, NULL, buffer );
+#else
+	MessageBox( NULL, buffer, "ASSERTION ERROR", MB_OK );
+#endif
+
+	debug_break();
 }
 
 #endif // _WIN32

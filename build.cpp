@@ -74,7 +74,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.sourceFiles		= { "src/*.cpp" },
 		.defines			= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
 		.additionalIncludes = { "include" },
-		.additionalLibs		= { "Shlwapi", "DbgHelp" },
+		.additionalLibs		= { "Shlwapi", "DbgHelp", "ucrtd" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings = {
 			"-Wno-c++98-compat",
