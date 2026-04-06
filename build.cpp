@@ -74,7 +74,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.sourceFiles		= { "src/*.cpp" },
 		.defines			= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
 		.additionalIncludes = { "include" },
-		.additionalLibs		= { "Shlwapi", "DbgHelp", "ucrtd" },
+		.additionalLibs		= { "Shlwapi", "DbgHelp", "ucrtd" },	// TODO(DM): 06/04/2026: this makes me think the way builder default-links to certain microsoft libs is wrong
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings = {
 			"-Wno-c++98-compat",
