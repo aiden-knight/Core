@@ -64,7 +64,7 @@ Headers in `include/` are only allowed to include `int_types.h` and `dll_export.
 
 ### Compiler and Warning Settings
 
-Clang is the primary compiler. Warnings are set to `-Wall -Weverything -Wextra -Wpedantic` with `-Werror`. Source files use `#pragma clang diagnostic` blocks to suppress specific intentional violations (e.g., `Wpadded`, `Wzero-as-null-pointer-constant`, `Wc++98-compat-pedantic`).
+Clang is the primary compiler. Warnings are set to `-Wall -Weverything -Wextra -Wpedantic` with `-Werror`. Per-warning suppressions are managed via the `ignoreWarnings` array in each `BuildConfig` in `build.cpp` — not via `#pragma clang diagnostic` blocks in source files.
 
 ### Tests
 
