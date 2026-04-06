@@ -74,7 +74,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.sourceFiles		= { "src/*.cpp" },
 		.defines			= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
 		.additionalIncludes = { "include" },
-		.additionalLibs		= { "Shlwapi" },
+		.additionalLibs		= { "Shlwapi", "DbgHelp" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings = {
 			"-Wno-c++98-compat",
@@ -99,6 +99,11 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		},
 		.warningsAsErrors	= true,
 	};
+
+#ifdef _WIN32
+	core.defines.push_back( "WIN32_LEAN_AND_MEAN" );
+	core.defines.push_back( "NOMINMAX" );
+#endif
 
 	if ( HasCommandLineArg( args, "--release" ) ) {
 		core.optimizationLevel = OPTIMIZATION_LEVEL_O3;
@@ -131,13 +136,11 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.additionalIncludes	= { "include" },
 		.additionalLibs		= { "core" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
-		.ignoreWarnings		= { "-Wno-switch-default" },
+		.ignoreWarnings		= { "-Wno-switch-default", "-Wno-c++98-compat", "-Wno-c++98-compat-pedantic" },
 		.warningsAsErrors	= true
 	};
 
-#if defined( _WIN32 )
-	tests.additionalLibs.push_back( "DbgHelp" );
-#elif defined( __linux__ )
+#if defined( __linux__ )
 	tests.additionalLibs.push_back( "stdc++" );
 #endif
 

@@ -47,6 +47,9 @@ SOFTWARE.
 	#error Unrecognised platform!
 #endif
 
+struct LinearAllocator;
+template<class T> struct Array;
+
 enum ConsoleTextColor {
 	CONSOLE_TEXT_COLOR_DEFAULT	= 0,
 	CONSOLE_TEXT_COLOR_RED,
@@ -55,6 +58,9 @@ enum ConsoleTextColor {
 	CONSOLE_TEXT_COLOR_BRIGHT_BLUE,
 	CONSOLE_TEXT_COLOR_LIGHT_GRAY,
 };
+
+CORE_API Array<const char *>	get_callstack( LinearAllocator *allocator );
+CORE_API void				dump_callstack();
 
 CORE_API s32	get_last_error_code();
 

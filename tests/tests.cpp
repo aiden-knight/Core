@@ -258,6 +258,25 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_test_linear_all
 /*
 ================================================================================================
 
+	Debug
+
+================================================================================================
+*/
+
+TEMPER_TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> callstack = get_callstack( allocator );
+
+	TEMPER_CHECK_TRUE( callstack.count > 0 );
+	TEMPER_CHECK_TRUE( string_contains( callstack[0], "test_get_callstack" ) );
+}
+
+
+/*
+================================================================================================
+
 	temp storage
 
 ================================================================================================

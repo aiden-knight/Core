@@ -30,17 +30,65 @@ SOFTWARE.
 
 #include <debug.h>
 
+#include <core_array.inl>
+#include <core_helpers.h>
+#include <linear_allocator.h>
+#include <temp_storage.h>
 #include <typecast.inl>
 
-#ifndef WIN32_LEAN_AND_MEAN
-	#define WIN32_LEAN_AND_MEAN
-#endif
-
-#ifndef NOMINMAX
-	#define NOMINMAX
-#endif
-
 #include <Windows.h>
+#include <DbgHelp.h>
+
+#include <stdio.h>
+#include <string.h>
+
+Array<const char *> get_callstack( LinearAllocator *allocator ) {
+	Array<const char *> callstack;
+	callstack.init( allocator );
+
+	HANDLE process = GetCurrentProcess();
+
+	static bool8 sym_initialized = false;
+	if ( !sym_initialized ) {
+		SymInitialize( process, NULL, TRUE );
+		sym_initialized = true;
+	}
+
+	// TODO(DM): 05/04/2026: can we do better than a hardcoded constant?
+	void *frames[1024];
+	u16 frame_count = CaptureStackBackTrace( 1, 1024, frames, NULL );
+
+	u8 symbol_buffer[sizeof( SYMBOL_INFO ) + MAX_SYM_NAME];
+
+	For ( u16, i, 0, frame_count ) {
+		DWORD64 address = cast( DWORD64, cast( u64, frames[i] ) );
+
+		SYMBOL_INFO *symbol = cast( SYMBOL_INFO *, symbol_buffer );
+		memset( symbol, 0, sizeof( SYMBOL_INFO ) );
+		symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
+		symbol->MaxNameLen = MAX_SYM_NAME;
+
+		DWORD64 displacement = 0;
+		if ( SymFromAddr( process, address, &displacement, symbol ) ) {
+			u64 name_len = cast( u64, symbol->NameLen );
+			char *name = cast( char *, linear_allocator_alloc( allocator, name_len + 1 ) );
+			memcpy( name, symbol->Name, name_len + 1 );
+			callstack.add( name );
+		} else {
+			callstack.add( "???" );
+		}
+	}
+
+	return callstack;
+}
+
+void dump_callstack() {
+	Array<const char *> callstack = get_callstack( g_temp_storage );
+
+	For ( u64, i, 0, callstack.count ) {
+		printf( "[%llu]: %s\n", i, callstack[i] );
+	}
+}
 
 void set_console_text_color( const ConsoleTextColor color ) {
 	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );

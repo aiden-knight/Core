@@ -30,8 +30,29 @@ SOFTWARE.
 
 #include <debug.h>
 
+#include <core_array.inl>
+#include <core_helpers.h>
+#include <linear_allocator.h>
+#include <temp_storage.h>
+
 #include <stdio.h>
 #include <errno.h>
+
+Array<const char *> get_callstack( LinearAllocator *allocator ) {
+	// TODO(DM): 05/04/2026: implement
+	unused( allocator );
+	assert( false );
+
+	Array<const char *> callstack;
+	callstack.init( allocator );
+
+	return callstack;
+}
+
+void dump_callstack() {
+	// TODO(DM): 05/04/2026: implement
+	assert( false );
+}
 
 void set_console_text_color( const ConsoleTextColor color ) {
 	const char* color_linux = NULL;
