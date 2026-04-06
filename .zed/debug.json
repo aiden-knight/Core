@@ -1,14 +1,16 @@
 [
-  {
-    "label": "Debug: core-tests (debug)",
-    "program": "${ZED_WORKTREE_ROOT}/bin/debug/core-tests.exe",
-    "cwd": "${ZED_WORKTREE_ROOT}",
-    "request": "launch"
-  },
-  {
-    "label": "Debug: core-tests (release)",
-    "program": "${ZED_WORKTREE_ROOT}/bin/release/core-tests.exe",
-    "cwd": "${ZED_WORKTREE_ROOT}",
-    "request": "launch"
-  }
+	{
+		"label": "Debug: core-tests (debug)",
+		"adapter": "CodeLLDB",
+		"program": "${ZED_WORKTREE_ROOT}/bin/debug/core-tests.exe",
+		"cwd": "${ZED_WORKTREE_ROOT}",
+		"request": "launch"
+	},
+	{
+		"label": "Debug: core-tests (release)",
+		"adapter": "CodeLLDB",
+		"program": "${ZED_WORKTREE_ROOT}/bin/release/core-tests.exe",
+		"cwd": "${ZED_WORKTREE_ROOT}",
+		"request": "launch"
+	}
 ]
