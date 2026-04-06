@@ -60,15 +60,15 @@ enum ConsoleTextColor {
 };
 
 CORE_API Array<const char *>	get_callstack( LinearAllocator *allocator );
-CORE_API void				dump_callstack();
+CORE_API void					dump_callstack();
 
-CORE_API s32	get_last_error_code();
+CORE_API s32					get_last_error_code();
 
-CORE_API void	set_console_text_color( const ConsoleTextColor color );
+CORE_API void					set_console_text_color( const ConsoleTextColor color );
 
-CORE_API void	warning( const char *fmt, ... );
-CORE_API void	error( const char *fmt, ... );
-CORE_API void	fatal_error( const char *fmt, ... );
+CORE_API void					warning( const char *fmt, ... );
+CORE_API void					error( const char *fmt, ... );
+CORE_API void					fatal_error( const char *fmt, ... );
 
 #if defined( __clang__ )
 #pragma clang diagnostic pop
