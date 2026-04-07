@@ -28,13 +28,13 @@ SOFTWARE.
 
 #include <string_builder.h>
 
+#include <linear_allocator.h>
 #include <debug.h>
 #include <typecast.inl>
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <memory.h>
-#include <malloc.h>
 #include <string.h>
 
 /*
@@ -45,53 +45,14 @@ SOFTWARE.
 ================================================================================================
 */
 
-void string_builder_reset( StringBuilder *builder ) {
+void string_builder_init( StringBuilder *builder, LinearAllocator *allocator ) {
 	assert( builder );
+	assert( allocator );
 
-	StringBuilderBuffer *current = builder->head;
-
-	while ( current ) {
-		StringBuilderBuffer *next = current->next;
-
-		free( current->data );
-		current->data = NULL;
-
-		current->next = NULL;
-		free( current );
-
-		current = next;
-	}
+	builder->allocator = allocator;
+	builder->head = NULL;
+	builder->tail = NULL;
 }
-
-void string_builder_destroy( StringBuilder *builder ) {
-	string_builder_reset( builder );
-}
-
-// static void string_builder_appendfv( StringBuilder *builder, const char *fmt, va_list args ) {
-// 	assert( builder );
-// 	assert( fmt );
-// 	assert( args );
-
-// 	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, malloc( sizeof( StringBuilderBuffer ) ) );
-// 	//buffer->next = NULL;
-// 	memset( buffer, 0, sizeof( StringBuilderBuffer ) );
-
-// 	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
-
-// 	buffer->data = cast( char*, malloc( trunc_cast( u64, ( buffer->length + 1 ) ) * sizeof( char ) ) );
-// 	vsnprintf( buffer->data, buffer->length + 1, fmt, args );
-// 	buffer->data[buffer->length] = 0;
-
-// 	// if no head then this is the first element
-// 	if ( !builder->head ) {
-// 		builder->head = buffer;
-// 		builder->tail = buffer;
-// 	}
-
-// 	builder->tail->next = buffer;
-// 	builder->tail = buffer;
-// 	builder->tail->next = NULL;
-// }
 
 void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	assert( builder );
@@ -103,13 +64,12 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 #if 0
 	string_builder_appendfv( builder, fmt, args );
 #else
-	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, malloc( sizeof( StringBuilderBuffer ) ) );
-	//buffer->next = NULL;
+	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, linear_allocator_alloc( builder->allocator, sizeof( StringBuilderBuffer ) ) );
 	memset( buffer, 0, sizeof( StringBuilderBuffer ) );
 
 	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
 
-	buffer->data = cast( char *, malloc( ( buffer->length + 1 ) * sizeof( char ) ) );
+	buffer->data = cast( char *, linear_allocator_alloc( builder->allocator, ( buffer->length + 1 ) * sizeof( char ), 1 ) );
 	vsnprintf( buffer->data, buffer->length + 1, fmt, args );
 	buffer->data[buffer->length] = 0;
 
@@ -146,7 +106,7 @@ const char* string_builder_to_string( StringBuilder *builder ) {
 
 	total_length += 1;
 
-	result = cast( char*, malloc( total_length * sizeof( char ) ) );
+	result = cast( char *, linear_allocator_alloc( builder->allocator, total_length * sizeof( char ), 1 ) );
 
 	current = builder->head;
 

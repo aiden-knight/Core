@@ -984,12 +984,10 @@ TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_SKIP ) {
 TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	StringBuilder builder = {};
 
-	string_builder_reset( &builder );
+	string_builder_init( &builder, g_temp_storage );
 
 	TEMPER_CHECK_TRUE( builder.head == NULL );
 	TEMPER_CHECK_TRUE( builder.tail == NULL );
-
-	defer { string_builder_destroy( &builder ); };
 
 	string_builder_appendf( &builder, "this " );
 	string_builder_appendf( &builder, "is" );
@@ -1000,6 +998,8 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	const char* actualString = string_builder_to_string( &builder );
 
 	TEMPER_CHECK_TRUE( string_equals( actualString, "this is only a test" ) );
+
+	mem_reset_temp_storage();
 }
 
 #if defined( __clang__ )

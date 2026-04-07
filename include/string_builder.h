@@ -31,6 +31,8 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+struct LinearAllocator;
+
 /*
 ================================================================================================
 
@@ -61,12 +63,12 @@ struct StringBuilderBuffer {
 #endif
 
 struct StringBuilder {
+	LinearAllocator		*allocator;
 	StringBuilderBuffer	*head;
 	StringBuilderBuffer	*tail;
 };
 
-CORE_API void			string_builder_reset( StringBuilder *builder );
-CORE_API void			string_builder_destroy( StringBuilder *builder );
+CORE_API void			string_builder_init( StringBuilder *builder, LinearAllocator *allocator );
 
 CORE_API void			string_builder_appendf( StringBuilder *builder, const char *fmt, ... );
 

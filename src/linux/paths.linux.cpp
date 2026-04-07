@@ -154,7 +154,7 @@ char* path_relative_path_to( const char *path_from, const char *path_to ) {
 	}
 
 	StringBuilder sb = {};
-	string_builder_reset( &sb );
+	string_builder_init( &sb, g_temp_storage );
 
 	For ( u32, back_index, 0, num_backs ) {
 		string_builder_appendf( &sb, "../" );

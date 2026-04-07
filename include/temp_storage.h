@@ -34,7 +34,7 @@ SOFTWARE.
 struct LinearAllocator;
 
 
-extern LinearAllocator *g_temp_storage;
+extern CORE_API LinearAllocator *g_temp_storage;
 
 CORE_API void	mem_init_temp_storage( const u64 size_bytes );
 CORE_API void	mem_shutdown_temp_storage();

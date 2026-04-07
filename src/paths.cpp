@@ -29,7 +29,7 @@ SOFTWARE.
 #include <paths.h>
 
 #include <core_helpers.h>
-//#include <temp_storage.h>
+#include <temp_storage.h>
 #include <typecast.inl>
 #include <core_string.h>
 #include <string_builder.h>
@@ -102,8 +102,7 @@ const char *path_remove_file_extension( const char *filename ) {
 
 static const char *path_join_internalv( const int count, va_list args ) {
 	StringBuilder builder = {};
-	string_builder_reset( &builder );
-	defer { string_builder_destroy( &builder ); };
+	string_builder_init( &builder, g_temp_storage );
 
 	For ( int, arg_index, 0, count ) {
 		if ( arg_index > 0 ) {
