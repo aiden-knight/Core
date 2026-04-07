@@ -144,8 +144,6 @@ void assert_internal( const char *file, const int line, const char *fmt, ... ) {
 #else
 	MessageBox( NULL, buffer, "ASSERTION ERROR", MB_OK );
 #endif
-
-	debug_break();
 }
 
 #endif // _WIN32

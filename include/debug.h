@@ -49,6 +49,7 @@ SOFTWARE.
 		do { \
 			if ( !(condition) ) { \
 				assert_internal( __FILE__, __LINE__, #condition ); \
+				debug_break(); \
 			} \
 		} while ( 0 )
 #else
