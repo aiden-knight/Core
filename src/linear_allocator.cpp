@@ -67,13 +67,14 @@ void* linear_allocator_alloc( LinearAllocator *allocator, const u64 size_bytes, 
 	allocator->offset = align_up( allocator->offset, alignment );
 
 	if ( allocator->offset >= allocator->comitted_bytes || allocator->offset + size_bytes > allocator->comitted_bytes ) {
-		u64 actual_comitted_size = max( size_bytes, allocator->virtual_memory_page_size );
+		u64 new_comitted_bytes = align_up( allocator->offset + size_bytes, allocator->virtual_memory_page_size );
 
-		//printf( "Virtual allocator comitting another %llu bytes\n", actual_comitted_size );
+		assert( new_comitted_bytes <= allocator->reserved_bytes );
 
-		virtual_commit( allocator->ptr + allocator->offset, actual_comitted_size );
+		void *result = virtual_commit( allocator->ptr + allocator->comitted_bytes, new_comitted_bytes - allocator->comitted_bytes );
+		assert( result );
 
-		allocator->comitted_bytes = align_up( allocator->offset + size_bytes, allocator->virtual_memory_page_size );
+		allocator->comitted_bytes = new_comitted_bytes;
 	}
 
 	u8 *ptr = allocator->ptr + allocator->offset;
