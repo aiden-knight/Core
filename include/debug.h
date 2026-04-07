@@ -36,6 +36,10 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+struct LinearAllocator;
+
+template<class T> struct Array;
+
 #ifdef _WIN32
 	#define debug_break	__debugbreak
 #elif defined(__linux__)
@@ -55,9 +59,6 @@ SOFTWARE.
 #else
 	#define assert( condition )
 #endif
-
-struct LinearAllocator;
-template<class T> struct Array;
 
 enum ConsoleTextColor {
 	CONSOLE_TEXT_COLOR_DEFAULT	= 0,
