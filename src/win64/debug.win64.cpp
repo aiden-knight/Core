@@ -43,6 +43,7 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <string.h>
+#include <malloc.h>
 
 Array<const char *> get_callstack( LinearAllocator *allocator ) {
 	Array<const char *> callstack;
@@ -125,7 +126,7 @@ void assert_internal( const char *file, const int line, const char *fmt, ... ) {
 	defer { va_end( args_copy ); };
 
 	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
-	char *buffer = cast( char *, linear_allocator_alloc( g_temp_storage, ( length + 1 ) * sizeof( char ) ) );
+	char *buffer = cast( char *, alloca( ( length + 1 ) * sizeof( char ) ) );
 	vsnprintf( buffer, length + 1, fmt, args_copy );
 	buffer[length] = 0;
 
