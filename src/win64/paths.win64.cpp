@@ -68,7 +68,9 @@ const char *path_absolute_path( const char *file ) {
 	assert( file );
 
 	char *absolute_path = cast( char *, mem_temp_alloc( MAX_PATH * sizeof( char ) ) );
-	GetFullPathName( file, MAX_PATH, absolute_path, NULL );
+	DWORD length = GetFullPathName( file, MAX_PATH, absolute_path, NULL );
+	absolute_path[length] = 0;
+
 	return absolute_path;
 }
 
