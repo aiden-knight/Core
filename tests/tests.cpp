@@ -1177,7 +1177,6 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 }
 
 int main( int argc, char **argv ) {
-	// TODO(DM): 21/03/2026: this is currently holding up any test that makes use of temp storage
 	mem_init_temp_storage( MEM_KILOBYTES( 8 ) );
 	defer { mem_shutdown_temp_storage(); };
 
