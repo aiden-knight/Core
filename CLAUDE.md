@@ -53,7 +53,7 @@ The build produces `core.dll` (the library) and `core-tests.exe` (test runner) a
 - **`StringBuilder`**: Linked-buffer string builder for incremental string construction (`string_builder.h`). Requires `string_builder_reset(StringBuilder *)` before use.
 - **`Hashmap`**: Open-addressing hash table (`hashmap.h` / `hashmap.cpp`).
 - **`LinearAllocator`**: Stack-based bump allocator — allocate forward, free everything at once.
-- **`TempStorage`**: A global scratch allocator (`g_temp_storage`) backed by a `LinearAllocator`. The per-thread design is not yet implemented.
+- **`TempStorage`**: A global scratch allocator (`g_temp_storage`) backed by a `LinearAllocator`. The per-thread design is not yet implemented. Call `mem_reset_temp_storage()` to reset it (sets offset to zero without decommitting memory).
 - **`defer.h`**: Go-style scope-exit cleanup via macros. Used internally in implementation files; not part of the public API.
 - **`assert(condition)`**: Custom macro defined in `debug.h`. In debug builds, calls `assert_internal()` then `debug_break()` on the calling line. No-op in release. Use this instead of the standard `<assert.h>`.
 
@@ -70,3 +70,5 @@ Clang is the primary compiler. Warnings are set to `-Wall -Weverything -Wextra -
 ### Tests
 
 Tests live in `tests/tests.cpp` and use the Temper single-header testing framework (`tests/temper/temper.h`, v2.0.1). There is also a `test_dll.c` used to test dynamic library loading. Temper supports filtering via `-t <test>`, `-s <suite>`, and `-p` (partial match) flags passed to the test executable.
+
+Any test that uses temp storage (directly or indirectly via path/string functions such as `path_app_path`, `path_absolute_path`, `string_replace`, etc.) must call `mem_reset_temp_storage()` at the end of its body. Temp storage is never reset automatically between tests.
