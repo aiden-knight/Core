@@ -32,6 +32,7 @@ SOFTWARE.
 #include <core_helpers.h>
 #include <core_memory.h>
 #include <core_math.h>
+#include <debug.h>
 #include <os.h>
 
 #include <stdio.h>
@@ -41,12 +42,25 @@ SOFTWARE.
 LinearAllocator *linear_allocator_create( const u64 reserved_bytes ) {
 	assert( reserved_bytes );
 
+	u32 page_size = os_get_virtual_memory_page_size();
+
+	u64 actual_reserved_bytes = reserved_bytes;
+
+	if ( actual_reserved_bytes % page_size != 0 ) {
+		actual_reserved_bytes = align_up( actual_reserved_bytes, page_size );
+
+		warning(
+			"LinearAllocator: specified reserved bytes (%llu) is not a multiple of the virtual memory page size (%u bytes).\n"
+			"The OS dictates that any virtual memory pages that get reserved will automatically be a multiple of %u, so the specified reserved bytes will be rounded up to %llu bytes."
+			, reserved_bytes, page_size, page_size, actual_reserved_bytes );
+	}
+
 	// TODO(DM): 29/12/2025: alloc the whole allocator plus its entire arena in one virtual alloc call
 	LinearAllocator *allocator = cast( LinearAllocator *, malloc( sizeof( LinearAllocator ) ) );
 	memset( allocator, 0, sizeof( LinearAllocator ) );
-	allocator->ptr = cast( u8 *, virtual_reserve( reserved_bytes ) );
-	allocator->reserved_bytes = reserved_bytes;
-	allocator->virtual_memory_page_size = os_get_virtual_memory_page_size();
+	allocator->ptr = cast( u8 *, virtual_reserve( actual_reserved_bytes ) );
+	allocator->reserved_bytes = actual_reserved_bytes;
+	allocator->virtual_memory_page_size = page_size;
 
 	return allocator;
 }
