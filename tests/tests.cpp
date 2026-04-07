@@ -82,11 +82,6 @@ TEMPER_TEST( number_types_sizes, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( sizeof( float64 ) == 8 );
 }
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#endif
-
 TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( S8_MIN  == ( -127 - 1 ) );
 	TEMPER_CHECK_TRUE( S16_MIN == ( -32767 - 1 ) );
@@ -100,10 +95,6 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 
 	// TODO(DM): FLOAT32_MIN, FLOAT32_MAX, FLOAT64_MIN, FLOAT64_MAX
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 
 /*
@@ -140,13 +131,6 @@ TEMPER_TEST( test_align_up, TEMPER_FLAG_SHOULD_RUN ) {
 
 ================================================================================================
 */
-
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
 
 static LinearAllocator *g_test_linear_allocator = NULL;
 
@@ -250,10 +234,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_rewind_by, g_test_linear_al
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_test_linear_allocator );
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -281,13 +261,6 @@ TEMPER_TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
 
 ================================================================================================
 */
-
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
 
 TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 	String msg = {};
@@ -392,10 +365,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", ' ', 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 't', 'T', "This is only a TesT" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 'x', "thix ix only a text" );
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -404,12 +373,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 
 
 ================================================================================================
 */
-
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
 
 // TODO: 23/12/2025:
 // more tests
@@ -431,10 +394,6 @@ TEMPER_TEST_PARAMETRIC( hash_string_equals_hash64, TEMPER_FLAG_SHOULD_RUN, const
 TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash32, "test_hash_string_value", 0, 163121569U );
 TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_value", 0, 17747826225912071899ULL );
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -443,15 +402,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 
 ================================================================================================
 */
-
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#pragma clang diagnostic ignored "-Wdouble-promotion"
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage"
-#endif
 
 // TODO(TOM): 23/12/2025: evaluate the tests
 
@@ -708,10 +658,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.5f 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.3f  );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f  );
 
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -731,11 +677,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 
 ================================================================================================
 */
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
 
 TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
 	const char *app_path = path_app_path();
@@ -906,10 +847,6 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( string_equals( expected_path, actual_path ) );
 }
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -976,11 +913,6 @@ TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_SKIP ) {
 ================================================================================================
 */
 
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#endif
-
 TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	StringBuilder builder = {};
 	string_builder_init( &builder, g_temp_storage );
@@ -1000,10 +932,6 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 
 	mem_reset_temp_storage();
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif
 
 
 /*
@@ -1045,12 +973,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( random_float32_within_range, 0.0f, FLOAT32_MAX );
 ================================================================================================
 */
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#endif
-
 TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) {
 	// load
 #if defined( _WIN32 )
@@ -1079,10 +1001,6 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 	TEMPER_CHECK_TRUE( library.ptr == NULL );
 }
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -1091,11 +1009,6 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 
 ================================================================================================
 */
-
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wzero-as-null-pointer-constant"
-#endif
 
 static s32 thread_func( void* data ) {
 	unused( data );
@@ -1118,10 +1031,6 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread.ptr == NULL );
 }
 
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
-
 
 /*
 ================================================================================================
@@ -1135,13 +1044,6 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 
 
 //================================================================
-
-#if defined( __clang__ )
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat"
-#pragma clang diagnostic ignored "-Wold-style-cast"
-#pragma clang diagnostic ignored "-Wunsafe-buffer-usage-in-libc-call"
-#endif
 
 #define TEST_PADDING "................................................................"
 
@@ -1195,7 +1097,3 @@ int main( int argc, char **argv ) {
 
 	return exitCode;
 }
-
-#if defined( __clang__ )
-#pragma clang diagnostic pop
-#endif

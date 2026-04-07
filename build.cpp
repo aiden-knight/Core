@@ -138,7 +138,16 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.additionalIncludes	= { "include" },
 		.additionalLibs		= { "core" },
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
-		.ignoreWarnings		= { "-Wno-switch-default", "-Wno-c++98-compat", "-Wno-c++98-compat-pedantic" },
+		.ignoreWarnings = {
+			"-Wno-switch-default",
+			"-Wno-c++98-compat",
+			"-Wno-c++98-compat-pedantic",
+			"-Wno-old-style-cast",
+			"-Wno-zero-as-null-pointer-constant",
+			"-Wno-unsafe-buffer-usage-in-libc-call",
+			"-Wno-double-promotion",
+			"-Wno-unsafe-buffer-usage",
+		},
 		.warningsAsErrors	= true
 	};
 
