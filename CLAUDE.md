@@ -55,10 +55,11 @@ The build produces `core.dll` (the library) and `core-tests.exe` (test runner) a
 - **`LinearAllocator`**: Stack-based bump allocator — allocate forward, free everything at once.
 - **`TempStorage`**: A global scratch allocator (`g_temp_storage`) backed by a `LinearAllocator`. The per-thread design is not yet implemented.
 - **`defer.h`**: Go-style scope-exit cleanup via macros. Used internally in implementation files; not part of the public API.
+- **`assert(condition)`**: Custom macro defined in `debug.h`. In debug builds, calls `assert_internal()` then `debug_break()` on the calling line. No-op in release. Use this instead of the standard `<assert.h>`.
 
 ### Header Inclusion Rules
 
-Headers in `include/` are only allowed to include `int_types.h` and `dll_export.h`. They must not include any other headers, including other Core headers or standard library headers. Some headers currently violate this rule and need to be fixed. When adding new headers, enforce this strictly.
+Headers in `include/` are only allowed to include `int_types.h` and `dll_export.h`. They must not include any other headers, including other Core headers or standard library headers. `core_process.h` currently violates this rule (includes `core_array.h`) and needs to be fixed. When adding new headers, enforce this strictly.
 
 `.inl` files are exempt from this rule — they are template implementation files meant to be included directly in source files, not traditional headers.
 
