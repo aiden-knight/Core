@@ -277,28 +277,6 @@ TEMPER_TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
 /*
 ================================================================================================
 
-	temp storage
-
-================================================================================================
-*/
-
-// TODO(DM): 21/03/2026: write these!
-
-
-/*
-================================================================================================
-
-	Logging
-
-================================================================================================
-*/
-
-// TODO(DM): 23/12/2025: better API, better tests
-
-
-/*
-================================================================================================
-
 	String
 
 ================================================================================================
@@ -1201,7 +1179,7 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 
 int main( int argc, char **argv ) {
 	// TODO(DM): 21/03/2026: this is currently holding up any test that makes use of temp storage
-	mem_init_temp_storage( MEM_KILOBYTES( 16 ) );
+	mem_init_temp_storage( MEM_KILOBYTES( 8 ) );
 	defer { mem_shutdown_temp_storage(); };
 
 	g_temperTestContext.callbacks.OnBeforeTest = on_before_test;
