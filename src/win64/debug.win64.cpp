@@ -140,6 +140,8 @@ void assert_internal( const char *file, const int line, const char *fmt, ... ) {
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
 
+	// TODO(DM): when we eventually figure out what the X11/wayland/XCB equivalents to these are...
+	// move the code above into debug.cpp and then make it call a function like "dialog_box_internal()", or something
 #ifdef _DEBUG
 	_CrtDbgReport( _CRT_ASSERT, file, line, NULL, buffer );
 #else
