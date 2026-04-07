@@ -50,7 +50,7 @@ The build produces `core.dll` (the library) and `core-tests.exe` (test runner) a
 - **Custom types**: All code uses typedefs from `int_types.h` (`s8`, `u8`, `s16`, `u16`, `s32`, `u32`, `s64`, `u64`, `float32`, `float64`, `bool8`) — never `int`, `float`, etc.
 - **`Array<T>`**: Primary dynamic array container (`core_array.h` / `core_array.inl`). Requires `init(LinearAllocator *)` before use.
 - **`String`**: Non-owning string type with length. Operations are free functions in `core_string.h`. Requires `string_init(String *, LinearAllocator *)` before use.
-- **`StringBuilder`**: Linked-buffer string builder for incremental string construction (`string_builder.h`). Requires `string_builder_reset(StringBuilder *)` before use.
+- **`StringBuilder`**: Linked-buffer string builder for incremental string construction (`string_builder.h`). Requires `string_builder_init(StringBuilder *, LinearAllocator *)` before use.
 - **`Hashmap`**: Open-addressing hash table (`hashmap.h` / `hashmap.cpp`).
 - **`LinearAllocator`**: Stack-based bump allocator — allocate forward, free everything at once.
 - **`TempStorage`**: A global scratch allocator (`g_temp_storage`) backed by a `LinearAllocator`. The per-thread design is not yet implemented. Call `mem_reset_temp_storage()` to reset it (sets offset to zero without decommitting memory).
