@@ -42,6 +42,8 @@ void warning( const char *fmt, ... ) {
 	va_start( args, fmt );
 	vfprintf( stderr, fmt, args );
 	va_end( args );
+
+	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
 }
 
 void error( const char *fmt, ... ) {
@@ -55,6 +57,8 @@ void error( const char *fmt, ... ) {
 	va_start( args, fmt );
 	vfprintf( stderr, fmt, args );
 	va_end( args );
+
+	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
 }
 
 void fatal_error( const char *fmt, ... ) {
@@ -68,5 +72,6 @@ void fatal_error( const char *fmt, ... ) {
 	va_start( args, fmt );
 	vfprintf( stderr, fmt, args );
 	va_end( args );
-}
 
+	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+}
