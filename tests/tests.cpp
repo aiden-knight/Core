@@ -983,7 +983,6 @@ TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_SKIP ) {
 
 TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	StringBuilder builder = {};
-
 	string_builder_init( &builder, g_temp_storage );
 
 	TEMPER_CHECK_TRUE( builder.head == NULL );
