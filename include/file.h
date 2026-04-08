@@ -36,7 +36,7 @@ SOFTWARE.
 
 	File IO
 
-	Set of basic functions for interacting with Files.  All implementations are OS dependent.
+	Set of functions for manipulating files and folders.  All implementations are OS dependent.
 
 ================================================================================================
 */
