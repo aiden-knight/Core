@@ -34,6 +34,7 @@ SOFTWARE.
 #include "../include/linear_allocator.h"
 #include "../include/defer.h"
 #include "../include/core_string.h"
+#include "../include/file.h"
 #include "../include/core_math.h"
 #include "../include/debug.h"
 #include "../include/hash.h"
@@ -93,7 +94,14 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( S32_MAX == 2147483647 );
 	TEMPER_CHECK_TRUE( S64_MAX == 9223372036854775807 );
 
-	// TODO(DM): FLOAT32_MIN, FLOAT32_MAX, FLOAT64_MIN, FLOAT64_MAX
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wfloat-equal"
+	TEMPER_CHECK_TRUE( FLOAT32_MIN == 1.17549435e-38f );
+	TEMPER_CHECK_TRUE( FLOAT32_MAX == 3.40282347e+38f );
+
+	TEMPER_CHECK_TRUE( FLOAT64_MIN == 2.2250738585072014e-308 );
+	TEMPER_CHECK_TRUE( FLOAT64_MAX == 1.7976931348623157e+308 );
+#pragma clang diagnostic pop
 }
 
 
@@ -665,7 +673,124 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 ================================================================================================
 */
 
-// TODO(DM): 23/12/2025: the API is fine, just rewrite the tests
+TEMPER_TEST_PARAMETRIC( test_file_exists, TEMPER_FLAG_SHOULD_RUN, const char *filename, const bool8 expected ) {
+	TEMPER_CHECK_TRUE( file_exists( filename ) == expected );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "build.cpp",                true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "include/file.h",           true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "include/paths.h",          true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "src/linear_allocator.cpp", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "this_file_does_not_exist", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "include/fake_header.h",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "src/fake_source_file.cpp", false );
+
+static File        g_test_file              = {};
+static const char *g_test_folder_path       = "bin/debug/core_test_folder";
+static const char *g_test_file_path         = "bin/debug/core_test_folder/core_test_file.txt";
+static const char *g_test_file_renamed_path = "bin/debug/core_test_folder/core_test_file_renamed.txt";
+static const char *g_test_file_copy_path    = "bin/debug/core_test_folder/core_test_file_copy.txt";
+
+static void count_visited_files( const FileInfo *file_info, void *user_data ) {
+	unused( file_info );
+	u32 *count = cast( u32 *, user_data );
+	*count += 1;
+}
+
+TEMPER_TEST_PARAMETRIC( test_folder_create, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+	TEMPER_CHECK_TRUE_A( folder_create_if_it_doesnt_exist( path ) );
+	TEMPER_CHECK_TRUE( folder_exists( path ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_folder_delete, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+	TEMPER_CHECK_TRUE_A( folder_delete( path ) );
+	TEMPER_CHECK_TRUE( !folder_exists( path ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_open_or_create, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
+	*file = file_open_or_create( filename );
+	TEMPER_CHECK_TRUE_A( file->handle != INVALID_FILE_HANDLE );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_write, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
+	TEMPER_CHECK_TRUE_A( file_write( file, content ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_write_line, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
+	TEMPER_CHECK_TRUE_A( file_write_line( file, content ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_get_size, TEMPER_FLAG_SHOULD_RUN, const char *filename, const u64 expected_size ) {
+	u64 size = 0;
+	TEMPER_CHECK_TRUE_A( file_get_size( filename, &size ) );
+	TEMPER_CHECK_TRUE( size == expected_size );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_read, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 offset, const u64 size, const char *expected ) {
+	char *buffer = cast( char *, mem_temp_alloc( ( size + 1 ) * sizeof( char ) ) );
+	buffer[size] = 0;
+
+	TEMPER_CHECK_TRUE_A( file_read( file, offset, size, buffer ) );
+	TEMPER_CHECK_TRUE( string_equals( buffer, expected ) );
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_copy, TEMPER_FLAG_SHOULD_RUN, const char *src, const char *dst ) {
+	TEMPER_CHECK_TRUE_A( file_copy( src, dst ) );
+	TEMPER_CHECK_TRUE( file_exists( dst ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_get_all_files_in_folder, TEMPER_FLAG_SHOULD_RUN, const char *path, const FileVisitFlags visit_flags, const u32 expected_count ) {
+	u32 count = 0;
+	TEMPER_CHECK_TRUE_A( file_get_all_files_in_folder( path, visit_flags, count_visited_files, &count ) );
+	TEMPER_CHECK_TRUE( count == expected_count );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_rename, TEMPER_FLAG_SHOULD_RUN, File *file, const char *old_path, const char *new_path ) {
+	TEMPER_CHECK_TRUE_A( file_close( file ) );
+	TEMPER_CHECK_TRUE_A( file_rename( old_path, new_path ) );
+	TEMPER_CHECK_TRUE( file_exists( new_path ) );
+	TEMPER_CHECK_TRUE( !file_exists( old_path ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_delete, TEMPER_FLAG_SHOULD_RUN, const char *filename ) {
+	TEMPER_CHECK_TRUE_A( file_delete( filename ) );
+	TEMPER_CHECK_TRUE( !file_exists( filename ) );
+}
+
+// folder: create
+TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_create, g_test_folder_path );
+
+// create
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_open_or_create, &g_test_file, g_test_file_path );
+
+// write
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write,      &g_test_file, "Hello, world!" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write_line, &g_test_file, "Goodbye, world!" );
+
+// size: "Hello, world!" (13) + "Goodbye, world!\n" (16) = 29 bytes
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_size, g_test_file_path, 29 );
+
+// read
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read, &g_test_file, 0,  13, "Hello, world!"   );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read, &g_test_file, 13, 15, "Goodbye, world!" );
+
+// copy
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_copy, g_test_file_path, g_test_file_copy_path );
+
+// folder: visit (2 files: original + copy)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_all_files_in_folder, g_test_folder_path, FILE_VISIT_FILES, 2 );
+
+// rename
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_rename, &g_test_file, g_test_file_path, g_test_file_renamed_path );
+
+// delete files
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_delete, g_test_file_renamed_path );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_delete, g_test_file_copy_path    );
+
+// folder: delete
+TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_delete, g_test_folder_path );
 
 
 /*
