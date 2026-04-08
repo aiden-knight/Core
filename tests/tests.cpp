@@ -382,11 +382,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 
 ================================================================================================
 */
 
-// TODO: 23/12/2025:
-// more tests
-// tests to check for collisions?
-// hash the same thing over and over again to make sure its stable?
-
 TEMPER_TEST_PARAMETRIC( hash_string_equals_hash32, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed, const u32 expected_hash ) {
 	const u64 string_length = strlen( string );
 
@@ -399,8 +394,131 @@ TEMPER_TEST_PARAMETRIC( hash_string_equals_hash64, TEMPER_FLAG_SHOULD_RUN, const
 	TEMPER_CHECK_TRUE( hash64( string, string_length, seed ) == expected_hash );
 }
 
+TEMPER_TEST_PARAMETRIC( hash32_is_deterministic, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed ) {
+	const u64 length = strlen( string );
+
+	TEMPER_CHECK_TRUE( hash32( string, length, seed ) == hash32( string, length, seed ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hash64_is_deterministic, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed ) {
+	const u64 length = strlen( string );
+
+	TEMPER_CHECK_TRUE( hash64( string, length, seed ) == hash64( string, length, seed ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hash32_seed_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed_a, const u32 seed_b ) {
+	const u64 length = strlen( string );
+
+	TEMPER_CHECK_TRUE( hash32( string, length, seed_a ) != hash32( string, length, seed_b ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hash64_seed_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed_a, const u64 seed_b ) {
+	const u64 length = strlen( string );
+
+	TEMPER_CHECK_TRUE( hash64( string, length, seed_a ) != hash64( string, length, seed_b ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hash32_length_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 length_a, const u64 length_b ) {
+	TEMPER_CHECK_TRUE( hash32( data, length_a, 0 ) != hash32( data, length_b, 0 ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hash64_length_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 length_a, const u64 length_b ) {
+	TEMPER_CHECK_TRUE( hash64( data, length_a, 0 ) != hash64( data, length_b, 0 ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hash_string_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed ) {
+	TEMPER_CHECK_TRUE( hash_string( string, seed ) == hash64( string, strlen( string ), seed ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
+	const u64 length = strlen( data );
+
+	Hasher *hasher = hasher_create( seed );
+	TEMPER_CHECK_TRUE_A( hasher );
+
+	hasher_hash( hasher, data, length );
+	const u64 result = hasher_get_hash( hasher );
+
+	hasher_destroy( hasher );
+
+	TEMPER_CHECK_TRUE( result == hash64( data, length, seed ) );
+}
+
+TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
+	const u64 length = strlen( data );
+	const u64 half   = length / 2;
+
+	Hasher *hasher = hasher_create( seed );
+	TEMPER_CHECK_TRUE_A( hasher );
+
+	hasher_hash( hasher, data,        half );
+	hasher_hash( hasher, data + half, length - half );
+	const u64 multi_chunk = hasher_get_hash( hasher );
+
+	hasher_reset( hasher, seed );
+
+	hasher_hash( hasher, data, length );
+	const u64 single_chunk = hasher_get_hash( hasher );
+
+	hasher_destroy( hasher );
+
+	TEMPER_CHECK_TRUE( multi_chunk == single_chunk );
+}
+
+TEMPER_TEST_PARAMETRIC( hasher_reset_gives_same_result, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
+	const u64 length = strlen( data );
+
+	Hasher *hasher = hasher_create( seed );
+	TEMPER_CHECK_TRUE_A( hasher );
+
+	hasher_hash( hasher, data, length );
+	const u64 first_hash = hasher_get_hash( hasher );
+
+	hasher_reset( hasher, seed );
+
+	hasher_hash( hasher, data, length );
+	const u64 second_hash = hasher_get_hash( hasher );
+
+	hasher_destroy( hasher );
+
+	TEMPER_CHECK_TRUE( first_hash == second_hash );
+}
+
 TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash32, "test_hash_string_value", 0, 163121569U );
 TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_value", 0, 17747826225912071899ULL );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_is_deterministic, "hello",                  0  );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_is_deterministic, "hello",                  42 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_is_deterministic, "test_hash_string_value", 0  );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_is_deterministic, "hello",                  0  );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_is_deterministic, "hello",                  42 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_is_deterministic, "test_hash_string_value", 0  );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_seed_changes_output, "hello", 0, 1 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_seed_changes_output, "hello", 0, 0xDEADBEEF );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_seed_changes_output, "hello", 0, 1 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_seed_changes_output, "hello", 0, 0xDEADBEEFBAADF00DULL );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_length_changes_output, "foobar", 3, 6 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash32_length_changes_output, "foobar", 1, 6 );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_length_changes_output, "foobar", 3, 6 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash64_length_changes_output, "foobar", 1, 6 );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_matches_hash64, "hello", 0  );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_matches_hash64, "hello", 42 );
+TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_matches_hash64, "",      0  );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hasher_single_chunk_matches_hash64, "Hello, world!", 0  );
+TEMPER_INVOKE_PARAMETRIC_TEST( hasher_single_chunk_matches_hash64, "Hello, world!", 42 );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hasher_multi_chunk_matches_single_chunk, "Hello, world!", 0  );
+TEMPER_INVOKE_PARAMETRIC_TEST( hasher_multi_chunk_matches_single_chunk, "Hello, world!", 42 );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( hasher_reset_gives_same_result, "Hello, world!", 0  );
+TEMPER_INVOKE_PARAMETRIC_TEST( hasher_reset_gives_same_result, "Hello, world!", 42 );
 
 
 /*
