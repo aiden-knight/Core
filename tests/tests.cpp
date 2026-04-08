@@ -26,7 +26,7 @@ SOFTWARE.
 ===========================================================================
 */
 
-#include "test_dll.h"
+#include "test_dll/test_dll.h"
 
 #include "../include/int_types.h"
 #include "../include/typecast.inl"
