@@ -1369,6 +1369,8 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread.ptr == NULL );
 }
 
+// TODO(DM): 08/04/2026: the rest here
+
 
 /*
 ================================================================================================
