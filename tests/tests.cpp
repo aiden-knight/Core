@@ -1055,8 +1055,6 @@ TEMPER_TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_SKIP, co
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/diary.txt", "/home/images/cat.jpg", "../images/cat.jpg" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/diary.txt", "C:/Users/Tom/Pictures/cats.jpg", "../../Tom/Pictures/cats.jpg" );
 
-// TODO(DM): 22/03/2026: add test here for path_set_current_directory()
-
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #ifdef _WIN32
 	const char *expected_path = "C:\\Users\\your_mother\\videos";
