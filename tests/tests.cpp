@@ -1194,7 +1194,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_SKIP ) {
+TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_seconds();
 
 #ifdef _WIN32
@@ -1203,10 +1203,11 @@ TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_SKIP ) {
 
 	float64 end = time_seconds();
 
-	TEMPER_CHECK_TRUE( float64_equals( end - start, 1.0 ) );
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1.1 );
 }
 
-TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_SKIP ) {
+TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_ms();
 
 #ifdef _WIN32
@@ -1215,10 +1216,11 @@ TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_SKIP ) {
 
 	float64 end = time_ms();
 
-	TEMPER_CHECK_TRUE( float64_equals( end - start, 1000.0 ) );
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1000.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1100.0 );
 }
 
-TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_SKIP ) {
+TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_us();
 
 #ifdef _WIN32
@@ -1227,10 +1229,11 @@ TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_SKIP ) {
 
 	float64 end = time_us();
 
-	TEMPER_CHECK_TRUE( float64_equals( end - start, 1000000.0 ) );
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1000000.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1100000.0 );
 }
 
-TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_SKIP ) {
+TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_ns();
 
 #ifdef _WIN32
@@ -1239,7 +1242,8 @@ TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_SKIP ) {
 
 	float64 end = time_ns();
 
-	TEMPER_CHECK_TRUE( float64_equals( end - start, 1000000000.0 ) );
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1000000000.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1100000000.0 );
 }
 
 
