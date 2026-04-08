@@ -686,10 +686,14 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "include/fake_header.h",    fal
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_exists, "src/fake_source_file.cpp", false );
 
 static File        g_test_file              = {};
+static File        g_test_file2             = {};
 static const char *g_test_folder_path       = "bin/debug/core_test_folder";
+static const char *g_test_subfolder_path    = "bin/debug/core_test_folder/subdir";
 static const char *g_test_file_path         = "bin/debug/core_test_folder/core_test_file.txt";
+static const char *g_test_file_entire_path  = "bin/debug/core_test_folder/core_test_file_entire.txt";
 static const char *g_test_file_renamed_path = "bin/debug/core_test_folder/core_test_file_renamed.txt";
 static const char *g_test_file_copy_path    = "bin/debug/core_test_folder/core_test_file_copy.txt";
+static const char *g_test_subdir_file_path  = "bin/debug/core_test_folder/subdir/subdir_file.txt";
 
 static void count_visited_files( const FileInfo *file_info, void *user_data ) {
 	unused( file_info );
@@ -707,6 +711,15 @@ TEMPER_TEST_PARAMETRIC( test_folder_delete, TEMPER_FLAG_SHOULD_RUN, const char *
 	TEMPER_CHECK_TRUE( !folder_exists( path ) );
 }
 
+TEMPER_TEST_PARAMETRIC( test_file_open, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
+	*file = file_open( filename, FILE_OPEN_READ );
+	TEMPER_CHECK_TRUE_A( file->handle != INVALID_FILE_HANDLE );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_close, TEMPER_FLAG_SHOULD_RUN, File *file ) {
+	TEMPER_CHECK_TRUE( file_close( file ) );
+}
+
 TEMPER_TEST_PARAMETRIC( test_file_open_or_create, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
 	*file = file_open_or_create( filename );
 	TEMPER_CHECK_TRUE_A( file->handle != INVALID_FILE_HANDLE );
@@ -716,14 +729,33 @@ TEMPER_TEST_PARAMETRIC( test_file_write, TEMPER_FLAG_SHOULD_RUN, File *file, con
 	TEMPER_CHECK_TRUE_A( file_write( file, content ) );
 }
 
+TEMPER_TEST_PARAMETRIC( test_file_write_buffer, TEMPER_FLAG_SHOULD_RUN, File *file, const void *data, const u64 size ) {
+	TEMPER_CHECK_TRUE_A( file_write( file, data, size ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_write_at_offset, TEMPER_FLAG_SHOULD_RUN, File *file, const void *data, const u64 offset, const u64 size ) {
+	TEMPER_CHECK_TRUE_A( file_write( file, data, offset, size ) );
+}
+
 TEMPER_TEST_PARAMETRIC( test_file_write_line, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
 	TEMPER_CHECK_TRUE_A( file_write_line( file, content ) );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_write_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const void *data, const u64 size ) {
+	TEMPER_CHECK_TRUE_A( file_write_entire( filename, data, size ) );
+	TEMPER_CHECK_TRUE( file_exists( filename ) );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_get_size, TEMPER_FLAG_SHOULD_RUN, const char *filename, const u64 expected_size ) {
 	u64 size = 0;
 	TEMPER_CHECK_TRUE_A( file_get_size( filename, &size ) );
 	TEMPER_CHECK_TRUE( size == expected_size );
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_get_last_write_time, TEMPER_FLAG_SHOULD_RUN, const char *filename ) {
+	u64 write_time = 0;
+	TEMPER_CHECK_TRUE_A( file_get_last_write_time( filename, &write_time ) );
+	TEMPER_CHECK_TRUE( write_time != 0 );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_read, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 offset, const u64 size, const char *expected ) {
@@ -734,6 +766,28 @@ TEMPER_TEST_PARAMETRIC( test_file_read, TEMPER_FLAG_SHOULD_RUN, File *file, cons
 	TEMPER_CHECK_TRUE( string_equals( buffer, expected ) );
 
 	mem_reset_temp_storage();
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_read_sequential, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 size, const char *expected ) {
+	char *buffer = cast( char *, mem_temp_alloc( ( size + 1 ) * sizeof( char ) ) );
+	buffer[size] = 0;
+
+	TEMPER_CHECK_TRUE_A( file_read( file, size, buffer ) );
+	TEMPER_CHECK_TRUE( string_equals( buffer, expected ) );
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST_PARAMETRIC( test_file_read_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const char *expected, const u64 expected_length ) {
+	char *buffer = NULL;
+	u64 length = 0;
+
+	TEMPER_CHECK_TRUE_A( file_read_entire( filename, &buffer, &length ) );
+	TEMPER_CHECK_TRUE( length == expected_length );
+	TEMPER_CHECK_TRUE( string_equals( buffer, expected ) );
+
+	file_free_buffer( &buffer );
+	TEMPER_CHECK_TRUE( buffer == NULL );
 }
 
 TEMPER_TEST_PARAMETRIC( test_file_copy, TEMPER_FLAG_SHOULD_RUN, const char *src, const char *dst ) {
@@ -765,22 +819,66 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_create, g_test_folder_path );
 // create
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_open_or_create, &g_test_file, g_test_file_path );
 
-// write
+// write string content: "Hello, world!Goodbye, world!\n" = 29 bytes
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write,      &g_test_file, "Hello, world!" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write_line, &g_test_file, "Goodbye, world!" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write_line, &g_test_file, "Goodbye, world!\n" );
 
-// size: "Hello, world!" (13) + "Goodbye, world!\n" (16) = 29 bytes
-TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_size, g_test_file_path, 29 );
+// write entire (creates a second file: "Written entirely" = 16 bytes)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write_entire, g_test_file_entire_path, "Written entirely", 16 );
 
-// read
+// size
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_size, g_test_file_path,        30 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_size, g_test_file_entire_path, 16 );
+
+// last write time
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_last_write_time, g_test_file_path );
+
+// read with explicit offset
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read, &g_test_file, 0,  13, "Hello, world!"   );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read, &g_test_file, 13, 15, "Goodbye, world!" );
+
+// open a fresh read-only handle, do sequential reads, then close it
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_open,            &g_test_file2, g_test_file_path      );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read_sequential, &g_test_file2, 13, "Hello, world!"   );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read_sequential, &g_test_file2, 15, "Goodbye, world!" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_close,           &g_test_file2                        );
+
+// read entire
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read_entire, g_test_file_entire_path, "Written entirely", 16 );
+
+// write buffer: at g_test_file's current offset, overwrites "\n" with "!"
+// file: "Hello, world!Goodbye, world!\!" (30 bytes)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write_buffer, &g_test_file, "!", 1 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read,         &g_test_file, 27, 1, "!" );
+
+// write at offset: patch "world" at offset 7 with "WORLD"
+// file: "Hello, WORLD!Goodbye, world!\!" (30 bytes)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_write_at_offset, &g_test_file, "WORLD", 7, 5 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_read,            &g_test_file, 7, 5, "WORLD"  );
 
 // copy
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_copy, g_test_file_path, g_test_file_copy_path );
 
-// folder: visit (2 files: original + copy)
-TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_all_files_in_folder, g_test_folder_path, FILE_VISIT_FILES, 2 );
+// subfolder: create and populate for folder visit tests
+TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_create,       g_test_subfolder_path                    );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_open_or_create, &g_test_file2, g_test_subdir_file_path   );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_close,          &g_test_file2                             );
+
+// folder: visit - files only in root (3: original, entire, copy)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_all_files_in_folder, g_test_folder_path, FILE_VISIT_FILES,   3 );
+
+// folder: visit - folders only in root (1: subdir)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_all_files_in_folder, g_test_folder_path, FILE_VISIT_FOLDERS, 1 );
+
+// folder: visit - files recursively (3 root + 1 subdir = 4)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_all_files_in_folder, g_test_folder_path, cast( FileVisitFlags, FILE_VISIT_FILES | FILE_VISIT_RECURSIVE ), 4 );
+
+// folder: visit - files + folders recursively (4 files + 1 folder = 5)
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_get_all_files_in_folder, g_test_folder_path, cast( FileVisitFlags, FILE_VISIT_FILES | FILE_VISIT_FOLDERS | FILE_VISIT_RECURSIVE ), 5 );
+
+// cleanup: subfolder file then subfolder
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_delete,   g_test_subdir_file_path );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_delete, g_test_subfolder_path   );
 
 // rename
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_rename, &g_test_file, g_test_file_path, g_test_file_renamed_path );
@@ -788,6 +886,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_file_rename, &g_test_file, g_test_file_path,
 // delete files
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_delete, g_test_file_renamed_path );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_file_delete, g_test_file_copy_path    );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_file_delete, g_test_file_entire_path  );
 
 // folder: delete
 TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_delete, g_test_folder_path );
