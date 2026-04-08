@@ -403,8 +403,6 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash64, "test_hash_string_valu
 ================================================================================================
 */
 
-// TODO(TOM): 23/12/2025: evaluate the tests
-
 TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
 	u32 lo_part = 0xDEADBEEF;
 	u32 hi_part = 0xBAADF00D;
