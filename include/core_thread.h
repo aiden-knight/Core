@@ -36,7 +36,7 @@ struct Thread {
 };
 
 struct Semaphore {
-	void* ptr;
+	void	*ptr;
 };
 
 struct Atomic32 {
@@ -70,6 +70,9 @@ CORE_API void		semaphore_signal( Semaphore *semaphore );
 
 CORE_API s32		semaphore_wait( Semaphore *semaphore );
 
+// Performs an atomic increment.
 CORE_API u32		atomic_increment( Atomic32 *atomic );
 
+// If the value of 'dst' is the same as 'compare', then 'dst' gets set to 'exchange'.
+// The value of 'dst' before it got potentially changed gets returned.
 CORE_API u32		atomic_compare_exchange( Atomic32* dst, const u32 compare, const u32 exchange );
