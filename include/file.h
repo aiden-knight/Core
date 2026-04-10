@@ -67,7 +67,7 @@ enum FileOpenFlagBits {
 };
 typedef u32 FileOpenFlags;
 
-// TODO(DM): 05/10/2025: support for symlinks
+// TODO: DM: 05/10/2025: support for symlinks
 struct FileInfo {
 	u64			size_bytes;
 	u64			last_write_time;

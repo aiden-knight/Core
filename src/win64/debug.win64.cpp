@@ -57,7 +57,7 @@ Array<const char *> get_callstack( LinearAllocator *allocator ) {
 		sym_initialized = true;
 	}
 
-	// TODO(DM): 05/04/2026: can we do better than a hardcoded constant?
+	// TODO: DM: 05/04/2026: can we do better than a hardcoded constant?
 	void *frames[1024];
 	u16 frame_count = CaptureStackBackTrace( 1, 1024, frames, NULL );
 
@@ -140,7 +140,7 @@ void assert_internal( const char *file, const int line, const char *fmt, ... ) {
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
 
-	// TODO(DM): when we eventually figure out what the X11/wayland/XCB equivalents to these are...
+	// TODO: DM: when we eventually figure out what the X11/wayland/XCB equivalents to these are...
 	// move the code above into debug.cpp and then make it call a function like "dialog_box_internal()", or something
 #ifdef _DEBUG
 	_CrtDbgReport( _CRT_ASSERT, file, line, NULL, buffer );

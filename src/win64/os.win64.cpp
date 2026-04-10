@@ -32,12 +32,28 @@ SOFTWARE.
 
 #include <Windows.h>
 
+/*
+================================================================================================
+
+	OS helpers
+
+	TODO: DM: 29/12/2025: calling GetSystemInfo() every time like this is obviously bad
+	but having core cache state at startup caused problems before
+	so I'm gun-shy about doing that again
+
+================================================================================================
+*/
+
 u32 os_get_virtual_memory_page_size() {
-	// TODO(DM): 29/12/2025: obviously bad, but having core cache state at startup caused problems before
-	// so I'm gun-shy about doing that again
 	SYSTEM_INFO sys_info = {};
 	GetSystemInfo( &sys_info );
 	return sys_info.dwPageSize;
+}
+
+u32 os_get_num_cpu_cores() {
+	SYSTEM_INFO sys_info = {};
+	GetSystemInfo( &sys_info );
+	return sys_info.dwNumberOfProcessors;
 }
 
 #endif // _WIN32

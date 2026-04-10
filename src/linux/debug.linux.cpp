@@ -39,7 +39,7 @@ SOFTWARE.
 #include <errno.h>
 
 Array<const char *> get_callstack( LinearAllocator *allocator ) {
-	// TODO(DM): 05/04/2026: implement
+	// TODO: DM: 05/04/2026: implement
 	unused( allocator );
 	assert( false );
 
@@ -50,7 +50,7 @@ Array<const char *> get_callstack( LinearAllocator *allocator ) {
 }
 
 void dump_callstack() {
-	// TODO(DM): 05/04/2026: implement
+	// TODO: DM: 05/04/2026: implement
 	assert( false );
 }
 

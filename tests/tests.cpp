@@ -1473,7 +1473,7 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-// TODO(DM): 23/12/2025: the API is fine, just write the tests
+// TODO: DM: 23/12/2025: the API is fine, just write the tests
 
 
 /*

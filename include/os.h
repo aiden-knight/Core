@@ -31,3 +31,6 @@ SOFTWARE.
 #include "dll_export.h"
 
 CORE_API u32	os_get_virtual_memory_page_size();
+
+// Returns the total number of cores that the CPU has, including hyperthreads.
+CORE_API u32	os_get_num_cpu_cores();

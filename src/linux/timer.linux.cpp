@@ -42,7 +42,7 @@ SOFTWARE.
 ================================================================================================
 */
 
-// TODO(DM): how do we get clock cycles on linux?
+// TODO: DM: how do we get clock cycles on linux?
 // this isnt it!
 s64 time_cycles( void ) {
 	struct timespec now;

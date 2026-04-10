@@ -1519,7 +1519,7 @@ int TemperExecuteAllTestsInternal( void ) {
 
 		// check if whether the suite/test passed the filter first before checking if the run flag was set
 		// otherwise the test could be marked as run/skip but still pass the filter and it would never show in the output
-		// TODO(DM): profile doing a loop like this with branching vs. adding everything that passes the filter first to a list of things to run
+		// TODO: DM: profile doing a loop like this with branching vs. adding everything that passes the filter first to a list of things to run
 		// we care only about raw execution time in that test and whether or not the initial pass was faster than just running the loop with branching
 		if ( TemperIsSuiteFilteredInternal( testInfo->suiteNameStr ) ) {
 			if ( TemperIsTestFilteredInternal( testInfo->testNameStr ) ) {

@@ -51,7 +51,7 @@ struct LinearAllocator;
 #pragma clang diagnostic ignored "-Wpadded"
 #endif
 
-// TODO(DM): 23/12/2025: add 4KB static char array and use that if the string fits in that
+// TODO: DM: 23/12/2025: add 4KB static char array and use that if the string fits in that
 struct StringBuilderBuffer {
 	u32						length;
 	char					*data;

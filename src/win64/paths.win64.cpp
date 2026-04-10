@@ -119,7 +119,7 @@ const char *path_fix_slashes( const char *path ) {
 	return result;
 }
 
-// TODO(DM): 10/10/2025: I'm very tempted to remove this implementation and make the linux one work cross platform
+// TODO: DM: 10/10/2025: I'm very tempted to remove this implementation and make the linux one work cross platform
 // for some reason this windows implementation cares whether or not the files we are referencing are files or directories and it starts returning very wrong answers if we are wrong about the file type we specify vs the actual path
 // the linux implementation doesnt care about any of that and instead just compares the strings (which is all it needs to do)
 char *path_relative_path_to( const char *path_from, const char *path_to ) {

@@ -43,19 +43,19 @@ void	*virtual_commit( void *ptr, const u64 size_bytes ) {
 		return NULL;
 	}
 
-	return ptr;	// TODO(DM): 21/03/2026: is that correct?
+	return ptr;	// TODO: DM: 21/03/2026: is that correct?
 }
 
 void	virtual_decommit( void *ptr, const u64 size_bytes ) {
 	if ( madvise( ptr, size_bytes, MADV_DONTNEED ) == -1 ) {
-		// TODO(DM): 21/03/2026: handle error
+		// TODO: DM: 21/03/2026: handle error
 	}
 }
 
 void	virtual_free( void *ptr ) {
-	// TODO(DM): 21/03/2026: is -1 OK here?
+	// TODO: DM: 21/03/2026: is -1 OK here?
 	if ( munmap( ptr, 0 ) == -1 ) {
-		// TODO(DM): 21/03/2026: handle error
+		// TODO: DM: 21/03/2026: handle error
 	}
 }
 

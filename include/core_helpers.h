@@ -35,7 +35,7 @@ SOFTWARE.
 
 	Core Helpers
 
-	TODO(DM): 23/12/2025: core_helpers.h doesnt seem like the right name for this header
+	TODO: DM: 23/12/2025: core_helpers.h doesnt seem like the right name for this header
 
 ================================================================================================
 */

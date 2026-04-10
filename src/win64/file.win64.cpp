@@ -58,7 +58,7 @@ static File open_file_internal( const char *filename, const DWORD open_flags, co
 	HANDLE handle = CreateFileA( filename, open_flags, file_share_flags, NULL, creation_disposition, flags_and_attribs, NULL );
 	//assertf( handle != INVALID_HANDLE_VALUE, "Failed to create/open file \"%s\": 0x%X", filename, GetLastError() );
 
-	// TODO(DM): allow setting a logging level for the file system? verbose logging?
+	// TODO: DM: allow setting a logging level for the file system? verbose logging?
 	//printf( "%s last error: 0x%08X\n", __FUNCTION__, GetLastError() );
 
 	return { cast( u64, handle ), 0 };

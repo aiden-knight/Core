@@ -55,7 +55,7 @@ LinearAllocator *linear_allocator_create( const u64 reserved_bytes ) {
 			, reserved_bytes, page_size, page_size, actual_reserved_bytes );
 	}
 
-	// TODO(DM): 29/12/2025: alloc the whole allocator plus its entire arena in one virtual alloc call
+	// TODO: DM: 29/12/2025: alloc the whole allocator plus its entire arena in one virtual alloc call
 	LinearAllocator *allocator = cast( LinearAllocator *, malloc( sizeof( LinearAllocator ) ) );
 	memset( allocator, 0, sizeof( LinearAllocator ) );
 	allocator->ptr = cast( u8 *, virtual_reserve( actual_reserved_bytes ) );
