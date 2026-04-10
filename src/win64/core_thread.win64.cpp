@@ -148,6 +148,10 @@ u32	atomic_increment( Atomic32 *atomic ) {
 	return InterlockedIncrement( &atomic->value );
 }
 
+u32	atomic_decrement( Atomic32* atomic ) {
+	return InterlockedDecrement( &atomic->value );
+}
+
 u32 atomic_compare_exchange( Atomic32 *dst, const u32 compare, const u32 exchange ) {
 	return InterlockedCompareExchange( &dst->value, exchange, compare );
 }
