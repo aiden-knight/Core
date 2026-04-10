@@ -1311,6 +1311,7 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 struct ThreadJob {
+	Atomic32	completed;
 	const char	*msg;
 };
 
@@ -1332,6 +1333,7 @@ struct ThreadContext {
 static void add_thread_job( Scheduler *scheduler, const char *msg ) {
 	u32 job_index = atomic_increment( &scheduler->jobs_write_pos ) - 1;
 	ThreadJob *job = &scheduler->jobs[job_index];
+	job->completed = { 0 };
 	job->msg = msg;
 
 	semaphore_signal( &scheduler->sema );
@@ -1350,7 +1352,7 @@ static s32 thread_job_func( void *data ) {
 			if ( read_pos == cached_read_pos ) {
 				ThreadJob* job = &scheduler->jobs[read_pos];
 
-				Sleep( 1000 );
+				Sleep( 100 );
 
 				char msg[1024] = {};
 
@@ -1369,6 +1371,7 @@ static s32 thread_job_func( void *data ) {
 
 				OutputDebugString( msg );
 
+				atomic_increment( &job->completed );
 				atomic_increment( &scheduler->num_completed_jobs );
 			}
 		} else {
@@ -1376,7 +1379,9 @@ static s32 thread_job_func( void *data ) {
 		}
 	}
 
-	return 0;
+	// deliberately set to this value
+	// when we shut the scheduler down we want to test that the threads actually shut down like they were supposed to
+	return 42;
 }
 
 TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
@@ -1406,7 +1411,15 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	add_thread_job( &scheduler, "Job A6\n" );
 	add_thread_job( &scheduler, "Job A7\n" );
 
-	while ( scheduler.num_completed_jobs.value != 8 );
+	//while ( scheduler.num_completed_jobs.value != 8 );
+	Sleep( 1000 );
+
+	TEMPER_CHECK_TRUE( scheduler.num_completed_jobs.value == 8 );
+	TEMPER_CHECK_TRUE( scheduler.jobs_read_pos.value == scheduler.jobs_write_pos.value );
+
+	For ( u32, job_index, 0, scheduler.num_completed_jobs.value ) {
+		TEMPER_CHECK_TRUE( scheduler.jobs[job_index].completed.value == 1 );
+	}
 
 	add_thread_job( &scheduler, "Job B0\n" );
 	add_thread_job( &scheduler, "Job B1\n" );
@@ -1417,11 +1430,31 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	add_thread_job( &scheduler, "Job B6\n" );
 	add_thread_job( &scheduler, "Job B7\n" );
 
-	while ( scheduler.num_completed_jobs.value != 16 );
+	//while ( scheduler.num_completed_jobs.value != 16 );
+	Sleep( 1000 );
 
+	TEMPER_CHECK_TRUE( scheduler.num_completed_jobs.value == 16 );
+	TEMPER_CHECK_TRUE( scheduler.jobs_read_pos.value == scheduler.jobs_write_pos.value );
+
+	For ( u32, job_index, 0, scheduler.num_completed_jobs.value ) {
+		TEMPER_CHECK_TRUE( scheduler.jobs[job_index].completed.value == 1 );
+	}
+
+	// all threads could be sleeping because the work is done
+	// so allow them to shutdown, THEN wake them up
 	scheduler.running = false;
 
+	// each thread checks the semaphore, so calling this once will only wake up one thread
+	// so we need to call this once per thread
 	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
+		semaphore_signal( &scheduler.sema );
+	}
+
+	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
+		s32 exit_code = thread_wait( &scheduler.threads[thread_index] );
+
+		TEMPER_CHECK_TRUE( exit_code == 42 );
+
 		thread_destroy( &scheduler.threads[thread_index] );
 
 		TEMPER_CHECK_TRUE( scheduler.threads[thread_index].ptr == NULL );
