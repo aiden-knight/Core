@@ -66,8 +66,10 @@ CORE_API bool8		semaphore_create( Semaphore *semaphore );
 // Returns true if the semaphore could be sucessfully destroyed, otherwise returns false.
 CORE_API bool8		semaphore_destroy( Semaphore *semaphore );
 
+// Any threads blocked by this semaphore will become unblocked.
 CORE_API void		semaphore_signal( Semaphore *semaphore );
 
+// Blocks the thread until the semaphore "wakes up" via a call to 'semaphore_signal'.
 CORE_API s32		semaphore_wait( Semaphore *semaphore );
 
 // Performs an atomic increment.
