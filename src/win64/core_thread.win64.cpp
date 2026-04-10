@@ -57,9 +57,8 @@ static DWORD thread_bootstrap( void *data ) {
 	return exit_code_dword;
 }
 
-Thread thread_create( ThreadFunc thread_func, void *data ) {
+Thread thread_create( ThreadFunc thread_func, void *data, const bool8 run_immediately ) {
 	assert( thread_func );
-	//assert( data );
 
 	// bootstrap data cant be local
 	// could go out of scope by the time the thread actually fires
@@ -69,11 +68,13 @@ Thread thread_create( ThreadFunc thread_func, void *data ) {
 	bootstrap->thread_func = thread_func;
 	bootstrap->data = data;
 
-	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, bootstrap, 0, 0 );
+	DWORD creation_flags = 0;
 
-	if ( handle == NULL ) {
-		return { NULL };
+	if ( !run_immediately ) {
+		creation_flags |= CREATE_SUSPENDED;
 	}
+
+	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, bootstrap, creation_flags, NULL );
 
 	return { handle };
 }
@@ -81,10 +82,6 @@ Thread thread_create( ThreadFunc thread_func, void *data ) {
 void thread_destroy( Thread *thread ) {
 	assert( thread );
 	assert( thread->ptr );
-
-	// TODO(DM): 03/02/2026: is this expected behaviour user-side?
-	// do we make users do this themselves?
-	thread_wait( thread );
 
 	CloseHandle( cast( HANDLE, thread->ptr ) );
 	thread->ptr = NULL;
@@ -96,7 +93,7 @@ s32 thread_wait( Thread *thread ) {
 
 	HANDLE handle = cast( HANDLE, thread->ptr );
 
-	DWORD result = WaitForSingleObjectEx( handle, INFINITE, TRUE );
+	DWORD result = WaitForSingleObject( handle, INFINITE );
 
 	assert( result != WAIT_FAILED );
 	unused( result );
@@ -107,6 +104,52 @@ s32 thread_wait( Thread *thread ) {
 	}
 
 	return trunc_cast( s32, exit_code );
+}
+
+bool8 thread_suspend( Thread *thread ) {
+	return SuspendThread( thread->ptr ) == -1;
+}
+
+bool8 thread_resume( Thread *thread ) {
+	return ResumeThread( thread->ptr ) == -1;
+}
+
+bool8 semaphore_create( Semaphore *semaphore ) {
+	HANDLE handle = CreateSemaphore( NULL, 0, 1, NULL );
+
+	if ( !handle ) {
+		return false;
+	}
+
+	semaphore->ptr = handle;
+
+	return true;
+}
+
+bool8 semaphore_destroy( Semaphore *semaphore ) {
+	if ( !CloseHandle( semaphore->ptr ) ) {
+		return false;
+	}
+
+	semaphore->ptr = NULL;
+
+	return true;
+}
+
+void semaphore_signal( Semaphore *semaphore ) {
+	ReleaseSemaphore( semaphore->ptr, 1, NULL );
+}
+
+s32		semaphore_wait( Semaphore *semaphore ) {
+	return trunc_cast( s32, WaitForSingleObjectEx( semaphore->ptr, INFINITE, TRUE ) );
+}
+
+u32	atomic_increment( Atomic32 *atomic ) {
+	return InterlockedIncrement( &atomic->value );
+}
+
+u32 atomic_compare_exchange( Atomic32 *dst, const u32 compare, const u32 exchange ) {
+	return InterlockedCompareExchange( &dst->value, exchange, compare );
 }
 
 #endif // _WIN32

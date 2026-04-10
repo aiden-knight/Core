@@ -45,10 +45,8 @@ SOFTWARE.
 #include "../include/library.h"
 #include "../include/temp_storage.h"
 #include "../include/core_thread.h"
-
 #include "../include/core_array.inl"
-#include <cmath>
-#include <paths.h>
+#include "../include/paths.h"
 
 #define TEMPER_IMPLEMENTATION
 #define TEMPERDEV_ASSERT assert
@@ -1189,67 +1187,6 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 /*
 ================================================================================================
 
-	Timer
-
-================================================================================================
-*/
-
-TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
-	float64 start = time_seconds();
-
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
-
-	float64 end = time_seconds();
-
-	TEMPER_CHECK_TRUE( ( end - start ) >= 1.0 );
-	TEMPER_CHECK_TRUE( ( end - start ) <  1.1 );
-}
-
-TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
-	float64 start = time_ms();
-
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
-
-	float64 end = time_ms();
-
-	TEMPER_CHECK_TRUE( ( end - start ) >= 1000.0 );
-	TEMPER_CHECK_TRUE( ( end - start ) <  1100.0 );
-}
-
-TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
-	float64 start = time_us();
-
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
-
-	float64 end = time_us();
-
-	TEMPER_CHECK_TRUE( ( end - start ) >= 1000000.0 );
-	TEMPER_CHECK_TRUE( ( end - start ) <  1100000.0 );
-}
-
-TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_RUN ) {
-	float64 start = time_ns();
-
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
-
-	float64 end = time_ns();
-
-	TEMPER_CHECK_TRUE( ( end - start ) >= 1000000000.0 );
-	TEMPER_CHECK_TRUE( ( end - start ) <  1100000000.0 );
-}
-
-
-/*
-================================================================================================
-
 	String Builder
 
 ================================================================================================
@@ -1352,14 +1289,14 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 ================================================================================================
 */
 
-static s32 thread_func( void* data ) {
+static s32 thread_basic_test_func( void* data ) {
 	unused( data );
 
 	return 69;
 }
 
 TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
-	Thread thread = thread_create( thread_func, NULL );
+	Thread thread = thread_create( thread_basic_test_func, NULL );
 
 	TEMPER_CHECK_TRUE( thread.ptr != NULL );
 
@@ -1373,7 +1310,126 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread.ptr == NULL );
 }
 
-// TODO(DM): 08/04/2026: the rest here
+struct ThreadJob {
+	const char	*msg;
+};
+
+struct Scheduler {
+	Thread		threads[4];
+	Semaphore	sema;
+	Atomic32	jobs_read_pos;
+	Atomic32	jobs_write_pos;
+	Atomic32	num_completed_jobs;
+	ThreadJob	jobs[1024];
+	bool8		running;
+};
+
+struct ThreadContext {
+	u32			logical_thread_index;
+	Scheduler	*scheduler;
+};
+
+static void add_thread_job( Scheduler *scheduler, const char *msg ) {
+	u32 job_index = atomic_increment( &scheduler->jobs_write_pos ) - 1;
+	ThreadJob *job = &scheduler->jobs[job_index];
+	job->msg = msg;
+
+	semaphore_signal( &scheduler->sema );
+}
+
+static s32 thread_job_func( void *data ) {
+	ThreadContext *context = cast( ThreadContext *, data );
+
+	Scheduler *scheduler = context->scheduler;
+
+	while ( scheduler->running ) {
+		u32 cached_read_pos = scheduler->jobs_read_pos.value;
+		if ( cached_read_pos < scheduler->jobs_write_pos.value ) {
+			u32 read_pos = atomic_compare_exchange( &scheduler->jobs_read_pos, cached_read_pos, cached_read_pos + 1 );
+
+			if ( read_pos == cached_read_pos ) {
+				ThreadJob* job = &scheduler->jobs[read_pos];
+
+				Sleep( 1000 );
+
+				char msg[1024] = {};
+
+				const char* threadnumstr = NULL;
+				switch ( context->logical_thread_index ) {
+					case 0: threadnumstr = "0"; break;
+					case 1: threadnumstr = "1"; break;
+					case 2: threadnumstr = "2"; break;
+					case 3: threadnumstr = "3"; break;
+				}
+
+				strcat( msg, "Thread " );
+				strcat( msg, threadnumstr );
+				strcat( msg, ": " );
+				strcat( msg, job->msg );
+
+				OutputDebugString( msg );
+
+				atomic_increment( &scheduler->num_completed_jobs );
+			}
+		} else {
+			semaphore_wait( &scheduler->sema );
+		}
+	}
+
+	return 0;
+}
+
+TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
+	Scheduler scheduler = {};
+	scheduler.running = true;
+	semaphore_create( &scheduler.sema );
+
+	ThreadContext contexts[4] = {};
+
+	memset( scheduler.threads, 0, count_of( scheduler.threads ) * sizeof( Thread ) );
+
+	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
+		contexts[thread_index].scheduler = &scheduler;
+		contexts[thread_index].logical_thread_index = thread_index;
+
+		scheduler.threads[thread_index] = thread_create( thread_job_func, &contexts[thread_index] );
+
+		TEMPER_CHECK_TRUE( scheduler.threads[thread_index].ptr != NULL );
+	}
+
+	add_thread_job( &scheduler, "Job A0\n" );
+	add_thread_job( &scheduler, "Job A1\n" );
+	add_thread_job( &scheduler, "Job A2\n" );
+	add_thread_job( &scheduler, "Job A3\n" );
+	add_thread_job( &scheduler, "Job A4\n" );
+	add_thread_job( &scheduler, "Job A5\n" );
+	add_thread_job( &scheduler, "Job A6\n" );
+	add_thread_job( &scheduler, "Job A7\n" );
+
+	while ( scheduler.num_completed_jobs.value != 8 );
+
+	add_thread_job( &scheduler, "Job B0\n" );
+	add_thread_job( &scheduler, "Job B1\n" );
+	add_thread_job( &scheduler, "Job B2\n" );
+	add_thread_job( &scheduler, "Job B3\n" );
+	add_thread_job( &scheduler, "Job B4\n" );
+	add_thread_job( &scheduler, "Job B5\n" );
+	add_thread_job( &scheduler, "Job B6\n" );
+	add_thread_job( &scheduler, "Job B7\n" );
+
+	while ( scheduler.num_completed_jobs.value != 16 );
+
+	scheduler.running = false;
+
+	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
+		thread_destroy( &scheduler.threads[thread_index] );
+
+		TEMPER_CHECK_TRUE( scheduler.threads[thread_index].ptr == NULL );
+	}
+
+	semaphore_destroy( &scheduler.sema );
+	TEMPER_CHECK_TRUE( scheduler.sema.ptr == NULL );
+}
 
 
 /*
@@ -1385,6 +1441,69 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 // TODO(DM): 23/12/2025: the API is fine, just write the tests
+
+
+/*
+================================================================================================
+
+	Timer
+
+	Leave these tests last because they each need you to wait for a fixed span of time.
+
+================================================================================================
+*/
+
+TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
+	float64 start = time_seconds();
+
+#ifdef _WIN32
+	Sleep( 1000 );
+#endif
+
+	float64 end = time_seconds();
+
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1.1 );
+}
+
+TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
+	float64 start = time_ms();
+
+#ifdef _WIN32
+	Sleep( 1000 );
+#endif
+
+	float64 end = time_ms();
+
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1000.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1100.0 );
+}
+
+TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
+	float64 start = time_us();
+
+#ifdef _WIN32
+	Sleep( 1000 );
+#endif
+
+	float64 end = time_us();
+
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1000000.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1100000.0 );
+}
+
+TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_RUN ) {
+	float64 start = time_ns();
+
+#ifdef _WIN32
+	Sleep( 1000 );
+#endif
+
+	float64 end = time_ns();
+
+	TEMPER_CHECK_TRUE( ( end - start ) >= 1000000000.0 );
+	TEMPER_CHECK_TRUE( ( end - start ) <  1100000000.0 );
+}
 
 
 //================================================================

@@ -35,13 +35,41 @@ struct Thread {
 	void	*ptr;
 };
 
+struct Semaphore {
+	void* ptr;
+};
+
+struct Atomic32 {
+	volatile u32	value;
+};
+
 typedef s32 ( *ThreadFunc )( void *data );
 
 // Creates and immediately executes a thread that runs 'thread_func' with 'data' passed through.
-CORE_API Thread	thread_create( ThreadFunc thread_func, void *data );
+CORE_API Thread		thread_create( ThreadFunc thread_func, void *data, const bool8 run_immediately = true );
 
 // Waits for the thread to stop running, then destroys it.
-CORE_API void	thread_destroy( Thread *thread );
+CORE_API void		thread_destroy( Thread *thread );
 
-// Waits (blocking) for the thread to stop executing.  Returns when that happens.
-CORE_API s32	thread_wait( Thread *thread );
+// Waits for the thread to stop running, returning the exit code when it finished.
+CORE_API s32		thread_wait( Thread *thread );
+
+// Returns true if the thread was successfully suspended, otherwise returns false.
+CORE_API bool8		thread_suspend( Thread *thread );
+
+// Returns true if the thread was successfully resumed, otherwise returns false.
+CORE_API bool8		thread_resume( Thread *thread );
+
+// Returns true if the semaphore could be successfully created, otherwise returns false.
+CORE_API bool8		semaphore_create( Semaphore *semaphore );
+
+// Returns true if the semaphore could be sucessfully destroyed, otherwise returns false.
+CORE_API bool8		semaphore_destroy( Semaphore *semaphore );
+
+CORE_API void		semaphore_signal( Semaphore *semaphore );
+
+CORE_API s32		semaphore_wait( Semaphore *semaphore );
+
+CORE_API u32		atomic_increment( Atomic32 *atomic );
+
+CORE_API u32		atomic_compare_exchange( Atomic32* dst, const u32 compare, const u32 exchange );
