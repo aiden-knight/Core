@@ -38,83 +38,83 @@ SOFTWARE.
 #include <stdio.h>
 #include <malloc.h>
 
-struct ThreadBootstrapData {
-	ThreadFunc	thread_func;
-	void		*data;
+struct threadBootstrapData_t {
+	threadFunc_t	threadFunc;
+	void			*data;
 };
 
-static DWORD thread_bootstrap( void *data ) {
+static DWORD ThreadBootstrap( void *data ) {
 	assert( data );
 
-	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, data );
+	threadBootstrapData_t *bootstrap = Cast( threadBootstrapData_t *, data );
 
-	assert( bootstrap->thread_func );
+	assert( bootstrap->threadFunc );
 
-	s32 exit_code = bootstrap->thread_func( bootstrap->data );
+	s32 exitCode = bootstrap->threadFunc( bootstrap->data );
 
-	DWORD exit_code_dword = cast( DWORD, exit_code );
+	DWORD exitCodeDword = Cast( DWORD, exitCode );
 
-	return exit_code_dword;
+	return exitCodeDword;
 }
 
-Thread thread_create( ThreadFunc thread_func, void *data, const bool8 run_immediately ) {
-	assert( thread_func );
+thread_t Thread_Create( threadFunc_t threadFunc, void *data, const bool8 runImmediately ) {
+	assert( threadFunc );
 
 	// bootstrap data cant be local
 	// could go out of scope by the time the thread actually fires
 	// TODO: DM: 24/03/2026: do we just pass allocator here so people can specify what allocator this goes on to?
 	// if NULL allocator then just malloc?
-	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, malloc( sizeof( ThreadBootstrapData ) ) );
-	bootstrap->thread_func = thread_func;
+	threadBootstrapData_t *bootstrap = Cast( threadBootstrapData_t *, malloc( sizeof( threadBootstrapData_t ) ) );
+	bootstrap->threadFunc = threadFunc;
 	bootstrap->data = data;
 
-	DWORD creation_flags = 0;
+	DWORD creationFlags = 0;
 
-	if ( !run_immediately ) {
-		creation_flags |= CREATE_SUSPENDED;
+	if ( !runImmediately ) {
+		creationFlags |= CREATE_SUSPENDED;
 	}
 
-	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, bootstrap, creation_flags, NULL );
+	HANDLE handle = CreateThread( NULL, 0, ThreadBootstrap, bootstrap, creationFlags, NULL );
 
 	return { handle };
 }
 
-void thread_destroy( Thread *thread ) {
+void Thread_Destroy( thread_t *thread ) {
 	assert( thread );
 	assert( thread->ptr );
 
-	CloseHandle( cast( HANDLE, thread->ptr ) );
+	CloseHandle( Cast( HANDLE, thread->ptr ) );
 	thread->ptr = NULL;
 }
 
-s32 thread_wait( Thread *thread ) {
+s32 Thread_Wait( thread_t *thread ) {
 	assert( thread );
 	assert( thread->ptr );
 
-	HANDLE handle = cast( HANDLE, thread->ptr );
+	HANDLE handle = Cast( HANDLE, thread->ptr );
 
 	DWORD result = WaitForSingleObject( handle, INFINITE );
 
 	assert( result != WAIT_FAILED );
-	unused( result );
+	Unused( result );
 
-	DWORD exit_code = S32_MAX;
-	if ( !GetExitCodeThread( handle, &exit_code ) ) {
+	DWORD exitCode = S32_MAX;
+	if ( !GetExitCodeThread( handle, &exitCode ) ) {
 		// TODO: DM: 24/03/2026: handle errors etc.
 	}
 
-	return trunc_cast( s32, exit_code );
+	return TruncCast( s32, exitCode );
 }
 
-bool8 thread_suspend( Thread *thread ) {
+bool8 Thread_Suspend( thread_t *thread ) {
 	return SuspendThread( thread->ptr ) == -1;
 }
 
-bool8 thread_resume( Thread *thread ) {
+bool8 Thread_Resume( thread_t *thread ) {
 	return ResumeThread( thread->ptr ) == -1;
 }
 
-bool8 semaphore_create( Semaphore *semaphore ) {
+bool8 Semaphore_Create( semaphore_t *semaphore ) {
 	HANDLE handle = CreateSemaphore( NULL, 0, 1, NULL );
 
 	if ( !handle ) {
@@ -126,7 +126,7 @@ bool8 semaphore_create( Semaphore *semaphore ) {
 	return true;
 }
 
-bool8 semaphore_destroy( Semaphore *semaphore ) {
+bool8 Semaphore_Destroy( semaphore_t *semaphore ) {
 	if ( !CloseHandle( semaphore->ptr ) ) {
 		return false;
 	}
@@ -136,23 +136,23 @@ bool8 semaphore_destroy( Semaphore *semaphore ) {
 	return true;
 }
 
-void semaphore_signal( Semaphore *semaphore ) {
+void Semaphore_Signal( semaphore_t *semaphore ) {
 	ReleaseSemaphore( semaphore->ptr, 1, NULL );
 }
 
-s32		semaphore_wait( Semaphore *semaphore ) {
-	return trunc_cast( s32, WaitForSingleObjectEx( semaphore->ptr, INFINITE, TRUE ) );
+s32 Semaphore_Wait( semaphore_t *semaphore ) {
+	return TruncCast( s32, WaitForSingleObjectEx( semaphore->ptr, INFINITE, TRUE ) );
 }
 
-u32	atomic_increment( Atomic32 *atomic ) {
+u32 AtomicIncrement( atomic32_t *atomic ) {
 	return InterlockedIncrement( &atomic->value );
 }
 
-u32	atomic_decrement( Atomic32* atomic ) {
+u32 AtomicDecrement( atomic32_t* atomic ) {
 	return InterlockedDecrement( &atomic->value );
 }
 
-u32 atomic_compare_exchange( Atomic32 *dst, const u32 compare, const u32 exchange ) {
+u32 AtomicCompareExchange( atomic32_t *dst, const u32 compare, const u32 exchange ) {
 	return InterlockedCompareExchange( &dst->value, exchange, compare );
 }
 

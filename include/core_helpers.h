@@ -41,10 +41,10 @@ SOFTWARE.
 */
 
 // returns number of elements in static array
-#define count_of( x )					( sizeof( (x) ) / sizeof( (x)[0] ) )
+#define CountOf( x )					( sizeof( (x) ) / sizeof( (x)[0] ) )
 
 // use this to avoid compiler warning about unused variable if you need to keep it
-#define unused( x )						( (void) (x) )
+#define Unused( x )						( (void) (x) )
 
 // for loop helper macro
 // DM: these exist because I'm getting bored of typing the whole thing out every time and it feels like boiler-plate
@@ -54,6 +54,6 @@ SOFTWARE.
 #define RFor( Type, it, start, count )	for ( Type it = (count); it-- > (start); )
 
 // memory conversion helpers
-#define MEM_KILOBYTES( x )	( cast( u64, (x) ) * 1000 )
+#define MEM_KILOBYTES( x )	( Cast( u64, (x) ) * 1000 )
 #define MEM_MEGABYTES( x )	( MEM_KILOBYTES( x ) * 1000 )
 #define MEM_GIGABYTES( x )	( MEM_MEGABYTES( x ) * 1000 )

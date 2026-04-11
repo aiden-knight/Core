@@ -36,15 +36,15 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wpadded"
 #endif
 
-struct CommandLineArgs {
+struct commandLineArgs_t {
 	s32		count;
 	char	**data;
 };
 
-extern CommandLineArgs		g_cmd_line_args;
+extern commandLineArgs_t		g_cmdLineArgs;
 
-CORE_API void				set_command_line_args( int argc, char **argv );
-CORE_API CommandLineArgs	get_command_line_args( void );
+CORE_API void					CmdLine_SetArgs( int argc, char **argv );
+CORE_API commandLineArgs_t		CmdLine_GetArgs( void );
 
 #ifdef __clang__
 #pragma clang diagnostic pop

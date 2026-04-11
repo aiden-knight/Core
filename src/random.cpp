@@ -41,15 +41,14 @@ SOFTWARE.
 ================================================================================================
 */
 
-void random_generate_seed() {
-	srand( cast( u32, time( NULL ) ) );
+void RNG_GenerateSeed() {
+	srand( Cast( u32, time( NULL ) ) );
 }
 
-float32 random_float32() {
-	return random_float32( 0.0f, 1.0f );
+float32 RNG_GetFloat32() {
+	return RNG_GetFloat32( 0.0f, 1.0f );
 }
 
-float32 random_float32( const float32 min, const float32 max ) {
-	return min + cast( float32, rand() ) / cast( float32, cast(float32, RAND_MAX) / ( max - min ) );
+float32 RNG_GetFloat32( const float32 min, const float32 max ) {
+	return min + Cast( float32, rand() ) / Cast( float32, Cast( float32, RAND_MAX ) / ( max - min ) );
 }
-

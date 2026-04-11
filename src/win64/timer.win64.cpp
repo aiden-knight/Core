@@ -41,32 +41,32 @@ SOFTWARE.
 ================================================================================================
 */
 
-static s64 get_frequency( void ) {
+static s64 GetFrequency( void ) {
 	LARGE_INTEGER frequency = {};
 	QueryPerformanceFrequency( &frequency );
 	return frequency.QuadPart;
 }
 
-s64 time_cycles( void ) {
+s64 TimeCycles( void ) {
 	LARGE_INTEGER now = {};
 	QueryPerformanceCounter( &now );
 	return now.QuadPart;
 }
 
-float64 time_seconds( void ) {
-	return cast( float64, time_cycles() ) / cast( float64, get_frequency() );
+float64 TimeSeconds( void ) {
+	return Cast( float64, TimeCycles() ) / Cast( float64, GetFrequency() );
 }
 
-float64 time_ms( void ) {
-	return cast( float64, time_cycles() * 1000 ) / get_frequency();
+float64 TimeMS( void ) {
+	return Cast( float64, TimeCycles() * 1000 ) / GetFrequency();
 }
 
-float64 time_us( void ) {
-	return cast( float64, time_cycles() * 1000000 ) / get_frequency();
+float64 TimeUS( void ) {
+	return Cast( float64, TimeCycles() * 1000000 ) / GetFrequency();
 }
 
-float64 time_ns( void ) {
-	return cast( float64, time_cycles() * 1000000000 ) / get_frequency();
+float64 TimeNS( void ) {
+	return Cast( float64, TimeCycles() * 1000000000 ) / GetFrequency();
 }
 
 #endif // _WIN32

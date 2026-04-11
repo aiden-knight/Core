@@ -34,34 +34,34 @@ SOFTWARE.
 
 // Creates a hash based on the given 32 bit 'data' that is 'length' bytes long.
 // If 'seed' is zero then will not use a pre-existing seed as a base for the hash.
-CORE_API u32		hash32( const void *data, const u64 length, const u32 seed );
+CORE_API u32		Hash_32( const void *data, const u64 length, const u32 seed );
 
 // Creates a hash based on the given 64 bit 'data' that is 'length' bytes long.
 // If 'seed' is zero then will not use a pre-existing seed as a base for the hash.
-CORE_API u64		hash64( const void *data, const u64 length, const u64 seed );
+CORE_API u64		Hash_64( const void *data, const u64 length, const u64 seed );
 
 // Returns a 64 bit hash based on the given string.
 // If 'seed' is zero then will not use a pre-existing seed as a base for the hash.
-CORE_API u64		hash_string( const char *string, const u64 seed );
+CORE_API u64		Hash_String( const char *string, const u64 seed );
 
 
-struct Hasher;
+struct hasher_t;
 
-CORE_API Hasher		*hasher_create( const u64 seed );
-CORE_API void		hasher_destroy( Hasher *hasher );
+CORE_API hasher_t	*Hasher_Create( const u64 seed );
+CORE_API void		Hasher_Destroy( hasher_t *hasher );
 
-CORE_API void		hasher_reset( Hasher *hasher, const u64 seed );
+CORE_API void		Hasher_Reset( hasher_t *hasher, const u64 seed );
 
 // DM: dont think generalizing this to a pointer here is actually the best thing to do
 // lets just have the following functions:
 //
-//	hasher_hash1
-//	hasher_hash2
-//	hasher_hash4
-//	hasher_hash8
-//	hasher_hash16
-//	hasher_hash32
-//	hasher_hash64
-CORE_API void		hasher_hash( Hasher *hasher, const void *ptr, const u64 size );
+//	Hasher_Hash1
+//	Hasher_Hash2
+//	Hasher_Hash4
+//	Hasher_Hash8
+//	Hasher_Hash16
+//	Hasher_Hash32
+//	Hasher_Hash64
+CORE_API void		Hasher_Hash( hasher_t *hasher, const void *ptr, const u64 size );
 
-CORE_API u64		hasher_get_hash( Hasher *hasher );
+CORE_API u64		Hasher_GetHash( hasher_t *hasher );

@@ -52,7 +52,7 @@ SOFTWARE.
 ================================================================================================
 */
 
-static File open_file_internal( const char *filename, int flags ) {
+static file_t OpenFileInternal( const char *filename, int flags ) {
 	assert( filename );
 
 	int handle = open( filename, flags, S_IRWXU | S_IRWXG | S_IRWXO );
@@ -60,44 +60,44 @@ static File open_file_internal( const char *filename, int flags ) {
 		return { INVALID_FILE_HANDLE, 0 };
 	}
 
-	return { trunc_cast( u64, handle ), 0 };
+	return { TruncCast( u64, handle ), 0 };
 }
 
-File file_open( const char *filename, const FileOpenFlags open_flags ) {
+file_t FS_OpenFile( const char *filename, const fileOpenFlags_t openFlags ) {
 	assert( filename );
 
-	int open_flags_linux;
-	if ( ( open_flags & FILE_OPEN_READ ) && ( open_flags & FILE_OPEN_WRITE ) ) {
-		open_flags_linux = O_RDWR;
-	} else if ( open_flags & FILE_OPEN_WRITE ) {
-		open_flags_linux = O_WRONLY;
+	int openFlagsLinux;
+	if ( ( openFlags & FILE_OPEN_READ ) && ( openFlags & FILE_OPEN_WRITE ) ) {
+		openFlagsLinux = O_RDWR;
+	} else if ( openFlags & FILE_OPEN_WRITE ) {
+		openFlagsLinux = O_WRONLY;
 	} else {
-		open_flags_linux = O_RDONLY;
+		openFlagsLinux = O_RDONLY;
 	}
 
-	return open_file_internal( filename, open_flags_linux );
+	return OpenFileInternal( filename, openFlagsLinux );
 }
 
-File file_open_or_create( const char *filename, const bool8 keep_existing_content ) {
+file_t FS_OpenOrCreateFile( const char *filename, const bool8 keepExistingContent ) {
 	assert( filename );
 
 	int flags = O_CREAT | O_RDWR;
 
-	if ( !keep_existing_content ) {
+	if ( !keepExistingContent ) {
 		flags |= O_TRUNC;
 	}
 
-	return open_file_internal( filename, flags );
+	return OpenFileInternal( filename, flags );
 }
 
-bool8 file_close( File* file ) {
+bool8 FS_CloseFile( file_t* file ) {
 	assert( file );
 	assert( file->handle != INVALID_FILE_HANDLE );
 
-	if ( close( trunc_cast( int, file->handle ) ) != 0 ) {
+	if ( close( TruncCast( int, file->handle ) ) != 0 ) {
 		int err = errno;
 
-		error( "Failed to close file \"%s\": %s\n", strerror( err ) );
+		Error( "Failed to close file \"%s\": %s\n", strerror( err ) );
 
 		return false;
 	}
@@ -105,118 +105,118 @@ bool8 file_close( File* file ) {
 	return true;
 }
 
-bool8 file_copy( const char *original_path, const char *new_path ) {
-	assert( original_path );
-	assert( new_path );
+bool8 FS_CopyFile( const char *originalPath, const char *newPath ) {
+	assert( originalPath );
+	assert( newPath );
 
 	char *buffer = NULL;
-	if ( !file_read_entire( original_path, &buffer ) ) {
+	if ( !FS_ReadEntireFile( originalPath, &buffer ) ) {
 		return false;
 	}
 
-	defer { file_free_buffer( &buffer ); };
+	defer { FS_FreeFileBuffer( &buffer ); };
 
-	if ( !file_write_entire( new_path, buffer, strlen( buffer ) ) ) {
+	if ( !FS_WriteEntireFile( newPath, buffer, strlen( buffer ) ) ) {
 		return false;
 	}
 
 	return true;
 }
 
-bool8 file_rename( const char *old_filename, const char *new_filename ) {
-	assert( old_filename );
-	assert( new_filename );
+bool8 FS_RenameFile( const char *oldFilename, const char *newFilename ) {
+	assert( oldFilename );
+	assert( newFilename );
 
-	int result = rename( old_filename, new_filename );
+	int result = rename( oldFilename, newFilename );
 	if ( !result ) {
 		int err = errno;
-		fatal_error( "Failed to rename file \"%s\" to \"%s\": %s.\n", strerror( err ) );
+		FatalError( "Failed to rename file \"%s\" to \"%s\": %s.\n", strerror( err ) );
 		return false;
 	}
 
 	return true;
 }
 
-bool8 file_read( File* file, const u64 offset, const u64 size, void* out_data ) {
+bool8 FS_ReadFile( file_t* file, const u64 offset, const u64 size, void* outData ) {
 	assert( file && file->handle != INVALID_FILE_HANDLE );
 	assert( size );
-	assert( out_data );
+	assert( outData );
 
-	ssize_t bytes_read = pread( trunc_cast( int, file->handle ), out_data, size, trunc_cast( off_t, offset ) );
+	ssize_t bytesRead = pread( TruncCast( int, file->handle ), outData, size, TruncCast( off_t, offset ) );
 
-	return trunc_cast( u64, bytes_read ) == size;
+	return TruncCast( u64, bytesRead ) == size;
 }
 
-bool8 file_write( File* file, const void* data, const u64 offset, const u64 size ) {
+bool8 FS_WriteFile( file_t* file, const void* data, const u64 offset, const u64 size ) {
 	assert( file && file->handle != INVALID_FILE_HANDLE );
 	assert( data );
 	assert( size );
 
-	ssize_t bytes_written = pwrite( trunc_cast( int, file->handle ), data, size, trunc_cast( off_t, offset ) );
+	ssize_t bytesWritten = pwrite( TruncCast( int, file->handle ), data, size, TruncCast( off_t, offset ) );
 
-	return trunc_cast( u64, bytes_written ) == size;
+	return TruncCast( u64, bytesWritten ) == size;
 }
 
-bool8 file_delete( const char *filename ) {
+bool8 FS_DeleteFile( const char *filename ) {
 	assert( filename );
 
 	int result = remove( filename );
 
 	if ( result != 0 ) {
 		int err = errno;
-		fatal_error( "Failed to delete file \"%s\": %s.\n", strerror( err ) );
+		FatalError( "Failed to delete file \"%s\": %s.\n", strerror( err ) );
 	}
 
 	return result == 0;
 }
 
-bool8 file_get_size( const char *filename, u64 *out_size ) {
+bool8 FS_GetFileSize( const char *filename, u64 *outSize ) {
 	assert( filename );
-	assert( out_size );
+	assert( outSize );
 
-	struct stat file_stat = {};
-	if ( stat( filename, &file_stat ) != 0 ) {
+	struct stat fileStat = {};
+	if ( stat( filename, &fileStat ) != 0 ) {
 		return false;
 	}
 
-	*out_size = trunc_cast( u64, file_stat.st_size );
+	*outSize = TruncCast( u64, fileStat.st_size );
 
 	return true;
 }
 
-bool8 file_get_last_write_time( const char *filename, u64 *out_last_write_time ) {
+bool8 FS_GetFileLastWriteTime( const char *filename, u64 *outLastWriteTime ) {
 	assert( filename );
-	assert( out_last_write_time );
+	assert( outLastWriteTime );
 
-	struct stat file_stat = {};
-	if ( stat( filename, &file_stat ) != 0 ) {
+	struct stat fileStat = {};
+	if ( stat( filename, &fileStat ) != 0 ) {
 		return false;
 	}
 
-	*out_last_write_time = trunc_cast( u64, file_stat.st_mtime );
+	*outLastWriteTime = TruncCast( u64, fileStat.st_mtime );
 
 	return true;
 }
 
-bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, const bool8 visit_folders, FileVisitCallback visit_callback, void *user_data ) {
+bool8 FS_GetAllFilesInFolder( const char *path, const fileVisitFlags_t visitFlags, fileVisitCallback_t visitCallback, void *userData ) {
 	assert( path );
-	assert( visit_callback );
+	assert( visitCallback );
 
 	Array<const char *> directories;
-	directories.init( g_temp_storage );
-	directories.add( path );
+	directories.Init( g_tempStorage );
+	directories.Add( path );
 
-	u32 dir_index = 0;
+	u32 dirIndex = 0;
 
-	while ( dir_index < directories.count ) {
-		const char *directory = directories[dir_index];
+	while ( dirIndex < directories.count ) {
+		const char *directory = directories[dirIndex];
 
 		//printf( "Scanning directory \"%s\"\n", directory );
 
 		DIR *dir = opendir( directory );
 		defer { closedir( dir ); };
 
-		dir_index += 1;
+		dirIndex += 1;
 
 		if ( !dir ) {
 			int err = errno;
@@ -226,37 +226,37 @@ bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, con
 
 		struct dirent *entry = NULL;
 		while ( ( entry = readdir( dir ) ) != NULL ) {
-			if ( string_equals( entry->d_name, "." ) || string_equals( entry->d_name, ".." ) ) {
+			if ( Str_Equals( entry->d_name, "." ) || Str_Equals( entry->d_name, ".." ) ) {
 				continue;
 			}
 
-			const char *full_filename = temp_printf( "%s%c%s", directory, PATH_SEPARATOR, entry->d_name );
+			const char *fullFilename = Str_TempPrintf( "%s%c%s", directory, PATH_SEPARATOR, entry->d_name );
 
-			struct stat file_stat = {};
-			if ( stat( full_filename, &file_stat ) != 0 ) {
+			struct stat fileStat = {};
+			if ( stat( fullFilename, &fileStat ) != 0 ) {
 				/*int err = errno;
-				printf( "Can't stat \"%s\": %s\n", full_filename, strerror( err ) );*/
+				printf( "Can't stat \"%s\": %s\n", fullFilename, strerror( err ) );*/
 				return false;
 			}
 
-			FileInfo file_info = {
-				.size_bytes			= trunc_cast( u64, file_stat.st_size ),
-				.last_write_time	= trunc_cast( u64, file_stat.st_mtime ),
-				.is_directory		= S_ISDIR( file_stat.st_mode ),
-				.filename			= entry->d_name,
-				.full_filename		= full_filename,
+			fileInfo_t fileInfo = {
+				.sizeBytes		= TruncCast( u64, fileStat.st_size ),
+				.lastWriteTime	= TruncCast( u64, fileStat.st_mtime ),
+				.isDirectory	= S_ISDIR( fileStat.st_mode ),
+				.filename		= entry->d_name,
+				.fullFilename	= fullFilename,
 			};
 
-			if ( file_info.is_directory ) {
-				if ( visit_folders ) {
-					visit_callback( &file_info, user_data );
+			if ( fileInfo.isDirectory ) {
+				if ( visitFlags & FILE_VISIT_FOLDERS ) {
+					visitCallback( &fileInfo, userData );
 				}
 
-				if ( recursive ) {
-					directories.add( full_filename );
+				if ( visitFlags & FILE_VISIT_RECURSIVE ) {
+					directories.Add( fullFilename );
 				}
-			} else {
-				visit_callback( &file_info, user_data );
+			} else if ( visitFlags & FILE_VISIT_FILES ) {
+				visitCallback( &fileInfo, userData );
 			}
 		}
 	}
@@ -264,37 +264,37 @@ bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, con
 	return true;
 }
 
-bool8 file_exists( const char *filename ) {
+bool8 FS_FileExists( const char *filename ) {
 	assert( filename );
 
 	return access( filename, 0 ) == 0;
 }
 
-bool8 create_folder_internal( const char *path ) {
+bool8 CreateFolderInternal( const char *path ) {
 	int result = mkdir( path, S_IRWXU | S_IRWXG | S_IRWXO );
 	int err = errno;
 
 	if ( ( result != 0 ) && ( err != EEXIST ) ) {
-		fatal_error( "ERROR: Failed to create directory \"%s\": %s\n", path, strerror( err ) );
+		FatalError( "ERROR: Failed to create directory \"%s\": %s\n", path, strerror( err ) );
 	}
 
 	return result == 0;
 }
 
-bool8 folder_delete( const char *path ) {
+bool8 FS_DeleteFolder( const char *path ) {
 	assert( path );
 
 	int result = rmdir( path );
 
 	if ( result != 0 ) {
 		int err = errno;
-		fatal_error( "Failed to delete folder \"%s\": %s.\n", strerror( err ) );
+		FatalError( "Failed to delete folder \"%s\": %s.\n", strerror( err ) );
 	}
 
 	return result == 0;
 }
 
-bool8 folder_exists( const char *path ) {
+bool8 FS_FolderExists( const char *path ) {
 	assert( path );
 
 	DIR* dir = opendir( path );
@@ -307,7 +307,7 @@ bool8 folder_exists( const char *path ) {
 		return false;
 	}
 
-	fatal_error( "Failed to check if the folder exists: %s\n", strerror( err ) );
+	FatalError( "Failed to check if the folder exists: %s\n", strerror( err ) );
 
 	return false;
 }

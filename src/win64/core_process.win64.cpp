@@ -48,167 +48,167 @@ SOFTWARE.
 ================================================================================================
 */
 
-struct Process {
-	PROCESS_INFORMATION	process_info;
-	HANDLE				stdout_read;
-	HANDLE				stdout_write;
-	HANDLE				event_stdout;
+struct process_t {
+	PROCESS_INFORMATION	processInfo;
+	HANDLE				stdoutRead;
+	HANDLE				stdoutWrite;
+	HANDLE				eventStdout;
 };
 
-Process* process_create( LinearAllocator *allocator, Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags ) {
+process_t* Process_Create( linearAllocator_t *allocator, Array<const char *> *args, Array<const char *> *environmentVariables, const processFlags_t flags ) {
 	assert( allocator );
 	assert( args );
 	assert( args->count > 0 );
 
-	unused( environment_variables );
+	Unused( environmentVariables );
 
-	Process *process = cast( Process *, linear_allocator_alloc( allocator, sizeof( Process ) ) );
+	process_t *process = Cast( process_t *, Mem_Alloc( allocator, sizeof( process_t ) ) );
 
-	SECURITY_ATTRIBUTES sec_attr = { sizeof( SECURITY_ATTRIBUTES ), NULL, TRUE };
+	SECURITY_ATTRIBUTES secAttr = { sizeof( SECURITY_ATTRIBUTES ), NULL, TRUE };
 
 	// stdout
-	if ( !CreatePipe( &process->stdout_read, &process->stdout_write, &sec_attr, 0 ) ) {
-		error( "CreatePipe call failed: 0x%X.\n", GetLastError() );
+	if ( !CreatePipe( &process->stdoutRead, &process->stdoutWrite, &secAttr, 0 ) ) {
+		Error( "CreatePipe call failed: 0x%X.\n", GetLastError() );
 		return NULL;
 	}
 
-	STARTUPINFO start_info = { sizeof( start_info ) };
-	start_info.dwFlags = STARTF_USESTDHANDLES;
-	start_info.hStdOutput = process->stdout_write;
-	start_info.hStdError = NULL;//process->write_handle;
+	STARTUPINFO startInfo = { sizeof( startInfo ) };
+	startInfo.dwFlags = STARTF_USESTDHANDLES;
+	startInfo.hStdOutput = process->stdoutWrite;
+	startInfo.hStdError = NULL;//process->stdoutWrite;
 
-	char *combined_args = NULL;
+	char *combinedArgs = NULL;
 	{
 		u64 offset = 0;
 
-		u64 combined_args_length = 0;
+		u64 combinedArgsLength = 0;
 
-		For ( u64, arg_index, 0, args->count ) {
-			combined_args_length += strlen( ( *args )[arg_index] );
+		For ( u64, argIndex, 0, args->count ) {
+			combinedArgsLength += strlen( ( *args )[argIndex] );
 		}
-		combined_args_length += args->count - 1;	// one space between each argument
-		combined_args_length += 1;					// null terminator
+		combinedArgsLength += args->count - 1;	// one space between each argument
+		combinedArgsLength += 1;				// null terminator
 
-		combined_args = cast( char *, mem_temp_alloc( combined_args_length * sizeof( char ) ) );
+		combinedArgs = Cast( char *, Mem_TempAlloc( combinedArgsLength * sizeof( char ) ) );
 
-		For ( u64, arg_index, 0, args->count ) {
-			const char *arg = ( *args )[arg_index];
+		For ( u64, argIndex, 0, args->count ) {
+			const char *arg = ( *args )[argIndex];
 
-			u64 arg_len = strlen( arg );
+			u64 argLen = strlen( arg );
 
-			strncpy( combined_args + offset, arg, arg_len * sizeof( char ) );
-			offset += arg_len;
+			strncpy( combinedArgs + offset, arg, argLen * sizeof( char ) );
+			offset += argLen;
 
-			combined_args[offset] = ' ';
+			combinedArgs[offset] = ' ';
 			offset += 1;
 		}
-		combined_args[combined_args_length - 1] = 0;
+		combinedArgs[combinedArgsLength - 1] = 0;
 	}
 
 	if ( flags & PROCESS_FLAG_ASYNC ) {
-		process->event_stdout = CreateEvent( &sec_attr, 1, 1, NULL );
+		process->eventStdout = CreateEvent( &secAttr, 1, 1, NULL );
 	}
 
 	BOOL created = CreateProcess(
 		NULL,
-		const_cast<LPSTR>( combined_args ),
+		const_cast<LPSTR>( combinedArgs ),
 		NULL,
 		NULL,
 		true,
 		CREATE_NO_WINDOW,
 		NULL,
 		NULL,
-		&start_info,
-		&process->process_info
+		&startInfo,
+		&process->processInfo
 	);
 
 	if ( !created ) {
-		error( "CreateProcess() failed: 0x%X.\n", GetLastError() );
+		Error( "CreateProcess() failed: 0x%X.\n", GetLastError() );
 		return NULL;
 	}
 
 #if 1
-	CloseHandle( start_info.hStdOutput );
-	//start_info.hStdOutput = NULL;
+	CloseHandle( startInfo.hStdOutput );
+	//startInfo.hStdOutput = NULL;
 #else
-	CloseHandle( process->stdout_write );
-	//process->stdout_write = NULL;
+	CloseHandle( process->stdoutWrite );
+	//process->stdoutWrite = NULL;
 #endif
 
-	CloseHandle( process->process_info.hThread );
-	//process->process_info.hThread = NULL;
+	CloseHandle( process->processInfo.hThread );
+	//process->processInfo.hThread = NULL;
 
 	return process;
 }
 
-void process_destroy( Process* process ) {
+void Process_Destroy( process_t* process ) {
 	assert( process );
 
-	if ( process->stdout_read ) {
-		CloseHandle( process->stdout_read );
-		process->stdout_read = NULL;
+	if ( process->stdoutRead ) {
+		CloseHandle( process->stdoutRead );
+		process->stdoutRead = NULL;
 	}
 
-	if ( process->process_info.hProcess ) {
-		CloseHandle( process->process_info.hProcess );
-		process->process_info.hProcess = NULL;
+	if ( process->processInfo.hProcess ) {
+		CloseHandle( process->processInfo.hProcess );
+		process->processInfo.hProcess = NULL;
 	}
 
-	if ( process->process_info.hThread ) {
-		CloseHandle( process->process_info.hThread );
-		process->process_info.hThread = NULL;
+	if ( process->processInfo.hThread ) {
+		CloseHandle( process->processInfo.hThread );
+		process->processInfo.hThread = NULL;
 	}
 
-	if ( process->event_stdout ) {
-		CloseHandle( process->event_stdout );
-		process->event_stdout = NULL;
+	if ( process->eventStdout ) {
+		CloseHandle( process->eventStdout );
+		process->eventStdout = NULL;
 	}
 }
 
-s32 process_join( Process* process ) {
+s32 Process_Join( process_t* process ) {
 	assert( process );
 
-	CloseHandle( process->stdout_read );
-	process->stdout_read = NULL;
+	CloseHandle( process->stdoutRead );
+	process->stdoutRead = NULL;
 
-	WaitForSingleObject( process->process_info.hProcess, INFINITE );
+	WaitForSingleObject( process->processInfo.hProcess, INFINITE );
 
-	DWORD exit_code = 0;
-	BOOL got_exit_code = GetExitCodeProcess( process->process_info.hProcess, &exit_code );
+	DWORD exitCode = 0;
+	BOOL gotExitCode = GetExitCodeProcess( process->processInfo.hProcess, &exitCode );
 
-	assert( got_exit_code );
-	unused( got_exit_code );
+	assert( gotExitCode );
+	Unused( gotExitCode );
 
-	return trunc_cast( s32, exit_code );
+	return TruncCast( s32, exitCode );
 }
 
-u32 process_read_stdout( Process *process, char *out_buffer, const u32 count ) {
+u32 Process_ReadStdout( process_t *process, char *outBuffer, const u32 count ) {
 	assert( process );
-	assert( out_buffer );
+	assert( outBuffer );
 	assert( count > 0 );
 
 	OVERLAPPED overlapped = {};
-	overlapped.hEvent = process->event_stdout;
+	overlapped.hEvent = process->eventStdout;
 
-	DWORD bytes_read = 0;
-	BOOL read = ReadFile( process->stdout_read, out_buffer, count, &bytes_read, &overlapped );
+	DWORD bytesRead = 0;
+	BOOL read = ReadFile( process->stdoutRead, outBuffer, count, &bytesRead, &overlapped );
 
 	if ( !read ) {
-		DWORD last_error = GetLastError();
+		DWORD lastError = GetLastError();
 
-		if ( last_error == ERROR_IO_PENDING ) {
-			if ( !GetOverlappedResult( process->stdout_read, &overlapped, &bytes_read, 1 ) ) {
-				last_error = GetLastError();
+		if ( lastError == ERROR_IO_PENDING ) {
+			if ( !GetOverlappedResult( process->stdoutRead, &overlapped, &bytesRead, 1 ) ) {
+				lastError = GetLastError();
 
-				if ( ( last_error != ERROR_IO_INCOMPLETE ) && ( last_error != ERROR_HANDLE_EOF ) ) {
-					error( "Failed to read stdout of subprocess: 0x%X.\n", GetLastError() );
+				if ( ( lastError != ERROR_IO_INCOMPLETE ) && ( lastError != ERROR_HANDLE_EOF ) ) {
+					Error( "Failed to read stdout of subprocess: 0x%X.\n", GetLastError() );
 					return 0;
 				}
 			}
 		}
 	}
 
-	return bytes_read;
+	return bytesRead;
 }
 
 #endif // _WIN32

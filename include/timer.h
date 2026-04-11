@@ -33,16 +33,16 @@ SOFTWARE.
 
 
 // returns a timestamp in clock cycles
-CORE_API s64		time_cycles( void );
+CORE_API s64		TimeCycles( void );
 
 // returns a timestamp in seconds
-CORE_API float64	time_seconds( void );
+CORE_API float64	TimeSeconds( void );
 
 // returns a timestamp in milliseconds
-CORE_API float64	time_ms( void );
+CORE_API float64	TimeMS( void );
 
 // returns a timestamp in microseconds
-CORE_API float64	time_us( void );
+CORE_API float64	TimeUS( void );
 
 // returns a timestamp in nanoseconds
-CORE_API float64	time_ns( void );
+CORE_API float64	TimeNS( void );

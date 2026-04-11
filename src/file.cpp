@@ -43,45 +43,45 @@ SOFTWARE.
 ================================================================================================
 */
 
-void file_free_buffer( char **buffer ) {
+void FS_FreeFileBuffer( char **buffer ) {
 	free( *buffer );
 	*buffer = NULL;
 }
 
-bool8 file_read_entire( const char *filename, char **outBuffer, u64 *out_file_length ) {
+bool8 FS_ReadEntireFile( const char *filename, char **outBuffer, u64 *outFileLength ) {
 	assert( filename );
 	assert( !*outBuffer && "Specified out-buffer MUST be null because this function news it." );
 
-	u64 file_size = 0;
-	if ( !file_get_size( filename, &file_size ) ) {
+	u64 fileSize = 0;
+	if ( !FS_GetFileSize( filename, &fileSize ) ) {
 		return false;
 	}
 
-	File file = file_open( filename );
+	file_t file = FS_OpenFile( filename );
 
 	if ( file.handle == INVALID_FILE_HANDLE ) {
 		return 0;
 	}
 
-	char *temp = cast( char *, malloc( file_size + 1 ) );
+	char *temp = Cast( char *, malloc( fileSize + 1 ) );
 
-	bool8 read = file_read( &file, 0, file_size, temp );
+	bool8 read = FS_ReadFile( &file, 0, fileSize, temp );
 
-	file_close( &file );
+	FS_CloseFile( &file );
 
-	temp[file_size] = 0;
+	temp[fileSize] = 0;
 
 	*outBuffer = temp;
 
-	if ( out_file_length ) {
-		*out_file_length = file_size;
+	if ( outFileLength ) {
+		*outFileLength = fileSize;
 	}
 
 	return read;
 }
 
-bool8 file_read( File *file, const u64 size, void *out_data ) {
-	bool8 read = file_read( file, file->offset, size, out_data );
+bool8 FS_ReadFile( file_t *file, const u64 size, void *outData ) {
+	bool8 read = FS_ReadFile( file, file->offset, size, outData );
 
 	if ( read ) {
 		file->offset += size;
@@ -90,29 +90,29 @@ bool8 file_read( File *file, const u64 size, void *out_data ) {
 	return read;
 }
 
-bool8 file_write_entire( const char *filename, const void *data, const u64 size ) {
+bool8 FS_WriteEntireFile( const char *filename, const void *data, const u64 size ) {
 	assert( filename );
 	assert( data );
 
-	File file = file_open_or_create( filename );
+	file_t file = FS_OpenOrCreateFile( filename );
 
 	if ( file.handle == INVALID_FILE_HANDLE ) {
 		return false;
 	}
 
-	if ( !file_write( &file, data, 0, size ) ) {
+	if ( !FS_WriteFile( &file, data, 0, size ) ) {
 		return false;
 	}
 
-	if ( !file_close( &file ) ) {
+	if ( !FS_CloseFile( &file ) ) {
 		return false;
 	}
 
 	return true;
 }
 
-bool8 file_write( File *file, const void *data, const u64 size ) {
-	bool8 written = file_write( file, data, file->offset, size );
+bool8 FS_WriteFile( file_t *file, const void *data, const u64 size ) {
+	bool8 written = FS_WriteFile( file, data, file->offset, size );
 
 	if ( written ) {
 		file->offset += size;
@@ -121,19 +121,19 @@ bool8 file_write( File *file, const void *data, const u64 size ) {
 	return written;
 }
 
-bool8 file_write( File *file, const char *data ) {
-	return file_write( file, data, strlen( data ) * sizeof( char ) );
+bool8 FS_WriteFile( file_t *file, const char *data ) {
+	return FS_WriteFile( file, data, strlen( data ) * sizeof( char ) );
 }
 
-bool8 file_write_line( File *file, const char *line ) {
-	bool8 main_write = file_write( file, line );
-	return main_write && file_write( file, "\n" );
+bool8 FS_WriteFileLine( file_t *file, const char *line ) {
+	bool8 mainWrite = FS_WriteFile( file, line );
+	return mainWrite && FS_WriteFile( file, "\n" );
 }
 
-bool8 folder_create_if_it_doesnt_exist( const char *path ) {
+bool8 FS_CreateFolderIfItDoesntExist( const char *path ) {
 	assert( path );
 
-	if ( folder_exists( path ) ) {
+	if ( FS_FolderExists( path ) ) {
 		return true;
 	}
 
@@ -141,15 +141,15 @@ bool8 folder_create_if_it_doesnt_exist( const char *path ) {
 	{
 		bool8 result = false;
 
-		u64 path_len = strlen( path );
+		u64 pathLen = strlen( path );
 
 		// dont process trailing slash if one exists
 		// otherwise we will get duplicate results for sub-dirs to parse
-		//if ( path[path_len - 1] == '/' ) {
-		//	path_len--;
+		//if ( path[pathLen - 1] == '/' ) {
+		//	pathLen--;
 		//}
 
-		for ( u64 i = 0; i <= path_len; i++ ) {
+		for ( u64 i = 0; i <= pathLen; i++ ) {
 #if defined( __linux__ )
 			if ( path[i] != '/' && path[i] != '\0') {
 				continue;
@@ -168,8 +168,8 @@ bool8 folder_create_if_it_doesnt_exist( const char *path ) {
 			char name[1024] = {};
 			strncpy( name, path, i );
 
-			if ( !folder_exists( name ) ) {
-				result |= create_folder_internal( name );
+			if ( !FS_FolderExists( name ) ) {
+				result |= CreateFolderInternal( name );
 			}
 		}
 

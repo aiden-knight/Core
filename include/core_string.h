@@ -31,7 +31,7 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-struct LinearAllocator;
+struct linearAllocator_t;
 
 /*
 ================================================================================================
@@ -46,44 +46,44 @@ struct LinearAllocator;
 ================================================================================================
 */
 
-struct String {
-	LinearAllocator			*allocator;
-	char					*data;
-	u64						count;
+struct string_t {
+	linearAllocator_t	*allocator;
+	char				*data;
+	u64					count;
 };
 
-CORE_API void				string_init( String *out_str, LinearAllocator *allocator );
-CORE_API void				string_zero( String *out_str );
+CORE_API void				Str_Init( string_t *outStr, linearAllocator_t *allocator );
+CORE_API void				Str_Zero( string_t *outStr );
 
-CORE_API void				string_printf( String *out_str, const char *fmt, ... );
+CORE_API void				Str_Printf( string_t *outStr, const char *fmt, ... );
 
-CORE_API void				string_copy( String *dst, String *src );
+CORE_API void				Str_Copy( string_t *dst, string_t *src );
 
-CORE_API void				string_copy_from_c_string( String *out_str, const char *c_str );
-CORE_API void				string_copy_from_c_string( String *out_str, const char *c_str, const u64 length );
+CORE_API void				Str_CopyFromCString( string_t *outStr, const char *cStr );
+CORE_API void				Str_CopyFromCString( string_t *outStr, const char *cStr, const u64 length );
 
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
-CORE_API bool8				string_equals( const char *lhs, const char *rhs );
+CORE_API bool8				Str_Equals( const char *lhs, const char *rhs );
 
 // Returns true if the first characters of string 'str' are EXACTLY the same as string 'prefix'.  Case sensitive.
-CORE_API bool8				string_starts_with( const char *str, const char *prefix );
+CORE_API bool8				Str_StartsWith( const char *str, const char *prefix );
 
-// Returns true if the last character of 'str' is the valueo of 'end'.  Case sensitive.
-CORE_API bool8				string_ends_with( const char *str, const char end );
+// Returns true if the last character of 'str' is the value of 'end'.  Case sensitive.
+CORE_API bool8				Str_EndsWith( const char *str, const char end );
 
 // Returns true if the last characters of 'str' are EXACTLY the same as string 'suffix'.  Case sensitive.
-CORE_API bool8				string_ends_with( const char *str, const char *suffix );
+CORE_API bool8				Str_EndsWith( const char *str, const char *suffix );
 
 // Returns true if string 'str' has EXACTLY the contents of 'substring' somewhere in it.  Case sensitive.
-CORE_API bool8				string_contains( const char *str, const char *substring );
+CORE_API bool8				Str_Contains( const char *str, const char *substring );
 
-CORE_API const char			*string_replace( const char *str, const char old_char, const char new_char );
+CORE_API const char			*Str_Replace( const char *str, const char oldChar, const char newChar );
 
 // Returns a printf-formatted string with the given format string and var args that's been allocated via temp storage.
-CORE_API const char			*temp_printf( const char *fmt, ... );
+CORE_API const char			*Str_TempPrintf( const char *fmt, ... );
 
 // Returns a copy of 'from' that has been allocated on temp storage.
-CORE_API char				*temp_c_string( const char *from );
+CORE_API char				*Str_TempCString( const char *from );
 
 // Copies 'length' characters from 'from' and allocates it on temp storage.
-CORE_API char				*temp_c_string( const char *from, const u64 length );
+CORE_API char				*Str_TempCString( const char *from, const u64 length );

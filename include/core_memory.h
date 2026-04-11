@@ -39,10 +39,10 @@ SOFTWARE.
 ================================================================================================
 */
 
-CORE_API void	*virtual_reserve( const u64 size_bytes );
+CORE_API void	*Mem_VirtualReserve( const u64 sizeBytes );
 
-CORE_API void	*virtual_commit( void *ptr, const u64 size_bytes );
+CORE_API void	*Mem_VirtualCommit( void *ptr, const u64 sizeBytes );
 
-CORE_API void	virtual_decommit( void *ptr, const u64 size_bytes );
+CORE_API void	Mem_VirtualDecommit( void *ptr, const u64 sizeBytes );
 
-CORE_API void	virtual_free( void *ptr );
+CORE_API void	Mem_VirtualFree( void *ptr );

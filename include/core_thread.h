@@ -31,53 +31,53 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-struct Thread {
+struct thread_t {
 	void	*ptr;
 };
 
-struct Semaphore {
+struct semaphore_t {
 	void	*ptr;
 };
 
-struct Atomic32 {
+struct atomic32_t {
 	volatile u32	value;
 };
 
-typedef s32 ( *ThreadFunc )( void *data );
+typedef s32 ( *threadFunc_t )( void *data );
 
-// Creates and immediately executes a thread that runs 'thread_func' with 'data' passed through.
-CORE_API Thread		thread_create( ThreadFunc thread_func, void *data, const bool8 run_immediately = true );
+// Creates and immediately executes a thread that runs 'threadFunc' with 'data' passed through.
+CORE_API thread_t	Thread_Create( threadFunc_t threadFunc, void *data, const bool8 runImmediately = true );
 
 // Waits for the thread to stop running, then destroys it.
-CORE_API void		thread_destroy( Thread *thread );
+CORE_API void		Thread_Destroy( thread_t *thread );
 
 // Waits for the thread to stop running, returning the exit code when it finished.
-CORE_API s32		thread_wait( Thread *thread );
+CORE_API s32		Thread_Wait( thread_t *thread );
 
 // Returns true if the thread was successfully suspended, otherwise returns false.
-CORE_API bool8		thread_suspend( Thread *thread );
+CORE_API bool8		Thread_Suspend( thread_t *thread );
 
 // Returns true if the thread was successfully resumed, otherwise returns false.
-CORE_API bool8		thread_resume( Thread *thread );
+CORE_API bool8		Thread_Resume( thread_t *thread );
 
 // Returns true if the semaphore could be successfully created, otherwise returns false.
-CORE_API bool8		semaphore_create( Semaphore *semaphore );
+CORE_API bool8		Semaphore_Create( semaphore_t *semaphore );
 
 // Returns true if the semaphore could be sucessfully destroyed, otherwise returns false.
-CORE_API bool8		semaphore_destroy( Semaphore *semaphore );
+CORE_API bool8		Semaphore_Destroy( semaphore_t *semaphore );
 
 // Any threads blocked by this semaphore will become unblocked.
-CORE_API void		semaphore_signal( Semaphore *semaphore );
+CORE_API void		Semaphore_Signal( semaphore_t *semaphore );
 
-// Blocks the thread until the semaphore "wakes up" via a call to 'semaphore_signal'.
-CORE_API s32		semaphore_wait( Semaphore *semaphore );
+// Blocks the thread until the semaphore "wakes up" via a call to 'Semaphore_Signal'.
+CORE_API s32		Semaphore_Wait( semaphore_t *semaphore );
 
 // Performs an atomic increment.
-CORE_API u32		atomic_increment( Atomic32 *atomic );
+CORE_API u32		AtomicIncrement( atomic32_t *atomic );
 
 // Performs an atomic decrement.
-CORE_API u32		atomic_decrement( Atomic32* atomic );
+CORE_API u32		AtomicDecrement( atomic32_t *atomic );
 
 // If the value of 'dst' is the same as 'compare', then 'dst' gets set to 'exchange'.
-// The value of 'dst' before it got potentially changed gets returned.
-CORE_API u32		atomic_compare_exchange( Atomic32* dst, const u32 compare, const u32 exchange );
+// Returns the value of 'dst' before it got potentially changed.
+CORE_API u32		AtomicCompareExchange( atomic32_t *dst, const u32 compare, const u32 exchange );

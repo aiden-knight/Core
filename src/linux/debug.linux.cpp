@@ -38,40 +38,40 @@ SOFTWARE.
 #include <stdio.h>
 #include <errno.h>
 
-Array<const char *> get_callstack( LinearAllocator *allocator ) {
+Array<const char *> GetCallstack( linearAllocator_t *allocator ) {
 	// TODO: DM: 05/04/2026: implement
-	unused( allocator );
+	Unused( allocator );
 	assert( false );
 
 	Array<const char *> callstack;
-	callstack.init( allocator );
+	callstack.Init( allocator );
 
 	return callstack;
 }
 
-void dump_callstack() {
+void DumpCallstack() {
 	// TODO: DM: 05/04/2026: implement
 	assert( false );
 }
 
-void set_console_text_color( const ConsoleTextColor color ) {
-	const char* color_linux = NULL;
+void SetConsoleTextColor( const consoleTextColor_t color ) {
+	const char* colorLinux = NULL;
 
 	switch ( color ) {
-		case CONSOLE_TEXT_COLOR_DEFAULT:		color_linux = "\033[0m"; break;
-		case CONSOLE_TEXT_COLOR_RED:			color_linux = "\033[0;31m"; break;
-		case CONSOLE_TEXT_COLOR_YELLOW:			color_linux = "\033[0;32m"; break;
-		case CONSOLE_TEXT_COLOR_BLUE:			color_linux = "\033[1;34m"; break;
-		case CONSOLE_TEXT_COLOR_BRIGHT_BLUE:	color_linux = "\033[1;94m"; break;
-		case CONSOLE_TEXT_COLOR_LIGHT_GRAY:		color_linux = "\033[1;37m"; break;
+		case CONSOLE_TEXT_COLOR_DEFAULT:		colorLinux = "\033[0m"; break;
+		case CONSOLE_TEXT_COLOR_RED:			colorLinux = "\033[0;31m"; break;
+		case CONSOLE_TEXT_COLOR_YELLOW:			colorLinux = "\033[0;32m"; break;
+		case CONSOLE_TEXT_COLOR_BLUE:			colorLinux = "\033[1;34m"; break;
+		case CONSOLE_TEXT_COLOR_BRIGHT_BLUE:	colorLinux = "\033[1;94m"; break;
+		case CONSOLE_TEXT_COLOR_LIGHT_GRAY:		colorLinux = "\033[1;37m"; break;
 	}
 
-	assert( color_linux != NULL );
+	assert( colorLinux != NULL );
 
-	printf( "%s", color_linux );
+	printf( "%s", colorLinux );
 }
 
-s32 get_last_error_code() {
+s32 GetLastErrorCode() {
 	// errno is a global and therefore not thread safe
 	// so it MUST ALWAYS be cached ASAP
 	int err = errno;

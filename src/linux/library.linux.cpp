@@ -44,19 +44,19 @@ SOFTWARE.
 ================================================================================================
 */
 
-Library library_load( const char *name ) {
-	return Library {
+library_t Library_Load( const char *name ) {
+	return library_t {
 		.ptr = dlopen( name, RTLD_LAZY ),
 	};
 }
 
-bool8 library_unload( Library *library ) {
+bool8 Library_Unload( library_t *library ) {
 	assert( library );
 	assert( library->ptr );
 
 	if ( dlclose( library->ptr ) != 0 ) {
 		int err = errno;
-		error( "Failed to close library handle: %s\n", strerror( err ) );	// TODO: DM: 20/03/2026: I think we want to get rid of this
+		Error( "Failed to close library handle: %s\n", strerror( err ) );	// TODO: DM: 20/03/2026: I think we want to get rid of this
 		return false;
 	}
 
@@ -65,11 +65,11 @@ bool8 library_unload( Library *library ) {
 	return true;
 }
 
-void *library_get_symbol( const Library library, const char *symbol_name ) {
+void *Library_GetSymbol( const library_t library, const char *symbolName ) {
 	assert( library.ptr );
-	assert( symbol_name );
+	assert( symbolName );
 
-	return dlsym( library.ptr, symbol_name );
+	return dlsym( library.ptr, symbolName );
 }
 
 #endif // __linux__

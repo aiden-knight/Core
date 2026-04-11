@@ -36,13 +36,13 @@ SOFTWARE.
 ================================================================================================
 */
 
-CommandLineArgs g_cmd_line_args = {};
+commandLineArgs_t g_cmdLineArgs = {};
 
-void set_command_line_args( int argc, char** argv ) {
-	g_cmd_line_args.count = argc;
-	g_cmd_line_args.data = argv;
+void CmdLine_SetArgs( int argc, char** argv ) {
+	g_cmdLineArgs.count = argc;
+	g_cmdLineArgs.data = argv;
 }
 
-CommandLineArgs get_command_line_args() {
-	return g_cmd_line_args;
+commandLineArgs_t CmdLine_GetArgs() {
+	return g_cmdLineArgs;
 }

@@ -41,21 +41,21 @@ SOFTWARE.
 ================================================================================================
 */
 
-LinearAllocator *g_temp_storage = NULL;
+linearAllocator_t *g_tempStorage = NULL;
 
-void mem_init_temp_storage( const u64 size_bytes ) {
-	g_temp_storage = linear_allocator_create( size_bytes );
+void Mem_InitTempStorage( const u64 sizeBytes ) {
+	g_tempStorage = Mem_CreateAllocator( sizeBytes );
 }
 
-void mem_shutdown_temp_storage() {
-	linear_allocator_destroy( g_temp_storage );
-	g_temp_storage = NULL;
+void Mem_ShutdownTempStorage() {
+	Mem_DestroyAllocator( g_tempStorage );
+	g_tempStorage = NULL;
 }
 
-void* mem_temp_alloc( const u64 size_bytes, const u32 alignment ) {
-	return linear_allocator_alloc( g_temp_storage, size_bytes, alignment );
+void* Mem_TempAlloc( const u64 sizeBytes, const u32 alignment ) {
+	return Mem_Alloc( g_tempStorage, sizeBytes, alignment );
 }
 
-void mem_reset_temp_storage() {
-	linear_allocator_reset( g_temp_storage );
+void Mem_ResetTempStorage() {
+	Mem_ResetAllocator( g_tempStorage );
 }

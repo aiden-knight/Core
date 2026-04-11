@@ -32,10 +32,10 @@ SOFTWARE.
 #include "dll_export.h"
 
 // Generates a seed for random number generation based on time.
-CORE_API void		random_generate_seed();
+CORE_API void		RNG_GenerateSeed();
 
 // Generates a random float32 inclusive between 0 and 1.
-CORE_API float32	random_float32();
+CORE_API float32	RNG_GetFloat32();
 
 // Generates a random float32 inclusive between 'min' and 'max'.
-CORE_API float32	random_float32( const float32 min, const float32 max );
+CORE_API float32	RNG_GetFloat32( const float32 min, const float32 max );

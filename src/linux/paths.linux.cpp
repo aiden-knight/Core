@@ -55,13 +55,13 @@ SOFTWARE.
 ================================================================================================
 */
 
-const char *path_app_path() {
-	char *result = cast( char *, mem_temp_alloc( PATH_MAX * sizeof( char ) ) );
+const char *Path_AppPath() {
+	char *result = Cast( char *, Mem_TempAlloc( PATH_MAX * sizeof( char ) ) );
 	s64 length = readlink( "/proc/self/exe", result, PATH_MAX );
 
 	if ( length == -1 ) {
 		int err = errno;
-		fatal_error( "Failed to get app path: %s.\n", strerror( err ) );
+		FatalError( "Failed to get app path: %s.\n", strerror( err ) );
 	}
 
 	result[length] = 0;
@@ -69,39 +69,39 @@ const char *path_app_path() {
 	return result;
 }
 
-const char *path_current_working_directory() {
+const char *Path_CurrentWorkingDirectory() {
 	char temp[PATH_MAX];
 
 	const char *cwd = getcwd( temp, sizeof( temp ) );
 
 	if ( !cwd ) {
 		int err = errno;
-		fatal_error( "Failed to get CWD: %s.\n", strerror( err ) );
+		FatalError( "Failed to get CWD: %s.\n", strerror( err ) );
 	}
 
 	return cwd;
 }
 
-const char *path_absolute_path( const char *file ) {
-	unused( file );
+const char *Path_AbsolutePath( const char *file ) {
+	Unused( file );
 
 	assert( false );
 
 	return NULL;
 }
 
-bool8 path_is_absolute( const char *path ) {
+bool8 Path_IsAbsolute( const char *path ) {
 	assert( path );
 
 	return path[0] == '/';
 }
 
-const char *path_canonicalise( const char *path ) {
+const char *Path_Canonicalise( const char *path ) {
 	assert( path );
 
-	const char *path_copy = temp_c_string( path, PATH_MAX );
+	const char *pathCopy = Str_TempCString( path, PATH_MAX );
 
-	const char *result = realpath( path_copy, NULL );
+	const char *result = realpath( pathCopy, NULL );
 	if ( !result ) {
 		int err = errno;
 		printf( "Failed to get real path of \"%s\": %s.\n", path, strerror( err ) );
@@ -111,67 +111,67 @@ const char *path_canonicalise( const char *path ) {
 	return result;
 }
 
-const char *path_fix_slashes( const char *path ) {
-	u64 path_length = strlen( path );
-	char* result = temp_c_string( path, path_length );
+const char *Path_FixSlashes( const char *path ) {
+	u64 pathLength = strlen( path );
+	char* result = Str_TempCString( path, pathLength );
 
-	For ( u64, char_index, 0, path_length ) {
-		if ( result[char_index] == '\\' ) {
-			result[char_index] = '/';
+	For ( u64, charIndex, 0, pathLength ) {
+		if ( result[charIndex] == '\\' ) {
+			result[charIndex] = '/';
 		}
 	}
 
 	return result;
 }
 
-char* path_relative_path_to( const char *path_from, const char *path_to ) {
-	assert( path_from );
-	assert( path_to );
+char* Path_RelativePathTo( const char *pathFrom, const char *pathTo ) {
+	assert( pathFrom );
+	assert( pathTo );
 
-	const char *path_from_copy = path_from;
-	const char *path_to_copy = path_to;
+	const char *pathFromCopy = pathFrom;
+	const char *pathToCopy = pathTo;
 
-	u32 num_same_chars = 0;
-	u32 num_backs = 0;
+	u32 numSameChars = 0;
+	u32 numBacks = 0;
 
-	while ( path_from_copy[num_same_chars] && path_to_copy[num_same_chars] && path_from_copy[num_same_chars] == path_to_copy[num_same_chars] ) {
-		num_same_chars += 1;
+	while ( pathFromCopy[numSameChars] && pathToCopy[numSameChars] && pathFromCopy[numSameChars] == pathToCopy[numSameChars] ) {
+		numSameChars += 1;
 	}
 
-	path_from_copy = path_from + num_same_chars;
-	path_to_copy = path_to + num_same_chars;
+	pathFromCopy = pathFrom + numSameChars;
+	pathToCopy = pathTo + numSameChars;
 
 	// skip the first one of these if there is one
-	/*if ( *path_from_copy == '/' ) {
-		path_from_copy += 1;
+	/*if ( *pathFromCopy == '/' ) {
+		pathFromCopy += 1;
 	}*/
 
-	while ( *path_from_copy ) {
-		if ( *path_from_copy == '/' ) {
-			num_backs += 1;
+	while ( *pathFromCopy ) {
+		if ( *pathFromCopy == '/' ) {
+			numBacks += 1;
 		}
-		path_from_copy += 1;
+		pathFromCopy += 1;
 	}
 
-	StringBuilder sb = {};
-	string_builder_init( &sb, g_temp_storage );
+	stringBuilder_t sb = {};
+	StringBuilder_Init( &sb, g_tempStorage );
 
-	For ( u32, back_index, 0, num_backs ) {
-		string_builder_appendf( &sb, "../" );
+	For ( u32, backIndex, 0, numBacks ) {
+		StringBuilder_Appendf( &sb, "../" );
 	}
 
-	string_builder_appendf( &sb, path_to + num_same_chars );
+	StringBuilder_Appendf( &sb, pathTo + numSameChars );
 
-	//char* result = cast( char*, mem_temp_alloc( PATH_MAX * sizeof( char ) ) );
-	char* result = cast( char*, string_builder_to_string( &sb ) );
+	//char* result = Cast( char*, Mem_TempAlloc( PATH_MAX * sizeof( char ) ) );
+	char* result = Cast( char*, StringBuilder_ToString( &sb ) );
 
 	return result;
 }
 
-bool8 path_set_current_directory( const char *path ) {
+bool8 Path_SetCurrentDirectory( const char *path ) {
 	if ( chdir( path ) != 0 ) {
 		int err = errno;
-		fatal_error( "Failed to set current directory: %s.\n", strerror( err ) );
+		FatalError( "Failed to set current directory: %s.\n", strerror( err ) );
 
 		return false;
 	}

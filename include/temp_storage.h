@@ -31,14 +31,14 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-struct LinearAllocator;
+struct linearAllocator_t;
 
 
-extern CORE_API LinearAllocator *g_temp_storage;
+extern CORE_API linearAllocator_t *g_tempStorage;
 
-CORE_API void	mem_init_temp_storage( const u64 size_bytes );
-CORE_API void	mem_shutdown_temp_storage();
+CORE_API void	Mem_InitTempStorage( const u64 sizeBytes );
+CORE_API void	Mem_ShutdownTempStorage();
 
-CORE_API void*	mem_temp_alloc( const u64 size_bytes, const u32 alignment = 8 );
+CORE_API void*	Mem_TempAlloc( const u64 sizeBytes, const u32 alignment = 8 );
 
-CORE_API void	mem_reset_temp_storage();
+CORE_API void	Mem_ResetTempStorage();

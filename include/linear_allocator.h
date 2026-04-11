@@ -50,24 +50,24 @@ SOFTWARE.
 ================================================================================================
 */
 
-struct LinearAllocator {
+struct linearAllocator_t {
 	u8	*ptr;
 	u64	offset;
-	u64	reserved_bytes;
-	u64	comitted_bytes;
-	u64	virtual_memory_page_size;
+	u64	reservedBytes;
+	u64	comittedBytes;
+	u64	virtualMemoryPageSize;
 };
 
-CORE_API LinearAllocator	*linear_allocator_create( const u64 reserved_bytes );
+CORE_API linearAllocator_t	*Mem_CreateAllocator( const u64 reservedBytes );
 
-CORE_API void				linear_allocator_destroy( LinearAllocator *allocator );
+CORE_API void				Mem_DestroyAllocator( linearAllocator_t *allocator );
 
-CORE_API void				*linear_allocator_alloc( LinearAllocator *allocator, const u64 size_bytes, const u32 alignment = 8 );
+CORE_API void				*Mem_Alloc( linearAllocator_t *allocator, const u64 sizeBytes, const u32 alignment = 8 );
 
-CORE_API void				linear_allocator_reset( LinearAllocator *allocator );
+CORE_API void				Mem_ResetAllocator( linearAllocator_t *allocator );
 
-CORE_API u64				linear_allocator_tell( LinearAllocator *allocator );
+CORE_API u64				Mem_Tell( linearAllocator_t *allocator );
 
-CORE_API void				linear_allocator_rewind_to( LinearAllocator *allocator, const u64 offset );
+CORE_API void				Mem_RewindTo( linearAllocator_t *allocator, const u64 offset );
 
-CORE_API void				linear_allocator_rewind_by( LinearAllocator *allocator, const u64 bytes );
+CORE_API void				Mem_RewindBy( linearAllocator_t *allocator, const u64 bytes );

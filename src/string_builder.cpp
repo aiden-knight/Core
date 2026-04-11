@@ -45,7 +45,7 @@ SOFTWARE.
 ================================================================================================
 */
 
-void string_builder_init( StringBuilder *builder, LinearAllocator *allocator ) {
+void StringBuilder_Init( stringBuilder_t *builder, linearAllocator_t *allocator ) {
 	assert( builder );
 	assert( allocator );
 
@@ -54,7 +54,7 @@ void string_builder_init( StringBuilder *builder, LinearAllocator *allocator ) {
 	builder->tail = NULL;
 }
 
-void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
+void StringBuilder_Appendf( stringBuilder_t *builder, const char *fmt, ... ) {
 	assert( builder );
 	assert( fmt );
 
@@ -62,14 +62,14 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	va_start( args, fmt );
 
 #if 0
-	string_builder_appendfv( builder, fmt, args );
+	StringBuilder_Appendfv( builder, fmt, args );
 #else
-	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, linear_allocator_alloc( builder->allocator, sizeof( StringBuilderBuffer ) ) );
-	memset( buffer, 0, sizeof( StringBuilderBuffer ) );
+	stringBuilderBuffer_t *buffer = Cast( stringBuilderBuffer_t *, Mem_Alloc( builder->allocator, sizeof( stringBuilderBuffer_t ) ) );
+	memset( buffer, 0, sizeof( stringBuilderBuffer_t ) );
 
-	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
+	buffer->length = TruncCast( u32, vsnprintf( NULL, 0, fmt, args ) );
 
-	buffer->data = cast( char *, linear_allocator_alloc( builder->allocator, ( buffer->length + 1 ) * sizeof( char ), 1 ) );
+	buffer->data = Cast( char *, Mem_Alloc( builder->allocator, ( buffer->length + 1 ) * sizeof( char ), 1 ) );
 	vsnprintf( buffer->data, buffer->length + 1, fmt, args );
 	buffer->data[buffer->length] = 0;
 
@@ -87,26 +87,26 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	va_end( args );
 }
 
-const char* string_builder_to_string( StringBuilder *builder ) {
+const char* StringBuilder_ToString( stringBuilder_t *builder ) {
 	char* result = NULL;
-	u64 total_length = 0;
+	u64 totalLength = 0;
 	u64 offset = 0;
 
-	StringBuilderBuffer *current = builder->head;
+	stringBuilderBuffer_t *current = builder->head;
 
 	if ( !current ) {
 		return NULL;
 	}
 
 	while ( current ) {
-		total_length += current->length;
+		totalLength += current->length;
 
 		current = current->next;
 	}
 
-	total_length += 1;
+	totalLength += 1;
 
-	result = cast( char *, linear_allocator_alloc( builder->allocator, total_length * sizeof( char ), 1 ) );
+	result = Cast( char *, Mem_Alloc( builder->allocator, totalLength * sizeof( char ), 1 ) );
 
 	current = builder->head;
 
@@ -118,7 +118,7 @@ const char* string_builder_to_string( StringBuilder *builder ) {
 		current = current->next;
 	}
 
-	result[total_length - 1] = 0;
+	result[totalLength - 1] = 0;
 
 	return result;
 }

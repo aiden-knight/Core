@@ -39,11 +39,11 @@ SOFTWARE.
 #include <stdarg.h>
 #include <string.h>
 
-static void string_realloc_internal( String *out_str, const u64 length ) {
-	if ( length > out_str->count ) {
-		char *new_data = cast( char *, linear_allocator_alloc( out_str->allocator, length * sizeof( char ) ) );
-		memcpy( new_data, out_str->data, out_str->count * sizeof( char ) );
-		out_str->data = new_data;
+static void StrReallocInternal( string_t *outStr, const u64 length ) {
+	if ( length > outStr->count ) {
+		char *newData = Cast( char *, Mem_Alloc( outStr->allocator, length * sizeof( char ) ) );
+		memcpy( newData, outStr->data, outStr->count * sizeof( char ) );
+		outStr->data = newData;
 	}
 }
 
@@ -55,124 +55,123 @@ static void string_realloc_internal( String *out_str, const u64 length ) {
 ================================================================================================
 */
 
-void string_init( String *out_str, LinearAllocator *allocator ) {
-	out_str->allocator = allocator;
-	out_str->data = NULL;
-	out_str->count = 0;
+void Str_Init( string_t *outStr, linearAllocator_t *allocator ) {
+	outStr->allocator = allocator;
+	outStr->data = NULL;
+	outStr->count = 0;
 }
 
-void string_zero( String *out_str ) {
-	out_str->allocator = NULL;
-	out_str->data = NULL;
-	out_str->count = 0;
+void Str_Zero( string_t *outStr ) {
+	outStr->allocator = NULL;
+	outStr->data = NULL;
+	outStr->count = 0;
 }
 
-void string_printf( String *out_str, const char *fmt, ... ) {
-	assert( out_str );
+void Str_Printf( string_t *outStr, const char *fmt, ... ) {
+	assert( outStr );
 	assert( fmt );
 
 	va_list args;
 	va_start( args, fmt );
 	defer { va_end( args ); };
 
-	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
+	u64 length = Cast( u64, vsnprintf( NULL, 0, fmt, args ) );
 
-	string_realloc_internal( out_str, length + 1 );
-	vsnprintf( out_str->data, length, fmt, args );
-	out_str->data[length] = 0;
+	StrReallocInternal( outStr, length + 1 );
+	vsnprintf( outStr->data, length, fmt, args );
+	outStr->data[length] = 0;
 }
 
-void string_copy( String *dst, String *src ) {
-	string_copy_from_c_string( dst, src->data, src->count );
+void Str_Copy( string_t *dst, string_t *src ) {
+	Str_CopyFromCString( dst, src->data, src->count );
 }
 
-void string_copy_from_c_string( String *out_str, const char *c_str ) {
-	string_copy_from_c_string( out_str, c_str, strlen( c_str ) );
+void Str_CopyFromCString( string_t *outStr, const char *cStr ) {
+	Str_CopyFromCString( outStr, cStr, strlen( cStr ) );
 }
 
-void string_copy_from_c_string( String *out_str, const char *c_str, const u64 length ) {
-	string_realloc_internal( out_str, length + 1 );
-	memcpy( out_str->data, c_str, length );
-	out_str->data[length] = 0;
-	out_str->count = length;
+void Str_CopyFromCString( string_t *outStr, const char *cStr, const u64 length ) {
+	StrReallocInternal( outStr, length + 1 );
+	memcpy( outStr->data, cStr, length );
+	outStr->data[length] = 0;
+	outStr->count = length;
 }
 
-bool8 string_equals( const char *lhs, const char *rhs ) {
+bool8 Str_Equals( const char *lhs, const char *rhs ) {
 	assert( lhs );
 	assert( rhs );
 
-	u64 lhs_len = strlen( lhs );
-	return lhs_len == strlen( rhs ) && strncmp( lhs, rhs, lhs_len ) == 0;
+	u64 lhsLen = strlen( lhs );
+	return lhsLen == strlen( rhs ) && strncmp( lhs, rhs, lhsLen ) == 0;
 }
 
-bool8 string_starts_with( const char *str, const char *prefix ) {
+bool8 Str_StartsWith( const char *str, const char *prefix ) {
 	assert( str );
 	assert( prefix );
 
 	return strncmp( str, prefix, strlen( prefix ) ) == 0;
 }
 
-bool8 string_ends_with( const char *str, const char end ) {
+bool8 Str_EndsWith( const char *str, const char end ) {
 	assert( str );
 
 	return str[strlen( str ) - 1] == end;
 }
 
-bool8 string_ends_with( const char *str, const char *suffix ) {
+bool8 Str_EndsWith( const char *str, const char *suffix ) {
 	assert( str );
 	assert( suffix );
 
-	u64 suffix_length = strlen( suffix );
-	return strncmp( str + strlen( str ) - suffix_length, suffix, suffix_length ) == 0;
+	u64 suffixLength = strlen( suffix );
+	return strncmp( str + strlen( str ) - suffixLength, suffix, suffixLength ) == 0;
 }
 
-bool8 string_contains( const char *str, const char *substring ) {
+bool8 Str_Contains( const char *str, const char *substring ) {
 	assert( str );
 	assert( substring );
 
 	return strstr( str, substring ) != NULL;
 }
 
-const char *string_replace( const char *str, const char old_char, const char new_char ) {
-	char* result = temp_c_string( str );
+const char *Str_Replace( const char *str, const char oldChar, const char newChar ) {
+	char* result = Str_TempCString( str );
 
 	For ( u32, i, 0, strlen( str ) ) {
-		if ( result[i] == old_char ) {
-			result[i] = new_char;
+		if ( result[i] == oldChar ) {
+			result[i] = newChar;
 		}
 	}
 
 	return result;
 }
 
-const char* temp_printf( const char* fmt, ... ) {
+const char* Str_TempPrintf( const char* fmt, ... ) {
 	assert( fmt );
 
 	va_list args;
 	va_start( args, fmt );
 
-	u64 string_length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
-	string_length += 1;	// + 1 for null terminator
+	u64 stringLength = Cast( u64, vsnprintf( NULL, 0, fmt, args ) );
+	stringLength += 1;	// + 1 for null terminator
 
-	char* out_string = cast( char*, mem_temp_alloc( string_length * sizeof( char ) ) );
+	char* outString = Cast( char*, Mem_TempAlloc( stringLength * sizeof( char ) ) );
 
-	vsnprintf( out_string, string_length, fmt, args );
-	out_string[string_length - 1] = 0;
+	vsnprintf( outString, stringLength, fmt, args );
+	outString[stringLength - 1] = 0;
 
 	va_end( args );
 
-	return out_string;
+	return outString;
 }
 
-char *temp_c_string( const char *from ) {
-	return temp_c_string( from, strlen( from ) );
+char *Str_TempCString( const char *from ) {
+	return Str_TempCString( from, strlen( from ) );
 }
 
-char *temp_c_string( const char *from, const u64 num_chars ) {
-	char *result = cast( char *, mem_temp_alloc( ( num_chars + 1 ) * sizeof( char ) ) );
-	strncpy( result, from, num_chars * sizeof( char ) );
-	result[num_chars] = 0;
+char *Str_TempCString( const char *from, const u64 numChars ) {
+	char *result = Cast( char *, Mem_TempAlloc( ( numChars + 1 ) * sizeof( char ) ) );
+	strncpy( result, from, numChars * sizeof( char ) );
+	result[numChars] = 0;
 
 	return result;
 }
-

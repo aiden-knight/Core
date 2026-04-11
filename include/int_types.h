@@ -76,4 +76,4 @@ typedef u8			bool8;
 #define FLOAT64_MAX	DBL_MAX
 
 // returns bit position 'x'
-#define bit( x )	( 1ULL << (x) )
+#define Bit( x )	( 1ULL << (x) )

@@ -45,100 +45,100 @@ SOFTWARE.
 #include <string.h>
 #include <malloc.h>
 
-Array<const char *> get_callstack( LinearAllocator *allocator ) {
+Array<const char *> GetCallstack( linearAllocator_t *allocator ) {
 	Array<const char *> callstack;
-	callstack.init( allocator );
+	callstack.Init( allocator );
 
 	HANDLE process = GetCurrentProcess();
 
-	static bool8 sym_initialized = false;
-	if ( !sym_initialized ) {
+	static bool8 symInitialized = false;
+	if ( !symInitialized ) {
 		SymInitialize( process, NULL, TRUE );
-		sym_initialized = true;
+		symInitialized = true;
 	}
 
 	// TODO: DM: 05/04/2026: can we do better than a hardcoded constant?
 	void *frames[1024];
-	u16 frame_count = CaptureStackBackTrace( 1, 1024, frames, NULL );
+	u16 frameCount = CaptureStackBackTrace( 1, 1024, frames, NULL );
 
-	u8 symbol_buffer[sizeof( SYMBOL_INFO ) + MAX_SYM_NAME];
+	u8 symbolBuffer[sizeof( SYMBOL_INFO ) + MAX_SYM_NAME];
 
-	For ( u16, i, 0, frame_count ) {
-		DWORD64 address = cast( DWORD64, cast( u64, frames[i] ) );
+	For ( u16, i, 0, frameCount ) {
+		DWORD64 address = Cast( DWORD64, Cast( u64, frames[i] ) );
 
-		SYMBOL_INFO *symbol = cast( SYMBOL_INFO *, symbol_buffer );
+		SYMBOL_INFO *symbol = Cast( SYMBOL_INFO *, symbolBuffer );
 		memset( symbol, 0, sizeof( SYMBOL_INFO ) );
 		symbol->SizeOfStruct = sizeof( SYMBOL_INFO );
 		symbol->MaxNameLen = MAX_SYM_NAME;
 
 		DWORD64 displacement = 0;
 		if ( SymFromAddr( process, address, &displacement, symbol ) ) {
-			u64 name_len = cast( u64, symbol->NameLen );
-			char *name = cast( char *, linear_allocator_alloc( allocator, name_len + 1 ) );
-			memcpy( name, symbol->Name, name_len + 1 );
-			callstack.add( name );
+			u64 nameLen = Cast( u64, symbol->NameLen );
+			char *name = Cast( char *, Mem_Alloc( allocator, nameLen + 1 ) );
+			memcpy( name, symbol->Name, nameLen + 1 );
+			callstack.Add( name );
 		} else {
-			callstack.add( "???" );
+			callstack.Add( "???" );
 		}
 	}
 
 	return callstack;
 }
 
-void dump_callstack() {
-	Array<const char *> callstack = get_callstack( g_temp_storage );
+void DumpCallstack() {
+	Array<const char *> callstack = GetCallstack( g_tempStorage );
 
 	For ( u64, i, 0, callstack.count ) {
 		printf( "[%llu]: %s\n", i, callstack[i] );
 	}
 }
 
-void set_console_text_color( const ConsoleTextColor color ) {
+void SetConsoleTextColor( const consoleTextColor_t color ) {
 	HANDLE handle = GetStdHandle( STD_OUTPUT_HANDLE );
 
-	WORD color_code = 0;
+	WORD colorCode = 0;
 
 	switch ( color ) {
-		case CONSOLE_TEXT_COLOR_DEFAULT:		color_code = 0x07; break;
-		case CONSOLE_TEXT_COLOR_RED:			color_code = 0x0C; break;
-		case CONSOLE_TEXT_COLOR_YELLOW:			color_code = 0x0E; break;
-		case CONSOLE_TEXT_COLOR_BLUE:			color_code = 0x01; break;
-		case CONSOLE_TEXT_COLOR_BRIGHT_BLUE:	color_code = 0x09; break;
-		case CONSOLE_TEXT_COLOR_LIGHT_GRAY:		color_code = 0x07; break;
+		case CONSOLE_TEXT_COLOR_DEFAULT:		colorCode = 0x07; break;
+		case CONSOLE_TEXT_COLOR_RED:			colorCode = 0x0C; break;
+		case CONSOLE_TEXT_COLOR_YELLOW:			colorCode = 0x0E; break;
+		case CONSOLE_TEXT_COLOR_BLUE:			colorCode = 0x01; break;
+		case CONSOLE_TEXT_COLOR_BRIGHT_BLUE:	colorCode = 0x09; break;
+		case CONSOLE_TEXT_COLOR_LIGHT_GRAY:		colorCode = 0x07; break;
 	}
 
-	assert( color_code != 0 );
+	assert( colorCode != 0 );
 
-	SetConsoleTextAttribute( handle, color_code );
+	SetConsoleTextAttribute( handle, colorCode );
 }
 
-s32 get_last_error_code() {
-	return trunc_cast( s32, GetLastError() );
+s32 GetLastErrorCode() {
+	return TruncCast( s32, GetLastError() );
 }
 
-void assert_internal( const char *file, const int line, const char *fmt, ... ) {
+void AssertInternal( const char *file, const int line, const char *fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
 	defer { va_end( args ); };
 
-	va_list args_copy;
-	va_copy( args_copy, args );
-	defer { va_end( args_copy ); };
+	va_list argsCopy;
+	va_copy( argsCopy, args );
+	defer { va_end( argsCopy ); };
 
-	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
-	char *buffer = cast( char *, alloca( ( length + 1 ) * sizeof( char ) ) );
-	vsnprintf( buffer, length + 1, fmt, args_copy );
+	u64 length = Cast( u64, vsnprintf( NULL, 0, fmt, args ) );
+	char *buffer = Cast( char *, alloca( ( length + 1 ) * sizeof( char ) ) );
+	vsnprintf( buffer, length + 1, fmt, argsCopy );
 	buffer[length] = 0;
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "ASSERT FAILURE: %s line %d: ", file, line );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_YELLOW );
 
 	printf( "%s\n", buffer );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_DEFAULT );
 
 	// TODO: DM: when we eventually figure out what the X11/wayland/XCB equivalents to these are...
 	// move the code above into debug.cpp and then make it call a function like "dialog_box_internal()", or something

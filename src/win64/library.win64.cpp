@@ -43,16 +43,16 @@ SOFTWARE.
 ================================================================================================
 */
 
-Library library_load( const char *name ) {
+library_t Library_Load( const char *name ) {
 	assert( name );
 
 	return { LoadLibraryA( name ) };
 }
 
-bool8 library_unload( Library *library ) {
+bool8 Library_Unload( library_t *library ) {
 	assert( library && library->ptr );
 
-	if ( !FreeLibrary( cast( HMODULE, library->ptr ) ) ) {
+	if ( !FreeLibrary( Cast( HMODULE, library->ptr ) ) ) {
 		return false;
 	}
 
@@ -61,13 +61,13 @@ bool8 library_unload( Library *library ) {
 	return true;
 }
 
-void* library_get_symbol( const Library library, const char *symbol_name ) {
+void* Library_GetSymbol( const library_t library, const char *symbolName ) {
 	assert( library.ptr );
-	assert( symbol_name );
+	assert( symbolName );
 
-	FARPROC symbol = GetProcAddress( cast( HMODULE, library.ptr ), symbol_name );
+	FARPROC symbol = GetProcAddress( Cast( HMODULE, library.ptr ), symbolName );
 
-	return cast( void *, symbol );
+	return Cast( void *, symbol );
 }
 
 #endif // _WIN32

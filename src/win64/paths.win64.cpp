@@ -49,32 +49,32 @@ SOFTWARE.
 ================================================================================================
 */
 
-const char *path_app_path() {
-	char *app_full_path = cast( char *, mem_temp_alloc( MAX_PATH * sizeof( char ) ) );
-	GetModuleFileNameA( NULL, app_full_path, MAX_PATH );
+const char *Path_AppPath() {
+	char *appFullPath = Cast( char *, Mem_TempAlloc( MAX_PATH * sizeof( char ) ) );
+	GetModuleFileNameA( NULL, appFullPath, MAX_PATH );
 
-	return app_full_path;
+	return appFullPath;
 }
 
-const char *path_current_working_directory() {
-	char *cwd = cast( char *, mem_temp_alloc( MAX_PATH * sizeof( char ) ) );
+const char *Path_CurrentWorkingDirectory() {
+	char *cwd = Cast( char *, Mem_TempAlloc( MAX_PATH * sizeof( char ) ) );
 	DWORD length = GetCurrentDirectory( MAX_PATH, cwd );
 	cwd[length] = 0;
 
 	return cwd;
 }
 
-const char *path_absolute_path( const char *file ) {
+const char *Path_AbsolutePath( const char *file ) {
 	assert( file );
 
-	char *absolute_path = cast( char *, mem_temp_alloc( MAX_PATH * sizeof( char ) ) );
-	DWORD length = GetFullPathName( file, MAX_PATH, absolute_path, NULL );
-	absolute_path[length] = 0;
+	char *absolutePath = Cast( char *, Mem_TempAlloc( MAX_PATH * sizeof( char ) ) );
+	DWORD length = GetFullPathName( file, MAX_PATH, absolutePath, NULL );
+	absolutePath[length] = 0;
 
-	return absolute_path;
+	return absolutePath;
 }
 
-bool8 path_is_absolute( const char *path ) {
+bool8 Path_IsAbsolute( const char *path ) {
 	if ( !path || strlen( path ) < 3 ) {
 		return false;
 	}
@@ -82,20 +82,20 @@ bool8 path_is_absolute( const char *path ) {
 	return isalpha( path[0] ) && path[1] == ':' && ( path[2] == '\\' || path[2] == '/' );
 }
 
-const char *path_canonicalise( const char *path ) {
+const char *Path_Canonicalise( const char *path ) {
 	assert( path );
 
-	const char *path_copy = path_fix_slashes( path );
+	const char *pathCopy = Path_FixSlashes( path );
 
-	u64 max_path_length = ( strlen( path_copy ) + 1 ) * sizeof( char );
+	u64 maxPathLength = ( strlen( pathCopy ) + 1 ) * sizeof( char );
 
-	char *result = cast( char *, mem_temp_alloc( max_path_length ) );
+	char *result = Cast( char *, Mem_TempAlloc( maxPathLength ) );
 
-	BOOL success = PathCanonicalizeA( result, path_copy );
+	BOOL success = PathCanonicalizeA( result, pathCopy );
 	assert( success );
-	unused( success );
+	Unused( success );
 
-	result[max_path_length - 1] = 0;
+	result[maxPathLength - 1] = 0;
 
 	if ( *result == '/' ) {
 		result++;
@@ -106,13 +106,13 @@ const char *path_canonicalise( const char *path ) {
 	return result;
 }
 
-const char *path_fix_slashes( const char *path ) {
-	u64 path_length = strlen( path );
-	char *result = temp_c_string( path, path_length );
+const char *Path_FixSlashes( const char *path ) {
+	u64 pathLength = strlen( path );
+	char *result = Str_TempCString( path, pathLength );
 
-	For ( u64, char_index, 0, path_length ) {
-		if ( result[char_index] == '/' ) {
-			result[char_index] = '\\';
+	For ( u64, charIndex, 0, pathLength ) {
+		if ( result[charIndex] == '/' ) {
+			result[charIndex] = '\\';
 		}
 	}
 
@@ -122,23 +122,23 @@ const char *path_fix_slashes( const char *path ) {
 // TODO: DM: 10/10/2025: I'm very tempted to remove this implementation and make the linux one work cross platform
 // for some reason this windows implementation cares whether or not the files we are referencing are files or directories and it starts returning very wrong answers if we are wrong about the file type we specify vs the actual path
 // the linux implementation doesnt care about any of that and instead just compares the strings (which is all it needs to do)
-char *path_relative_path_to( const char *path_from, const char *path_to ) {
-	assert( path_from );
-	assert( path_to );
+char *Path_RelativePathTo( const char *pathFrom, const char *pathTo ) {
+	assert( pathFrom );
+	assert( pathTo );
 
-	char *result = cast( char *, mem_temp_alloc( MAX_PATH * sizeof( char ) ) );
+	char *result = Cast( char *, Mem_TempAlloc( MAX_PATH * sizeof( char ) ) );
 
-	if ( !PathRelativePathTo( result, path_fix_slashes( path_from ), FILE_ATTRIBUTE_DIRECTORY, path_fix_slashes( path_to ), FILE_ATTRIBUTE_DIRECTORY ) ) {
-		error( "Unable to compute relative path, ensure provided paths exist.\nFrom Path: %s\nTo Path: %s", path_from, path_to );
+	if ( !PathRelativePathTo( result, Path_FixSlashes( pathFrom ), FILE_ATTRIBUTE_DIRECTORY, Path_FixSlashes( pathTo ), FILE_ATTRIBUTE_DIRECTORY ) ) {
+		Error( "Unable to compute relative path, ensure provided paths exist.\nFrom Path: %s\nTo Path: %s", pathFrom, pathTo );
 	}
 
 	return result;
 }
 
-bool8 path_set_current_directory( const char *path ) {
+bool8 Path_SetCurrentDirectory( const char *path ) {
 	assert( path );
 
-	return cast( bool8, SetCurrentDirectory( path ) );
+	return Cast( bool8, SetCurrentDirectory( path ) );
 }
 
 #endif // _WIN32

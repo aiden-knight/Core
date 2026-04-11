@@ -40,8 +40,8 @@ SOFTWARE.
 */
 
 // Call these ones!
-#define cast( Type, x )				(Type) (x)
-#define trunc_cast( Type, x )		trunc_cast_internal<Type>( (x) )
+#define Cast( Type, x )				(Type) (x)
+#define TruncCast( Type, x )		TruncCastInternal<Type>( (x) )
 
 
 #pragma clang diagnostic push
@@ -53,36 +53,36 @@ SOFTWARE.
 // DO NOT CALL THIS DIRECTLY!
 // USE THE MACROS ABOVE!
 template<class OutType, class InType>
-OutType trunc_cast_internal( const InType in ) {
-	//bool8 is_input_floating_point = cast( InType, 0.5 ) != 0;
-	bool8 is_output_floating_point = cast( OutType, 0.5 ) != 0;
+OutType TruncCastInternal( const InType in ) {
+	//bool8 isInputFloatingPoint = Cast( InType, 0.5 ) != 0;
+	bool8 isOutputFloatingPoint = Cast( OutType, 0.5 ) != 0;
 
-	bool8 is_input_signed = cast( InType, -1 ) < 0;
-	bool8 is_output_signed = cast( OutType, -1 ) < 0;
+	bool8 isInputSigned = Cast( InType, -1 ) < 0;
+	bool8 isOutputSigned = Cast( OutType, -1 ) < 0;
 
-	OutType min_output_value = 0;
-	OutType max_output_value = 0;
+	OutType minOutputValue = 0;
+	OutType maxOutputValue = 0;
 
-	if ( is_output_floating_point ) {
-		min_output_value = cast( OutType, -FLOAT32_MAX );
-		max_output_value = cast( OutType, FLOAT32_MAX );
+	if ( isOutputFloatingPoint ) {
+		minOutputValue = Cast( OutType, -FLOAT32_MAX );
+		maxOutputValue = Cast( OutType, FLOAT32_MAX );
 	} else {
-		if ( is_output_signed ) {
-			max_output_value = cast( OutType, ( 1ULL << ( sizeof( OutType ) * 8 - 1 ) ) - 1 );
-			min_output_value = cast( OutType, -max_output_value - 1 );
+		if ( isOutputSigned ) {
+			maxOutputValue = Cast( OutType, ( 1ULL << ( sizeof( OutType ) * 8 - 1 ) ) - 1 );
+			minOutputValue = Cast( OutType, -maxOutputValue - 1 );
 		} else {
-			min_output_value = 0;
-			max_output_value = cast( OutType, ~0 );
+			minOutputValue = 0;
+			maxOutputValue = Cast( OutType, ~0 );
 		}
 	}
 
-	if ( is_input_signed ) {
-		assert( in >= cast( OutType, min_output_value ) );
+	if ( isInputSigned ) {
+		assert( in >= Cast( OutType, minOutputValue ) );
 	}
 
-	assert( in <= cast( OutType, max_output_value ) );
+	assert( in <= Cast( OutType, maxOutputValue ) );
 
-	return cast( OutType, in );
+	return Cast( OutType, in );
 }
 
 #pragma clang diagnostic pop

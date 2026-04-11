@@ -46,34 +46,34 @@ SOFTWARE.
 ================================================================================================
 */
 
-u32 hash32( const void *data, const u64 length, const u32 seed ) {
+u32 Hash_32( const void *data, const u64 length, const u32 seed ) {
 	return XXH32( data, length, seed );
 }
 
-u64 hash64( const void *data, const u64 length, const u64 seed ) {
+u64 Hash_64( const void *data, const u64 length, const u64 seed ) {
 	return XXH64( data, length, seed );
 }
 
-u64 hash_string( const char* string, const u64 seed ) {
-	return hash64( string, strlen( string ), seed );
+u64 Hash_String( const char* string, const u64 seed ) {
+	return Hash_64( string, strlen( string ), seed );
 }
 
-struct Hasher {
+struct hasher_t {
 	XXH64_state_t*	state;
 };
 
-Hasher *hasher_create( const u64 seed ) {
-	Hasher *hasher = cast( Hasher *, malloc( sizeof( Hasher ) ) );
-	memset( hasher, 0, sizeof( Hasher ) );
+hasher_t *Hasher_Create( const u64 seed ) {
+	hasher_t *hasher = Cast( hasher_t *, malloc( sizeof( hasher_t ) ) );
+	memset( hasher, 0, sizeof( hasher_t ) );
 
 	hasher->state = XXH64_createState();
 
-	hasher_reset( hasher, seed );
+	Hasher_Reset( hasher, seed );
 
 	return hasher;
 }
 
-void hasher_destroy( Hasher *hasher ) {
+void Hasher_Destroy( hasher_t *hasher ) {
 	XXH64_freeState( hasher->state );
 	hasher->state = NULL;
 
@@ -81,17 +81,16 @@ void hasher_destroy( Hasher *hasher ) {
 	hasher = NULL;
 }
 
-void hasher_reset( Hasher *hasher, const u64 seed ) {
+void Hasher_Reset( hasher_t *hasher, const u64 seed ) {
 	XXH_errorcode result = XXH64_reset( hasher->state, seed );
 	assert( result != XXH_ERROR );
-	unused( result );
+	Unused( result );
 }
 
-void hasher_hash( Hasher *hasher, const void *ptr, const u64 size ) {
+void Hasher_Hash( hasher_t *hasher, const void *ptr, const u64 size ) {
 	XXH64_update( hasher->state, ptr, size );
 }
 
-u64 hasher_get_hash( Hasher *hasher ) {
+u64 Hasher_GetHash( hasher_t *hasher ) {
 	return XXH64_digest( hasher->state );
 }
-

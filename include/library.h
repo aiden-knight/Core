@@ -31,16 +31,16 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-struct Library {
-	void			*ptr;
+struct library_t {
+	void	*ptr;
 };
 
 // Loads a dynamic library.
-CORE_API Library	library_load( const char *name );
+CORE_API library_t	Library_Load( const char *name );
 
 // Attempts to unload a dynamic library and returns true if successful, otherwise returns false.
-CORE_API bool8		library_unload( Library *library );
+CORE_API bool8		Library_Unload( library_t *library );
 
 // Returns the symbol as a pointer from the dynamic library.
 // If the symbol can't be found then returns NULL.
-CORE_API void		*library_get_symbol( const Library library, const char *symbol_name );
+CORE_API void		*Library_GetSymbol( const library_t library, const char *symbolName );

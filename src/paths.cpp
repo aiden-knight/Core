@@ -38,22 +38,22 @@ SOFTWARE.
 #include <stdarg.h>
 #include <string.h>
 
-static const char *get_last_slash( const char *path ) {
-	const char *last_slash = NULL;
-	const char *last_back_slash = strrchr( path, '\\' );
-	const char *last_forward_slash = strrchr( path, '/' );
+static const char *GetLastSlash( const char *path ) {
+	const char *lastSlash = NULL;
+	const char *lastBackSlash = strrchr( path, '\\' );
+	const char *lastForwardSlash = strrchr( path, '/' );
 
-	if ( !last_back_slash && !last_forward_slash ) {
+	if ( !lastBackSlash && !lastForwardSlash ) {
 		return NULL;
 	}
 
-	if ( cast( u64, last_back_slash ) > cast( u64, last_forward_slash ) ) {
-		last_slash = last_back_slash;
+	if ( Cast( u64, lastBackSlash ) > Cast( u64, lastForwardSlash ) ) {
+		lastSlash = lastBackSlash;
 	} else {
-		last_slash = last_forward_slash;
+		lastSlash = lastForwardSlash;
 	}
 
-	return last_slash;
+	return lastSlash;
 }
 
 /*
@@ -64,63 +64,63 @@ static const char *get_last_slash( const char *path ) {
 ================================================================================================
 */
 
-const char *path_remove_file_from_path( const char *path ) {
-	const char *last_slash = get_last_slash( path );
+const char *Path_RemoveFileFromPath( const char *path ) {
+	const char *lastSlash = GetLastSlash( path );
 
-	if ( !last_slash ) {
+	if ( !lastSlash ) {
 		return NULL;
 	}
 
-	u64 path_length = cast( u64, last_slash ) - cast( u64, path );
+	u64 pathLength = Cast( u64, lastSlash ) - Cast( u64, path );
 
-	return temp_c_string( path, path_length );
+	return Str_TempCString( path, pathLength );
 }
 
-const char *path_remove_path_from_file( const char *path ) {
-	const char *last_slash = get_last_slash( path );
+const char *Path_RemovePathFromFile( const char *path ) {
+	const char *lastSlash = GetLastSlash( path );
 
-	if ( !last_slash ) {
-		last_slash = path;
+	if ( !lastSlash ) {
+		lastSlash = path;
 	} else {
-		last_slash++;
+		lastSlash++;
 	}
 
-	return last_slash;
+	return lastSlash;
 }
 
-const char *path_remove_file_extension( const char *filename ) {
+const char *Path_RemoveFileExtension( const char *filename ) {
 	const char *dot = strrchr( filename, '.' );
 
 	if ( !dot ) {
 		return filename;
 	}
 
-	u64 result_length = cast( u64, dot ) - cast( u64, filename );
+	u64 resultLength = Cast( u64, dot ) - Cast( u64, filename );
 
-	return temp_c_string( filename, result_length );
+	return Str_TempCString( filename, resultLength );
 }
 
-static const char *path_join_internalv( const int count, va_list args ) {
-	StringBuilder builder = {};
-	string_builder_init( &builder, g_temp_storage );
+static const char *Path_JoinInternalV( const int count, va_list args ) {
+	stringBuilder_t builder = {};
+	StringBuilder_Init( &builder, g_tempStorage );
 
-	For ( int, arg_index, 0, count ) {
-		if ( arg_index > 0 ) {
-			string_builder_appendf( &builder, PATH_SEPARATOR );
+	For ( int, argIndex, 0, count ) {
+		if ( argIndex > 0 ) {
+			StringBuilder_Appendf( &builder, PATH_SEPARATOR );
 		}
 
 		const char* part = va_arg( args, const char * );
 
-		string_builder_appendf( &builder, part );
+		StringBuilder_Appendf( &builder, part );
 	}
 
-	return string_builder_to_string( &builder );
+	return StringBuilder_ToString( &builder );
 }
 
-const char *path_join_internal( const int count, ... ) {
+const char *Path_JoinInternal( const int count, ... ) {
 	va_list args;
 	va_start( args, count );
-	const char *result = path_join_internalv( count, args );
+	const char *result = Path_JoinInternalV( count, args );
 	va_end( args );
 
 	return result;

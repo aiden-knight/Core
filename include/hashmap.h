@@ -48,43 +48,41 @@ SOFTWARE.
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #endif
 
-struct Allocator;
-
 constexpr u64 HASHMAP_UNUSED_BUCKET 	= 0U;
 constexpr u64 HASHMAP_TOMBSTONE_BUCKET 	= 0xffffffffffffffffU;
 constexpr u32 HASHMAP_INVALID_VALUE 	= 0xffffffffU;
 
-struct HashmapBucket {
-	u32		key_hi;
-	u32		key_lo;
+struct hashmapBucket_t {
+	u32		keyHi;
+	u32		keyLo;
 	u32		value;
 };
 
-struct Hashmap {
+struct hashmap_t {
 	u32				capacity;
-	u32				usage_count;
-	u32 			tombstone_count;
-	u32				last_linear_probe;
-	float32			max_utilisation;
-	bool8			should_grow;
-	HashmapBucket	*buckets;
+	u32				usageCount;
+	u32 			tombstoneCount;
+	u32				lastLinearProbe;
+	float32			maxUtilisation;
+	bool8			shouldGrow;
+	hashmapBucket_t	*buckets;
 };
 
-CORE_API Hashmap	*hashmap_create( u32 starting_capacity, float32 normalized_max_utilisation = 0.5f, bool8 should_grow = true );
-CORE_API void		hashmap_destroy( Hashmap *map );
+CORE_API hashmap_t	*Hashmap_Create( u32 startingCapacity, float32 normalizedMaxUtilisation = 0.5f, bool8 shouldGrow = true );
+CORE_API void		Hashmap_Destroy( hashmap_t *map );
 
-CORE_API void		hashmap_reset( Hashmap *map );
+CORE_API void		Hashmap_Reset( hashmap_t *map );
 
 // Returns the value associated with the key if the key has a value, otherwise returns 0.
-CORE_API u32		hashmap_get_value( const Hashmap *map, const u64 key );
+CORE_API u32		Hashmap_GetValue( const hashmap_t *map, const u64 key );
 
-CORE_API void		hashmap_set_value( Hashmap *map, const u64 key, const u32 value );
-CORE_API void		hashmap_remove_key( Hashmap *map, const u64 key );
+CORE_API void		Hashmap_SetValue( hashmap_t *map, const u64 key, const u32 value );
+CORE_API void		Hashmap_RemoveKey( hashmap_t *map, const u64 key );
 
-CORE_API u64		hashmap_internal_combine( const u32 hi, const u32 lo );
-CORE_API u64		hashmap_internal_combine_at_index( const Hashmap *map, const u32 index );
-CORE_API u32		hashmap_internal_get_lo_part( const u64 key );
-CORE_API u32		hashmap_internal_get_hi_part( const u64 key );
+CORE_API u64		Hashmap_InternalCombine( const u32 hi, const u32 lo );
+CORE_API u64		Hashmap_InternalCombineAtIndex( const hashmap_t *map, const u32 index );
+CORE_API u32		Hashmap_InternalGetLoPart( const u64 key );
+CORE_API u32		Hashmap_InternalGetHiPart( const u64 key );
 
 #if defined( __clang__ )
 #pragma clang diagnostic pop

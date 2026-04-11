@@ -46,39 +46,39 @@ SOFTWARE.
 */
 
 // Returns true if 'a' is within an epsilon range to 'b', otherwise returns false.
-CORE_API bool8	float32_equals( const float32 a, const float32 b );
+CORE_API bool8	Float32Equals( const float32 a, const float32 b );
 
 // Returns true if 'a' is within an epsilon range to 'b', otherwise returns false.
-CORE_API bool8	float64_equals( const float64 a, const float64 b );
+CORE_API bool8	Float64Equals( const float64 a, const float64 b );
 
 // Returns whichever value is smallest.
-CORE_API u32	min( const u32 a, const u32 b );
+CORE_API u32	Min( const u32 a, const u32 b );
 
 // Returns whichever value is smallest.
-CORE_API u64	min( const u64 a, const u64 b );
+CORE_API u64	Min( const u64 a, const u64 b );
 
 // Returns whichever value is largest.
-CORE_API u32	max( const u32 a, const u32 b );
+CORE_API u32	Max( const u32 a, const u32 b );
 
 // Returns whichever value is largest.
-CORE_API u64	max( const u64 a, const u64 b );
+CORE_API u64	Max( const u64 a, const u64 b );
 
 // Returns the number of zeros on the left hand side of 'number' when viewed in base 2.
-CORE_API s32	get_num_leading_zeros( const u64 number );
+CORE_API s32	GetNumLeadingZeros( const u64 number );
 
 // Returns the number of zeros on the right hand side of 'number' when viewed in base 2.
-CORE_API s32	get_num_trailing_zeros( const u64 number );
+CORE_API s32	GetNumTrailingZeros( const u64 number );
 
 // Returns the number of bits inside 'number' that are set to 1 when viewed in base 2.
-CORE_API s32	get_num_set_bits( const u64 number );
+CORE_API s32	GetNumSetBits( const u64 number );
 
 // Returns the next power of two that is higher than 'number'.
-CORE_API u64	next_power_of_2_up( const u64 number );
+CORE_API u64	NextPowerOf2Up( const u64 number );
 
 // Returns the next multiple of 4 that is higher than or equal to 'number'.
-CORE_API u64	next_multiple_of_4_up( const u64 number );
+CORE_API u64	NextMultipleOf4Up( const u64 number );
 
 // Returns 'x' rounded up to the next multiple of 'alignment'. 'alignment' must be a power of two.
-inline u64 align_up( const u64 x, const u64 alignment ) {
+inline u64 AlignUp( const u64 x, const u64 alignment ) {
 	return ( x + ( alignment - 1 ) ) & ~( alignment - 1 );
 }

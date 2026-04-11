@@ -32,29 +32,29 @@ SOFTWARE.
 #include "core_array.h"	// DM!!! is this ok?
 #include "dll_export.h"
 
-struct LinearAllocator;
+struct linearAllocator_t;
 
 #ifdef __clang__
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
 #endif
 
-struct Process;
+struct process_t;
 
-enum ProcessFlagBits {
+enum processFlagBits_t {
 	PROCESS_FLAG_ASYNC	= 1,
 	PROCESS_FLAG_COMBINE_STDOUT_AND_STDERR,
 };
-typedef u32 ProcessFlags;
+typedef u32 processFlags_t;
 
 
-CORE_API Process	*process_create( LinearAllocator *allocator, Array<const char *> *args, Array<const char *> *environment_variables, const ProcessFlags flags );
+CORE_API process_t	*Process_Create( linearAllocator_t *allocator, Array<const char *> *args, Array<const char *> *environmentVariables, const processFlags_t flags );
 
-CORE_API void		process_destroy( Process *process );
+CORE_API void		Process_Destroy( process_t *process );
 
-CORE_API s32		process_join( Process *process );
+CORE_API s32		Process_Join( process_t *process );
 
-CORE_API u32		process_read_stdout( Process *process, char *out_buffer, const u32 count );
+CORE_API u32		Process_ReadStdout( process_t *process, char *outBuffer, const u32 count );
 
 #ifdef __clang__
 #pragma clang diagnostic pop

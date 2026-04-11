@@ -31,47 +31,47 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdarg.h>
 
-void warning( const char *fmt, ... ) {
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
+void Warning( const char *fmt, ... ) {
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "WARNING: " );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_YELLOW );
 
 	va_list args;
 	va_start( args, fmt );
 	vfprintf( stderr, fmt, args );
 	va_end( args );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_DEFAULT );
 }
 
-void error( const char *fmt, ... ) {
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
+void Error( const char *fmt, ... ) {
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "ERROR: " );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_YELLOW );
 
 	va_list args;
 	va_start( args, fmt );
 	vfprintf( stderr, fmt, args );
 	va_end( args );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_DEFAULT );
 }
 
-void fatal_error( const char *fmt, ... ) {
-	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
+void FatalError( const char *fmt, ... ) {
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_RED );
 
 	printf( "FATAL ERROR: " );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_YELLOW );
 
 	va_list args;
 	va_start( args, fmt );
 	vfprintf( stderr, fmt, args );
 	va_end( args );
 
-	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+	SetConsoleTextColor( CONSOLE_TEXT_COLOR_DEFAULT );
 }

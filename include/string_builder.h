@@ -31,7 +31,7 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
-struct LinearAllocator;
+struct linearAllocator_t;
 
 /*
 ================================================================================================
@@ -52,24 +52,24 @@ struct LinearAllocator;
 #endif
 
 // TODO: DM: 23/12/2025: add 4KB static char array and use that if the string fits in that
-struct StringBuilderBuffer {
+struct stringBuilderBuffer_t {
 	u32						length;
 	char					*data;
-	StringBuilderBuffer		*next;
+	stringBuilderBuffer_t	*next;
 };
 
 #ifdef __clang__
 #pragma clang diagnostic pop
 #endif
 
-struct StringBuilder {
-	LinearAllocator		*allocator;
-	StringBuilderBuffer	*head;
-	StringBuilderBuffer	*tail;
+struct stringBuilder_t {
+	linearAllocator_t		*allocator;
+	stringBuilderBuffer_t	*head;
+	stringBuilderBuffer_t	*tail;
 };
 
-CORE_API void			string_builder_init( StringBuilder *builder, LinearAllocator *allocator );
+CORE_API void			StringBuilder_Init( stringBuilder_t *builder, linearAllocator_t *allocator );
 
-CORE_API void			string_builder_appendf( StringBuilder *builder, const char *fmt, ... );
+CORE_API void			StringBuilder_Appendf( stringBuilder_t *builder, const char *fmt, ... );
 
-CORE_API const char		*string_builder_to_string( StringBuilder *builder );
+CORE_API const char		*StringBuilder_ToString( stringBuilder_t *builder );
