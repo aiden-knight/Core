@@ -67,15 +67,14 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 	// core
 	//
 	BuildConfig core = {
-		.name				= "core",
-		.binaryType			= BINARY_TYPE_DYNAMIC_LIBRARY,
-		.intermediateFolder	= "intermediate",
-		.binaryName			= "core",
-		.sourceFiles		= { "src/*.cpp" },
-		.defines			= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
-		.additionalIncludes = { "include" },
-		.additionalLibs		= { "Shlwapi", "DbgHelp" },
-		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
+		.name							= "core",
+		.binaryType						= BINARY_TYPE_DYNAMIC_LIBRARY,
+		.intermediateFolder				= "intermediate",
+		.binaryName						= "core",
+		.sourceFiles					= { "src/*.cpp" },
+		.defines						= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
+		.additionalIncludes 			= { "include" },
+		.warningLevels					= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings = {
 			"-Wno-c++98-compat",
 			"-Wno-c++98-compat-pedantic",
@@ -97,12 +96,18 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 			"-Wno-float-equal",
 			"-Wno-sign-compare",
 		},
-		.warningsAsErrors	= true,
+		.warningsAsErrors				= true,
+#ifdef __linux__
+		.additionalCompilerArguments	= { "-fPIC" },
+#endif
 	};
 
 #ifdef _WIN32
 	core.defines.push_back( "WIN32_LEAN_AND_MEAN" );
 	core.defines.push_back( "NOMINMAX" );
+
+	core.additionalLibs.push_back( "Shlwapi.lib" );
+	core.additionalLibs.push_back( "DbgHelp.lib" );
 #endif
 
 	if ( HasCommandLineArg( args, "--release" ) ) {
@@ -136,7 +141,11 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.sourceFiles		= { "tests/tests.cpp" },
 		.defines			= { "_CRT_SECURE_NO_WARNINGS", "LOG_SHOW_FUNCTIONS" },
 		.additionalIncludes	= { "include" },
+#ifdef _WIN32
 		.additionalLibs		= { "core" },
+#else
+		.additionalLibs		= { ":core.so" },
+#endif
 		.warningLevels		= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
 		.ignoreWarnings = {
 			"-Wno-switch-default",
@@ -147,6 +156,9 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 			"-Wno-unsafe-buffer-usage-in-libc-call",
 			"-Wno-double-promotion",
 			"-Wno-unsafe-buffer-usage",
+#ifdef __linux__
+			"-Wno-padded",
+#endif
 		},
 		.warningsAsErrors	= true
 	};
@@ -160,16 +172,10 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		tests.binaryFolder = "bin/release";
 		tests.defines.push_back( "NDEBUG" );
 		tests.additionalLibPaths.push_back( "bin/release" );
-//#ifdef _WIN32
-//		tests.additionalLibs.push_back( "msvcrt" );
-//#endif
 	} else {
 		tests.binaryFolder = "bin/debug";
 		tests.defines.push_back( "_DEBUG" );
 		tests.additionalLibPaths.push_back( "bin/debug" );
-//#ifdef _WIN32
-//		tests.additionalLibs.push_back( "msvcrtd" );
-//#endif
 	}
 
 	AddBuildConfig( options, &tests );
