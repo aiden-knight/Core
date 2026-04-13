@@ -34,31 +34,52 @@ SOFTWARE.
 #include <core_helpers.h>
 #include <linear_allocator.h>
 #include <temp_storage.h>
+#include <defer.h>
 
 #include <stdio.h>
+#include <malloc.h>
 #include <errno.h>
+#include <execinfo.h>
 
 Array<const char *> get_callstack( LinearAllocator *allocator ) {
-	// TODO: DM: 05/04/2026: implement
-	unused( allocator );
-	assert( false );
+	const int NUM_FRAMES = 1024;
+	void *buffer[NUM_FRAMES];
 
-	Array<const char *> callstack;
-	callstack.init( allocator );
+	int frames_count = backtrace( buffer, NUM_FRAMES );
 
-	return callstack;
+	char **frames_linux = backtrace_symbols( buffer, frames_count );
+	defer { free( frames_linux ); };	// backtrace_symbols() mallocs the return value, user must free it themselves
+
+	Array<const char *> frames;
+	frames.init( allocator );
+	frames.resize( trunc_cast( u64, frames_count ) );
+
+	For ( u32, frame_index, 0, frames.count ) {
+		u64 frame_len = strlen( frames_linux[frame_index] ) * sizeof( char );
+
+		char *frame = cast( char *, linear_allocator_alloc( allocator, frame_len + 1 ) );
+		memcpy( frame, frames_linux[frame_index], frame_len );
+		frame[frame_len] = 0;
+
+		frames[frame_index] = frame;
+	}
+
+	return frames;
 }
 
 void dump_callstack() {
-	// TODO: DM: 05/04/2026: implement
-	assert( false );
+	Array<const char *> callstack = get_callstack( g_temp_storage );
+
+	For ( u64, i, 0, callstack.count ) {
+		printf( "[%lu]: %s\n", i, callstack[i] );
+	}
 }
 
 void set_console_text_color( const ConsoleTextColor color ) {
-	const char* color_linux = NULL;
+	const char *color_linux = NULL;
 
 	switch ( color ) {
-		case CONSOLE_TEXT_COLOR_DEFAULT:		color_linux = "\033[0m"; break;
+		case CONSOLE_TEXT_COLOR_DEFAULT:		color_linux = "\033[0m";    break;
 		case CONSOLE_TEXT_COLOR_RED:			color_linux = "\033[0;31m"; break;
 		case CONSOLE_TEXT_COLOR_YELLOW:			color_linux = "\033[0;32m"; break;
 		case CONSOLE_TEXT_COLOR_BLUE:			color_linux = "\033[1;34m"; break;
@@ -72,10 +93,15 @@ void set_console_text_color( const ConsoleTextColor color ) {
 }
 
 s32 get_last_error_code() {
-	// errno is a global and therefore not thread safe
-	// so it MUST ALWAYS be cached ASAP
-	int err = errno;
-	return err;
+	return errno;
+}
+
+void assert_internal( const char *file, const int line, const char *fmt, ... ) {
+	unused( file );
+	unused( line );
+	unused( fmt );
+
+	// TODO: DM: write me!
 }
 
 #endif // __linux__
