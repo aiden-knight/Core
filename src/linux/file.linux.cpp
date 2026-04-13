@@ -44,6 +44,8 @@ SOFTWARE.
 #include <dirent.h>
 #include <errno.h>
 
+#include <stdio.h>
+
 /*
 ================================================================================================
 
@@ -198,7 +200,7 @@ bool8 file_get_last_write_time( const char *filename, u64 *out_last_write_time )
 	return true;
 }
 
-bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, const bool8 visit_folders, FileVisitCallback visit_callback, void *user_data ) {
+bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit_flags, FileVisitCallback visit_callback, void *user_data ) {
 	assert( path );
 	assert( visit_callback );
 
@@ -248,14 +250,14 @@ bool8 file_get_all_files_in_folder( const char *path, const bool8 recursive, con
 			};
 
 			if ( file_info.is_directory ) {
-				if ( visit_folders ) {
+				if ( visit_flags & FILE_VISIT_FOLDERS ) {
 					visit_callback( &file_info, user_data );
 				}
 
-				if ( recursive ) {
+				if ( visit_flags & FILE_VISIT_RECURSIVE ) {
 					directories.add( full_filename );
 				}
-			} else {
+			} else if ( visit_flags & FILE_VISIT_FILES ) {
 				visit_callback( &file_info, user_data );
 			}
 		}
