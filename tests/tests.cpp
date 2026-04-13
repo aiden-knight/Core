@@ -1281,6 +1281,7 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 }
 
 
+#ifdef _WIN32
 /*
 ================================================================================================
 
@@ -1352,9 +1353,11 @@ static s32 thread_job_func( void *data ) {
 			if ( read_pos == cached_read_pos ) {
 				ThreadJob* job = &scheduler->jobs[read_pos];
 
-				Sleep( 100 );
-
-				char msg[1024] = {};
+#ifdef _WIN32
+				Sleep( 1000 );
+#else
+				// TODO(DM): this
+#endif
 
 				const char* threadnumstr = NULL;
 				switch ( context->logical_thread_index ) {
@@ -1364,12 +1367,17 @@ static s32 thread_job_func( void *data ) {
 					case 3: threadnumstr = "3"; break;
 				}
 
+				char msg[1024] = {};
 				strcat( msg, "Thread " );
 				strcat( msg, threadnumstr );
 				strcat( msg, ": " );
 				strcat( msg, job->msg );
 
+#ifdef _WIN32
 				OutputDebugString( msg );
+#else
+				puts( msg );
+#endif
 
 				atomic_increment( &job->completed );
 				atomic_increment( &scheduler->num_completed_jobs );
@@ -1411,8 +1419,11 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	add_thread_job( &scheduler, "Job A6\n" );
 	add_thread_job( &scheduler, "Job A7\n" );
 
-	//while ( scheduler.num_completed_jobs.value != 8 );
+#ifdef _WIN32
 	Sleep( 1000 );
+#else
+	// TODO(DM): this
+#endif
 
 	TEMPER_CHECK_TRUE( scheduler.num_completed_jobs.value == 8 );
 	TEMPER_CHECK_TRUE( scheduler.jobs_read_pos.value == scheduler.jobs_write_pos.value );
@@ -1430,8 +1441,11 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	add_thread_job( &scheduler, "Job B6\n" );
 	add_thread_job( &scheduler, "Job B7\n" );
 
-	//while ( scheduler.num_completed_jobs.value != 16 );
+#ifdef _WIN32
 	Sleep( 1000 );
+#else
+	// TODO(DM): this
+#endif
 
 	TEMPER_CHECK_TRUE( scheduler.num_completed_jobs.value == 16 );
 	TEMPER_CHECK_TRUE( scheduler.jobs_read_pos.value == scheduler.jobs_write_pos.value );
@@ -1463,6 +1477,7 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	semaphore_destroy( &scheduler.sema );
 	TEMPER_CHECK_TRUE( scheduler.sema.ptr == NULL );
 }
+#endif
 
 
 /*
