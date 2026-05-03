@@ -71,7 +71,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.binaryType						= BINARY_TYPE_DYNAMIC_LIBRARY,
 		.intermediateFolder				= "intermediate",
 		.binaryName						= "core",
-		.sourceFiles					= { "src/*.cpp" },
+		.sourceFiles					= { "src/**/*.cpp" },
 		.defines						= { "CORE_EXPORTS", "HASHMAP_HIDE_MISSING_KEY_WARNING" },
 		.additionalIncludes 			= { "include" },
 		.warningLevels					= { "-Wall", "-Weverything", "-Wextra", "-Wpedantic" },
