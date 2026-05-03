@@ -129,8 +129,7 @@ bool8 file_rename( const char *old_filename, const char *new_filename ) {
 	assert( old_filename );
 	assert( new_filename );
 
-	int result = rename( old_filename, new_filename );
-	if ( !result ) {
+	if ( rename( old_filename, new_filename ) != 0 ) {
 		int err = errno;
 		fatal_error( "Failed to rename file \"%s\" to \"%s\": %s.\n", old_filename, new_filename, strerror( err ) );
 		return false;
