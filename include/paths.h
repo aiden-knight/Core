@@ -70,7 +70,7 @@ CORE_API const char			*path_remove_file_extension( const char *filename );
 // On Mac/Linux: Returns true if the path starts with two backslashes or a single forward slash, otherwise returns false.
 CORE_API bool8				path_is_absolute( const char *path );
 
-CORE_API const char			*path_canonicalise( const char *path );
+CORE_API const char			*path_canonicalize( const char *path );
 
 // Make sure that any slashes found in 'path' are what the OS expects them to be.
 CORE_API const char			*path_fix_slashes( const char *path );

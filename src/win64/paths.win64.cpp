@@ -82,7 +82,7 @@ bool8 path_is_absolute( const char *path ) {
 	return isalpha( path[0] ) && path[1] == ':' && ( path[2] == '\\' || path[2] == '/' );
 }
 
-const char *path_canonicalise( const char *path ) {
+const char *path_canonicalize( const char *path ) {
 	assert( path );
 
 	const char *path_copy = path_fix_slashes( path );
