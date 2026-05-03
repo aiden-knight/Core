@@ -1281,7 +1281,6 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 }
 
 
-#ifdef _WIN32
 /*
 ================================================================================================
 
@@ -1316,7 +1315,7 @@ struct ThreadJob {
 	const char	*msg;
 };
 
-struct Scheduler {
+struct ThreadPool {
 	Thread		threads[4];
 	Semaphore	sema;
 	Atomic32	jobs_read_pos;
@@ -1328,30 +1327,30 @@ struct Scheduler {
 
 struct ThreadContext {
 	u32			logical_thread_index;
-	Scheduler	*scheduler;
+	ThreadPool	*thread_pool;
 };
 
-static void add_thread_job( Scheduler *scheduler, const char *msg ) {
-	u32 job_index = atomic_increment( &scheduler->jobs_write_pos ) - 1;
-	ThreadJob *job = &scheduler->jobs[job_index];
+static void add_thread_job( ThreadPool *thread_pool, const char *msg ) {
+	u32 job_index = atomic_increment( &thread_pool->jobs_write_pos ) - 1;
+	ThreadJob *job = &thread_pool->jobs[job_index];
 	job->completed = { 0 };
 	job->msg = msg;
 
-	semaphore_signal( &scheduler->sema );
+	semaphore_signal( &thread_pool->sema );
 }
 
 static s32 thread_job_func( void *data ) {
 	ThreadContext *context = cast( ThreadContext *, data );
 
-	Scheduler *scheduler = context->scheduler;
+	ThreadPool *thread_pool = context->thread_pool;
 
-	while ( scheduler->running ) {
-		u32 cached_read_pos = scheduler->jobs_read_pos.value;
-		if ( cached_read_pos < scheduler->jobs_write_pos.value ) {
-			u32 read_pos = atomic_compare_exchange( &scheduler->jobs_read_pos, cached_read_pos, cached_read_pos + 1 );
+	while ( thread_pool->running ) {
+		u32 cached_read_pos = thread_pool->jobs_read_pos.value;
+		if ( cached_read_pos < thread_pool->jobs_write_pos.value ) {
+			u32 read_pos = atomic_compare_exchange( &thread_pool->jobs_read_pos, cached_read_pos, cached_read_pos + 1 );
 
 			if ( read_pos == cached_read_pos ) {
-				ThreadJob* job = &scheduler->jobs[read_pos];
+				ThreadJob* job = &thread_pool->jobs[read_pos];
 
 #ifdef _WIN32
 				Sleep( 1000 );
@@ -1380,10 +1379,10 @@ static s32 thread_job_func( void *data ) {
 #endif
 
 				atomic_increment( &job->completed );
-				atomic_increment( &scheduler->num_completed_jobs );
+				atomic_increment( &thread_pool->num_completed_jobs );
 			}
 		} else {
-			semaphore_wait( &scheduler->sema );
+			semaphore_wait( &thread_pool->sema );
 		}
 	}
 
@@ -1393,31 +1392,31 @@ static s32 thread_job_func( void *data ) {
 }
 
 TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
-	Scheduler scheduler = {};
-	scheduler.running = true;
-	semaphore_create( &scheduler.sema );
+	ThreadPool thread_pool = {};
+	thread_pool.running = true;
+	semaphore_create( &thread_pool.sema );
 
 	ThreadContext contexts[4] = {};
 
-	memset( scheduler.threads, 0, count_of( scheduler.threads ) * sizeof( Thread ) );
+	memset( thread_pool.threads, 0, count_of( thread_pool.threads ) * sizeof( Thread ) );
 
-	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
-		contexts[thread_index].scheduler = &scheduler;
+	For ( u32, thread_index, 0, count_of( thread_pool.threads ) ) {
+		contexts[thread_index].thread_pool = &thread_pool;
 		contexts[thread_index].logical_thread_index = thread_index;
 
-		scheduler.threads[thread_index] = thread_create( thread_job_func, &contexts[thread_index] );
+		thread_pool.threads[thread_index] = thread_create( thread_job_func, &contexts[thread_index] );
 
-		TEMPER_CHECK_TRUE( scheduler.threads[thread_index].ptr != NULL );
+		TEMPER_CHECK_TRUE( thread_pool.threads[thread_index].ptr != NULL );
 	}
 
-	add_thread_job( &scheduler, "Job A0\n" );
-	add_thread_job( &scheduler, "Job A1\n" );
-	add_thread_job( &scheduler, "Job A2\n" );
-	add_thread_job( &scheduler, "Job A3\n" );
-	add_thread_job( &scheduler, "Job A4\n" );
-	add_thread_job( &scheduler, "Job A5\n" );
-	add_thread_job( &scheduler, "Job A6\n" );
-	add_thread_job( &scheduler, "Job A7\n" );
+	add_thread_job( &thread_pool, "Job A0\n" );
+	add_thread_job( &thread_pool, "Job A1\n" );
+	add_thread_job( &thread_pool, "Job A2\n" );
+	add_thread_job( &thread_pool, "Job A3\n" );
+	add_thread_job( &thread_pool, "Job A4\n" );
+	add_thread_job( &thread_pool, "Job A5\n" );
+	add_thread_job( &thread_pool, "Job A6\n" );
+	add_thread_job( &thread_pool, "Job A7\n" );
 
 #ifdef _WIN32
 	Sleep( 1000 );
@@ -1425,21 +1424,21 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	// TODO(DM): this
 #endif
 
-	TEMPER_CHECK_TRUE( scheduler.num_completed_jobs.value == 8 );
-	TEMPER_CHECK_TRUE( scheduler.jobs_read_pos.value == scheduler.jobs_write_pos.value );
+	TEMPER_CHECK_TRUE( thread_pool.num_completed_jobs.value == 8 );
+	TEMPER_CHECK_TRUE( thread_pool.jobs_read_pos.value == thread_pool.jobs_write_pos.value );
 
-	For ( u32, job_index, 0, scheduler.num_completed_jobs.value ) {
-		TEMPER_CHECK_TRUE( scheduler.jobs[job_index].completed.value == 1 );
+	For ( u32, job_index, 0, thread_pool.num_completed_jobs.value ) {
+		TEMPER_CHECK_TRUE( thread_pool.jobs[job_index].completed.value == 1 );
 	}
 
-	add_thread_job( &scheduler, "Job B0\n" );
-	add_thread_job( &scheduler, "Job B1\n" );
-	add_thread_job( &scheduler, "Job B2\n" );
-	add_thread_job( &scheduler, "Job B3\n" );
-	add_thread_job( &scheduler, "Job B4\n" );
-	add_thread_job( &scheduler, "Job B5\n" );
-	add_thread_job( &scheduler, "Job B6\n" );
-	add_thread_job( &scheduler, "Job B7\n" );
+	add_thread_job( &thread_pool, "Job B0\n" );
+	add_thread_job( &thread_pool, "Job B1\n" );
+	add_thread_job( &thread_pool, "Job B2\n" );
+	add_thread_job( &thread_pool, "Job B3\n" );
+	add_thread_job( &thread_pool, "Job B4\n" );
+	add_thread_job( &thread_pool, "Job B5\n" );
+	add_thread_job( &thread_pool, "Job B6\n" );
+	add_thread_job( &thread_pool, "Job B7\n" );
 
 #ifdef _WIN32
 	Sleep( 1000 );
@@ -1447,37 +1446,36 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	// TODO(DM): this
 #endif
 
-	TEMPER_CHECK_TRUE( scheduler.num_completed_jobs.value == 16 );
-	TEMPER_CHECK_TRUE( scheduler.jobs_read_pos.value == scheduler.jobs_write_pos.value );
+	TEMPER_CHECK_TRUE( thread_pool.num_completed_jobs.value == 16 );
+	TEMPER_CHECK_TRUE( thread_pool.jobs_read_pos.value == thread_pool.jobs_write_pos.value );
 
-	For ( u32, job_index, 0, scheduler.num_completed_jobs.value ) {
-		TEMPER_CHECK_TRUE( scheduler.jobs[job_index].completed.value == 1 );
+	For ( u32, job_index, 0, thread_pool.num_completed_jobs.value ) {
+		TEMPER_CHECK_TRUE( thread_pool.jobs[job_index].completed.value == 1 );
 	}
 
 	// all threads could be sleeping because the work is done
 	// so allow them to shutdown, THEN wake them up
-	scheduler.running = false;
+	thread_pool.running = false;
 
 	// each thread checks the semaphore, so calling this once will only wake up one thread
 	// so we need to call this once per thread
-	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
-		semaphore_signal( &scheduler.sema );
+	For ( u32, thread_index, 0, count_of( thread_pool.threads ) ) {
+		semaphore_signal( &thread_pool.sema );
 	}
 
-	For ( u32, thread_index, 0, count_of( scheduler.threads ) ) {
-		s32 exit_code = thread_wait( &scheduler.threads[thread_index] );
+	For ( u32, thread_index, 0, count_of( thread_pool.threads ) ) {
+		s32 exit_code = thread_wait( &thread_pool.threads[thread_index] );
 
 		TEMPER_CHECK_TRUE( exit_code == 42 );
 
-		thread_destroy( &scheduler.threads[thread_index] );
+		thread_destroy( &thread_pool.threads[thread_index] );
 
-		TEMPER_CHECK_TRUE( scheduler.threads[thread_index].ptr == NULL );
+		TEMPER_CHECK_TRUE( thread_pool.threads[thread_index].ptr == NULL );
 	}
 
-	semaphore_destroy( &scheduler.sema );
-	TEMPER_CHECK_TRUE( scheduler.sema.ptr == NULL );
+	semaphore_destroy( &thread_pool.sema );
+	TEMPER_CHECK_TRUE( thread_pool.sema.ptr == NULL );
 }
-#endif
 
 
 /*
@@ -1598,13 +1596,13 @@ int main( int argc, char **argv ) {
 
 	TEMPER_RUN( argc, argv );
 
-	int exitCode = TEMPER_GET_EXIT_CODE();
+	int exit_code = TEMPER_GET_EXIT_CODE();
 
 #ifdef _DEBUG
-	if ( exitCode != 0 ) {
+	if ( exit_code != 0 ) {
 		debug_break();
 	}
 #endif
 
-	return exitCode;
+	return exit_code;
 }
