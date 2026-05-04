@@ -35,10 +35,12 @@ SOFTWARE.
 #include <defer.h>
 #include <typecast.inl>
 
-#include <stdio.h>
-#include <string.h>
 #include <pthread.h>
 #include <errno.h>
+
+#include <stdio.h>
+#include <string.h>
+#include <malloc.h>
 
 struct ThreadBootstrapData {
 	ThreadFunc	thread_func;
@@ -46,9 +48,13 @@ struct ThreadBootstrapData {
 };
 
 static void *thread_bootstrap( void *data ) {
-	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, data );
+	assert( data );
 
-	s32 exit_code = bootstrap->thread_func( bootstrap->data );
+	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, data );
+
+	assert( bootstrap_data );
+
+	s32 exit_code = bootstrap_data->thread_func( bootstrap_data->data );
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wint-to-pointer-cast"
@@ -58,9 +64,8 @@ static void *thread_bootstrap( void *data ) {
 	return cast( void *, exit_code_ptr );
 }
 
-Thread		thread_create( ThreadFunc thread_func, void *data, const bool8 run_immediately ) {
-	unused( run_immediately );
-	printf( "TODO: DM: implement run_immediately\n" );
+Thread		thread_create( ThreadFunc thread_func, void *data ) {
+	assert( thread_func );
 
 	pthread_t thread_linux;
 
@@ -68,12 +73,11 @@ Thread		thread_create( ThreadFunc thread_func, void *data, const bool8 run_immed
 	pthread_attr_init( &attribs );
 	defer { pthread_attr_destroy( &attribs ); };
 
-	ThreadBootstrapData bootstrap_data = {
-		.thread_func	= thread_func,
-		.data			= data,
-	};
+	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, malloc( sizeof( ThreadBootstrapData ) ) );
+	bootstrap_data->thread_func = thread_func;
+	bootstrap_data->data = data;
 
-	if ( pthread_create( &thread_linux, &attribs, &thread_bootstrap, &bootstrap_data ) != 0 ) {
+	if ( pthread_create( &thread_linux, &attribs, &thread_bootstrap, bootstrap_data ) != 0 ) {
 		int err = errno;
 		fatal_error( "Failed to create thread: %s\n", strerror( err ) );
 
@@ -84,26 +88,28 @@ Thread		thread_create( ThreadFunc thread_func, void *data, const bool8 run_immed
 }
 
 void		thread_destroy( Thread *thread ) {
-	pthread_t *pthread_linux = cast( pthread_t *, thread->ptr );
+	pthread_t pthread_linux = cast( pthread_t, thread->ptr );
 
-	pthread_cancel( *pthread_linux );
+	pthread_cancel( pthread_linux );
 
 	thread->ptr = NULL;
 }
 
 s32		thread_wait( Thread *thread ) {
-	pthread_t *pthread_linux = cast( pthread_t *, thread->ptr );
+	pthread_t pthread_linux = cast( pthread_t, thread->ptr );
 
-	s32 *exit_code = NULL;
+	s32 *exit_code_ptr;
 
-	if ( !pthread_join( *pthread_linux, cast( void **, &exit_code ) ) ) {
+	if ( pthread_join( pthread_linux, cast( void **, &exit_code_ptr ) ) != 0 ) {
 		int err = errno;
 		fatal_error( "Failed to join thread: %s\n", strerror( err ) );
 
 		return -1;
 	}
 
-	return *exit_code;
+	s64 exit_code_2 = cast( s64, exit_code_ptr );
+
+	return trunc_cast( s32, exit_code_2 );
 }
 
 bool8		thread_suspend( Thread *thread ) {
