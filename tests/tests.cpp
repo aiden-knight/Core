@@ -1315,6 +1315,7 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread.ptr == NULL );
 }
 
+#ifdef _WIN32
 struct ThreadJob {
 	Atomic32	completed;
 	const char	*msg;
@@ -1481,6 +1482,7 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	semaphore_destroy( &thread_pool.sema );
 	TEMPER_CHECK_TRUE( thread_pool.sema.ptr == NULL );
 }
+#endif
 
 
 /*
@@ -1504,12 +1506,21 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
+static void sleep_ms( const u32 ms ) {
+#ifdef _WIN32
+	Sleep( 1000 );
+#else
+	struct timespec ts = {};
+	ts.tv_sec = ms / 1000;
+	ts.tv_nsec = ( ms % 1000 ) * 1000000;
+	nanosleep( &ts, NULL );
+#endif
+}
+
 TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_seconds();
 
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
+	sleep_ms( 1000 );
 
 	float64 end = time_seconds();
 
@@ -1520,9 +1531,7 @@ TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
 TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_ms();
 
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
+	sleep_ms( 1000 );
 
 	float64 end = time_ms();
 
@@ -1533,9 +1542,7 @@ TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
 TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_us();
 
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
+	sleep_ms( 1000 );
 
 	float64 end = time_us();
 
@@ -1546,9 +1553,7 @@ TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
 TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_ns();
 
-#ifdef _WIN32
-	Sleep( 1000 );
-#endif
+	sleep_ms( 1000 );
 
 	float64 end = time_ns();
 
