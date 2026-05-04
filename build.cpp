@@ -30,6 +30,7 @@ SOFTWARE.
 
 BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArgs *args ) {
 	options->consolidateCompilerArgs = true;
+	options->forceRebuild = HasCommandLineArg( args, "--force-rebuild" );
 
 	//
 	// test DLL
@@ -99,6 +100,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 		.warningsAsErrors				= true,
 #ifdef __linux__
 		.additionalCompilerArguments	= { "-fPIC" },
+		.additionalLinkerArguments		= { "-rdynamic" },
 #endif
 	};
 
@@ -165,6 +167,8 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 
 #if defined( __linux__ )
 	tests.additionalLibs.push_back( "stdc++" );
+	tests.additionalLinkerArguments.push_back( "-Wl,--disable-new-dtags" );
+	tests.additionalLinkerArguments.push_back( "-rdynamic" );
 #endif
 
 	if ( HasCommandLineArg( args, "--release" ) ) {

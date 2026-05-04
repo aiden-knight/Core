@@ -40,6 +40,8 @@ SOFTWARE.
 #include <malloc.h>
 #include <errno.h>
 #include <execinfo.h>
+#include <dlfcn.h>
+#include <cxxabi.h>
 
 Array<const char *> get_callstack( LinearAllocator *allocator ) {
 	const int NUM_FRAMES = 1024;
@@ -47,21 +49,38 @@ Array<const char *> get_callstack( LinearAllocator *allocator ) {
 
 	int frames_count = backtrace( buffer, NUM_FRAMES );
 
-	char **frames_linux = backtrace_symbols( buffer, frames_count );
-	defer { free( frames_linux ); };	// backtrace_symbols() mallocs the return value, user must free it themselves
+	char **fallback_names = backtrace_symbols( buffer, frames_count );
+	defer { free( fallback_names ); };
 
 	Array<const char *> frames;
 	frames.init( allocator );
-	frames.resize( trunc_cast( u64, frames_count ) );
+	frames.reserve( trunc_cast( u64, frames_count ) );
 
-	For ( u32, frame_index, 0, frames.count ) {
-		u64 frame_len = strlen( frames_linux[frame_index] ) * sizeof( char );
+	// skip the first found frame because that will just be this function that we're in, which is useless for a callstack
+	For ( u32, frame_index, 1, frames_count ) {
+		Dl_info info;
+		const char *name = fallback_names[frame_index];
+		char *demangled = NULL;
 
-		char *frame = cast( char *, linear_allocator_alloc( allocator, frame_len + 1 ) );
-		memcpy( frame, frames_linux[frame_index], frame_len );
-		frame[frame_len] = 0;
+		if ( dladdr( buffer[frame_index], &info ) && info.dli_sname ) {
+			int status = 0;
+			demangled = abi::__cxa_demangle( info.dli_sname, NULL, NULL, &status );
 
-		frames[frame_index] = frame;
+			if ( status == 0 && demangled ) {
+				name = demangled;
+			} else {
+				name = info.dli_sname;
+			}
+		}
+
+		u64 len = strlen( name );
+		char *frame = cast( char *, linear_allocator_alloc( allocator, len + 1 ) );
+		memcpy( frame, name, len + 1 );
+
+		free( demangled );
+		demangled = NULL;
+
+		frames.add( frame );
 	}
 
 	return frames;
