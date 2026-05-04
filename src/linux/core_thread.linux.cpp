@@ -36,6 +36,7 @@ SOFTWARE.
 #include <typecast.inl>
 
 #include <pthread.h>
+#include <semaphore.h>
 #include <errno.h>
 
 #include <stdio.h>
@@ -125,45 +126,82 @@ bool8		thread_resume( Thread *thread ) {
 }
 
 bool8		semaphore_create( Semaphore *semaphore ) {
-	unused( semaphore );
-	assert( false && "TODO: DM: this" );
-	return false;
+	assert( semaphore );
+
+	sem_t *sema_linux = cast( sem_t *, malloc( sizeof( sem_t ) ) );
+
+	if ( sem_init( sema_linux, 1, 0 ) != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to create semaphore: %s\n", strerror( err ) );
+		return false;
+	}
+
+	semaphore->ptr = sema_linux;
+
+	return true;
 }
 
 bool8		semaphore_destroy( Semaphore *semaphore ) {
-	unused( semaphore );
-	assert( false && "TODO: DM: this" );
-	return false;
+	assert( semaphore );
+
+	sem_t *sema_linux = cast( sem_t *, semaphore->ptr );
+
+	if ( sem_destroy( sema_linux ) != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to destroy semaphore: %s\n", strerror( err ) );
+		return false;
+	}
+
+	return true;
 }
 
 void		semaphore_signal( Semaphore *semaphore ) {
 	assert( semaphore );
+
+	sem_t *sema_linux = cast( sem_t *, semaphore->ptr );
+
+	if ( sem_post( sema_linux ) != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to signal semaphore: %s\n", strerror( err ) );
+	}
 }
 
 s32		semaphore_wait( Semaphore *semaphore ) {
-	unused( semaphore );
-	assert( false && "TODO: DM: this" );
+	assert( semaphore );
+
+	sem_t *sema_linux = cast( sem_t *, semaphore->ptr );
+
+	if ( sem_wait( sema_linux ) != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to wait for semaphore: %s\n", strerror( err ) );
+		return -1;
+	}
+
+	// TODO: DM: 04/05/2026: the only reason we get away with this currently is because we never use the return value anywhere
 	return 0;
 }
 
+#pragma clang diagnostic push
+// TOOD: DM: 04/05/2026: this warning means we are imposing "stronger memory barriers than necessary", but I think we definitely need them?
+// the whole point of doing an "atomic" operation is to guarantee syncronization of values between threads in order to safely avoid race conditions, which is exactly what these intrinsics offer
+// so we need them?
+#pragma clang diagnostic ignored "-Watomic-implicit-seq-cst"
+
 u32		atomic_increment( Atomic32 *atomic ) {
-	unused( atomic );
-	assert( false && "TODO: DM: this" );
-	return 0;
+	assert( atomic );
+	return __sync_add_and_fetch( &atomic->value, 1 );
 }
 
 u32		atomic_decrement( Atomic32* atomic ) {
-	unused( atomic );
-	assert( false && "TODO: DM: this" );
-	return 0;
+	assert( atomic );
+	return __sync_sub_and_fetch( &atomic->value, 1 );
 }
 
 u32		atomic_compare_exchange( Atomic32* dst, const u32 compare, const u32 exchange ) {
-	unused( dst );
-	unused( compare );
-	unused( exchange );
-	assert( false && "TODO: DM: this" );
-	return 0;
+	assert( dst );
+	return __sync_val_compare_and_swap( &dst->value, compare, exchange );
 }
+
+#pragma clang diagnostic pop
 
 #endif
