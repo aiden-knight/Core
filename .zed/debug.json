@@ -5,12 +5,15 @@
 		"program": "${ZED_WORKTREE_ROOT}/bin/debug/core-tests",
 		"cwd": "${ZED_WORKTREE_ROOT}",
 		"request": "launch",
+		"build": "Build: tests (debug)",
 	},
+
 	{
 		"label": "Debug: core-tests (release)",
 		"adapter": "CodeLLDB",
 		"program": "${ZED_WORKTREE_ROOT}/bin/release/core-tests",
 		"cwd": "${ZED_WORKTREE_ROOT}",
 		"request": "launch",
+		"build": "Build: tests (release)",
 	},
 ]
