@@ -57,7 +57,7 @@ static DWORD thread_bootstrap( void *data ) {
 	return exit_code_dword;
 }
 
-Thread thread_create( ThreadFunc thread_func, void *data, const bool8 run_immediately ) {
+Thread thread_create( ThreadFunc thread_func, void *data ) {
 	assert( thread_func );
 
 	// bootstrap data cant be local
@@ -69,10 +69,6 @@ Thread thread_create( ThreadFunc thread_func, void *data, const bool8 run_immedi
 	bootstrap->data = data;
 
 	DWORD creation_flags = 0;
-
-	if ( !run_immediately ) {
-		creation_flags |= CREATE_SUSPENDED;
-	}
 
 	HANDLE handle = CreateThread( NULL, 0, thread_bootstrap, bootstrap, creation_flags, NULL );
 
