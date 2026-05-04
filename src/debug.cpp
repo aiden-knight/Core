@@ -28,8 +28,13 @@ SOFTWARE.
 
 #include <debug.h>
 
+#include <core_array.inl>
+#include <core_helpers.h>
+#include <temp_storage.h>
+
 #include <stdio.h>
 #include <stdarg.h>
+#include <inttypes.h>
 
 void warning( const char *fmt, ... ) {
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
@@ -74,4 +79,12 @@ void fatal_error( const char *fmt, ... ) {
 	va_end( args );
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
+}
+
+void dump_callstack() {
+	Array<const char *> callstack = get_callstack( g_temp_storage );
+
+	For ( u64, i, 0, callstack.count ) {
+		printf( "[%" PRIu64 "]: %s\n", i, callstack[i] );
+	}
 }

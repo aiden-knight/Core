@@ -86,14 +86,6 @@ Array<const char *> get_callstack( LinearAllocator *allocator ) {
 	return frames;
 }
 
-void dump_callstack() {
-	Array<const char *> callstack = get_callstack( g_temp_storage );
-
-	For ( u64, i, 0, callstack.count ) {
-		printf( "[%lu]: %s\n", i, callstack[i] );
-	}
-}
-
 void set_console_text_color( const ConsoleTextColor color ) {
 	const char *color_linux = NULL;
 
