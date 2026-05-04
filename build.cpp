@@ -37,12 +37,12 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 	BuildConfig testDLL = {
 		.name				= "test-dll",
 		.languageVersion	= LANGUAGE_VERSION_C99,
-		.sourceFiles		= { "tests/test_dll/test_dll.c" },
-		.defines			= { "TEST_DLL_EXPORTS" },
-		.intermediateFolder	= "intermediate",
 		.binaryName			= "test_dll",
 		.binaryType			= BINARY_TYPE_DYNAMIC_LIBRARY,
-		.warningsAsErrors	= true
+		.intermediateFolder	= "intermediate",
+		.sourceFiles		= { "tests/test_dll/test_dll.c" },
+		.defines			= { "TEST_DLL_EXPORTS" },
+		.warningsAsErrors	= true,
 	};
 
 	if ( HasCommandLineArg( args, "--release" ) ) {
