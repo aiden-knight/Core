@@ -70,9 +70,9 @@ const char *path_app_path() {
 }
 
 const char *path_current_working_directory() {
-	char temp[PATH_MAX];
+	char *temp = cast( char *, mem_temp_alloc( PATH_MAX * sizeof( char ) ) );
 
-	const char *cwd = getcwd( temp, sizeof( temp ) );
+	const char *cwd = getcwd( temp, PATH_MAX * sizeof( char ) );
 
 	if ( !cwd ) {
 		int err = errno;
@@ -82,12 +82,18 @@ const char *path_current_working_directory() {
 	return cwd;
 }
 
-const char *path_absolute_path( const char *file ) {
-	unused( file );
+const char *path_absolute_path( const char *path ) {
+	char *path_copy = temp_c_string( path, PATH_MAX * sizeof( char ) );
 
-	assert( false );
+	const char *result = realpath( path_copy, NULL );
 
-	return NULL;
+	if ( !result ) {
+		int err = errno;
+		fatal_error( "Failed to get absolute path of \"%s\": %s.\n", path, strerror( err ) );
+		return NULL;
+	}
+
+	return result;
 }
 
 bool8 path_is_absolute( const char *path ) {
@@ -96,15 +102,16 @@ bool8 path_is_absolute( const char *path ) {
 	return path[0] == '/';
 }
 
-const char *path_canonicalise( const char *path ) {
+const char *path_canonicalize( const char *path ) {
 	assert( path );
 
-	const char *path_copy = temp_c_string( path, PATH_MAX );
+	char* path_copy = temp_c_string( path, PATH_MAX * sizeof( char ) );
 
-	const char *result = realpath( path_copy, NULL );
+	const char* result = realpath( path_copy, NULL );
+
 	if ( !result ) {
 		int err = errno;
-		printf( "Failed to get real path of \"%s\": %s.\n", path, strerror( err ) );
+		fatal_error( "Failed to canoncalize path \"%s\": %s.\n", path, strerror( err ) );
 		return NULL;
 	}
 
