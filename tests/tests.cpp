@@ -1040,14 +1040,19 @@ TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FL
 }
 
 TEMPER_TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
+	bool8 set_cwd = false;
+
 	const char *original_cwd = path_current_working_directory();
-	defer { path_set_current_directory( original_cwd ); };
 
 	const char *known_path = path_absolute_path( folder );
-	path_set_current_directory( known_path );
+	set_cwd = path_set_current_directory( known_path );
+	TEMPER_CHECK_TRUE( set_cwd );
 
 	const char *cwd = path_current_working_directory();
 	TEMPER_CHECK_TRUE( string_equals( known_path, cwd ) );
+
+	set_cwd = path_set_current_directory( original_cwd );
+	TEMPER_CHECK_TRUE_M( set_cwd, "Failed to revert test back to the original cwd.  Tests that run after this one may fail." );
 
 	mem_reset_temp_storage();
 }
@@ -1588,7 +1593,7 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 }
 
 int main( int argc, char **argv ) {
-	mem_init_temp_storage( MEM_KILOBYTES( 8 ) );
+	mem_init_temp_storage( MEM_KILOBYTES( 64 ) );
 	defer { mem_shutdown_temp_storage(); };
 
 	g_temperTestContext.callbacks.OnBeforeTest = on_before_test;
