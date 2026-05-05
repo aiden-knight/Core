@@ -182,9 +182,9 @@ Process* process_create( LinearAllocator *allocator, Array<const char *> *args, 
 		return NULL;
 	}
 
-	// Close the write ends of the pipes on the parent side.  The child inherited them, so they
-	// remain open from the child's perspective.  Closing the parent's copies ensures ReadFile
-	// on the read ends returns EOF once the child exits rather than blocking indefinitely.
+	// close the write ends of the pipes on the parent side
+	// the child inherited them so they remain open from the child's perspective
+	// closing the parents copies ensures ReadFile on the read ends returns EOF once the child exits rather than blocking indefinitely
 	if ( !CloseHandle( stdout_write ) ) {
 		fatal_error( "Failed to close stdout write handle: 0x%X\n", GetLastError() );
 		return NULL;
