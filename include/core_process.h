@@ -29,10 +29,10 @@ SOFTWARE.
 #pragma once
 
 #include "int_types.h"
-#include "core_array.h"	// DM!!! is this ok?
 #include "dll_export.h"
 
 struct LinearAllocator;
+template<typename T> struct Array;
 
 #ifdef __clang__
 #pragma clang diagnostic push
