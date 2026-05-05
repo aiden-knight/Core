@@ -132,8 +132,8 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 	core.defines.push_back( "WIN32_LEAN_AND_MEAN" );
 	core.defines.push_back( "NOMINMAX" );
 
-	core.additionalLibs.push_back( "Shlwapi.lib" );
-	core.additionalLibs.push_back( "DbgHelp.lib" );
+	core.additionalLibs.push_back( "Shlwapi" );
+	core.additionalLibs.push_back( "DbgHelp" );
 #endif
 
 	if ( HasCommandLineArg( args, "--release" ) ) {
