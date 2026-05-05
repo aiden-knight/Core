@@ -1532,13 +1532,6 @@ TEMPER_TEST( test_process_sync_exit_code_nonzero, TEMPER_FLAG_SHOULD_RUN ) {
 	Process *process = process_create( allocator, &args );
 	TEMPER_CHECK_TRUE_A( process != NULL );
 
-	u32 bytes_read = 0;
-	char buffer[1024] = {};
-	while ( ( bytes_read = process_read_stdout( process, buffer, count_of( buffer ) - 1 ) ) ) {
-		buffer[bytes_read] = 0;
-		printf( "%s", buffer );
-	}
-
 	s32 exit_code = process_join( process );
 	TEMPER_CHECK_TRUE_M( exit_code == 42, "Exit code was actually %d\n", exit_code );
 
