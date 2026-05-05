@@ -1294,6 +1294,17 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 ================================================================================================
 */
 
+static void sleep_ms( const u32 ms ) {
+#ifdef _WIN32
+	Sleep( ms );
+#else
+	struct timespec ts = {};
+	ts.tv_sec = ms / 1000;
+	ts.tv_nsec = ( ms % 1000 ) * 1000000;
+	nanosleep( &ts, NULL );
+#endif
+}
+
 static s32 thread_basic_test_func( void* data ) {
 	unused( data );
 
@@ -1315,7 +1326,6 @@ TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread.ptr == NULL );
 }
 
-#ifdef _WIN32
 struct ThreadJob {
 	Atomic32	completed;
 	const char	*msg;
@@ -1358,11 +1368,7 @@ static s32 thread_job_func( void *data ) {
 			if ( read_pos == cached_read_pos ) {
 				ThreadJob* job = &thread_pool->jobs[read_pos];
 
-#ifdef _WIN32
-				Sleep( 1000 );
-#else
-				// TODO(DM): this
-#endif
+				sleep_ms( 100 );
 
 				const char* threadnumstr = NULL;
 				switch ( context->logical_thread_index ) {
@@ -1424,14 +1430,10 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	add_thread_job( &thread_pool, "Job A6\n" );
 	add_thread_job( &thread_pool, "Job A7\n" );
 
-#ifdef _WIN32
-	Sleep( 1000 );
-#else
-	// TODO(DM): this
-#endif
+	sleep_ms( 1000 );
 
-	TEMPER_CHECK_TRUE( thread_pool.num_completed_jobs.value == 8 );
-	TEMPER_CHECK_TRUE( thread_pool.jobs_read_pos.value == thread_pool.jobs_write_pos.value );
+	TEMPER_CHECK_TRUE_AM( thread_pool.num_completed_jobs.value == 8, "num_completed_jobs was actually %d", thread_pool.num_completed_jobs.value );
+	TEMPER_CHECK_TRUE_A( thread_pool.jobs_read_pos.value == thread_pool.jobs_write_pos.value );
 
 	For ( u32, job_index, 0, thread_pool.num_completed_jobs.value ) {
 		TEMPER_CHECK_TRUE( thread_pool.jobs[job_index].completed.value == 1 );
@@ -1446,14 +1448,10 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	add_thread_job( &thread_pool, "Job B6\n" );
 	add_thread_job( &thread_pool, "Job B7\n" );
 
-#ifdef _WIN32
-	Sleep( 1000 );
-#else
-	// TODO(DM): this
-#endif
+	sleep_ms( 1000 );
 
-	TEMPER_CHECK_TRUE( thread_pool.num_completed_jobs.value == 16 );
-	TEMPER_CHECK_TRUE( thread_pool.jobs_read_pos.value == thread_pool.jobs_write_pos.value );
+	TEMPER_CHECK_TRUE_AM( thread_pool.num_completed_jobs.value == 16, "num_completed_jobs was actually %d", thread_pool.num_completed_jobs.value );
+	TEMPER_CHECK_TRUE_A( thread_pool.jobs_read_pos.value == thread_pool.jobs_write_pos.value );
 
 	For ( u32, job_index, 0, thread_pool.num_completed_jobs.value ) {
 		TEMPER_CHECK_TRUE( thread_pool.jobs[job_index].completed.value == 1 );
@@ -1482,7 +1480,6 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	semaphore_destroy( &thread_pool.sema );
 	TEMPER_CHECK_TRUE( thread_pool.sema.ptr == NULL );
 }
-#endif
 
 
 /*
@@ -1505,17 +1502,6 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 
 ================================================================================================
 */
-
-static void sleep_ms( const u32 ms ) {
-#ifdef _WIN32
-	Sleep( 1000 );
-#else
-	struct timespec ts = {};
-	ts.tv_sec = ms / 1000;
-	ts.tv_nsec = ( ms % 1000 ) * 1000000;
-	nanosleep( &ts, NULL );
-#endif
-}
 
 TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_seconds();

@@ -91,9 +91,14 @@ Thread		thread_create( ThreadFunc thread_func, void *data ) {
 void		thread_destroy( Thread *thread ) {
 	pthread_t pthread_linux = cast( pthread_t, thread->ptr );
 
-	pthread_cancel( pthread_linux );
+	if ( pthread_linux ) {
+		if ( pthread_detach( pthread_linux ) != 0 ) {
+			int err = errno;
+			fatal_error( "Failed to detach thread: %s\n", strerror( err ) );
+		}
 
-	thread->ptr = NULL;
+		thread->ptr = NULL;
+	}
 }
 
 s32		thread_wait( Thread *thread ) {
@@ -107,6 +112,8 @@ s32		thread_wait( Thread *thread ) {
 
 		return -1;
 	}
+
+	thread->ptr = NULL;
 
 	s64 exit_code_2 = cast( s64, exit_code_ptr );
 
@@ -130,7 +137,7 @@ bool8		semaphore_create( Semaphore *semaphore ) {
 
 	sem_t *sema_linux = cast( sem_t *, malloc( sizeof( sem_t ) ) );
 
-	if ( sem_init( sema_linux, 1, 0 ) != 0 ) {
+	if ( sem_init( sema_linux, 0, 0 ) != 0 ) {
 		int err = errno;
 		fatal_error( "Failed to create semaphore: %s\n", strerror( err ) );
 		return false;
@@ -152,6 +159,11 @@ bool8		semaphore_destroy( Semaphore *semaphore ) {
 		return false;
 	}
 
+	free( sema_linux );
+	sema_linux = NULL;
+
+	semaphore->ptr = NULL;
+
 	return true;
 }
 
@@ -168,6 +180,7 @@ void		semaphore_signal( Semaphore *semaphore ) {
 
 s32		semaphore_wait( Semaphore *semaphore ) {
 	assert( semaphore );
+	assert( semaphore->ptr );
 
 	sem_t *sema_linux = cast( sem_t *, semaphore->ptr );
 
