@@ -46,11 +46,14 @@ struct ThreadBootstrapData {
 static DWORD thread_bootstrap( void *data ) {
 	assert( data );
 
-	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, data );
+	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, data );
 
-	assert( bootstrap->thread_func );
+	assert( bootstrap_data->thread_func );
 
-	s32 exit_code = bootstrap->thread_func( bootstrap->data );
+	s32 exit_code = bootstrap_data->thread_func( bootstrap_data->data );
+
+	free( bootstrap_data );
+	bootstrap_data = NULL;
 
 	DWORD exit_code_dword = cast( DWORD, exit_code );
 

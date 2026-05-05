@@ -57,6 +57,9 @@ static void *thread_bootstrap( void *data ) {
 
 	s32 exit_code = bootstrap_data->thread_func( bootstrap_data->data );
 
+	free( bootstrap_data );
+	bootstrap_data = NULL;
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wint-to-pointer-cast"
 	s32 *exit_code_ptr = cast( s32 *, exit_code );
