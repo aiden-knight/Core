@@ -105,9 +105,9 @@ bool8 path_is_absolute( const char *path ) {
 const char *path_canonicalize( const char *path ) {
 	assert( path );
 
-	char* path_copy = temp_c_string( path, PATH_MAX * sizeof( char ) );
+	char *path_copy = temp_c_string( path, PATH_MAX * sizeof( char ) );
 
-	const char* result = realpath( path_copy, NULL );
+	const char *result = realpath( path_copy, NULL );
 
 	if ( !result ) {
 		int err = errno;
@@ -120,7 +120,7 @@ const char *path_canonicalize( const char *path ) {
 
 const char *path_fix_slashes( const char *path ) {
 	u64 path_length = strlen( path );
-	char* result = temp_c_string( path, path_length );
+	char *result = temp_c_string( path, path_length );
 
 	For ( u64, char_index, 0, path_length ) {
 		if ( result[char_index] == '\\' ) {
@@ -131,7 +131,7 @@ const char *path_fix_slashes( const char *path ) {
 	return result;
 }
 
-char* path_relative_path_to( const char *path_from, const char *path_to ) {
+char *path_relative_path_to( const char *path_from, const char *path_to ) {
 	assert( path_from );
 	assert( path_to );
 
@@ -173,8 +173,7 @@ char* path_relative_path_to( const char *path_from, const char *path_to ) {
 
 	string_builder_appendf( &sb, path_to + num_same_chars );
 
-	//char* result = cast( char*, mem_temp_alloc( PATH_MAX * sizeof( char ) ) );
-	char* result = cast( char*, string_builder_to_string( &sb ) );
+	char * result = cast( char *, string_builder_to_string( &sb ) );
 
 	return result;
 }

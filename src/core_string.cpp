@@ -134,7 +134,7 @@ bool8 string_contains( const char *str, const char *substring ) {
 }
 
 const char *string_replace( const char *str, const char old_char, const char new_char ) {
-	char* result = temp_c_string( str );
+	char *result = temp_c_string( str );
 
 	For ( u32, i, 0, strlen( str ) ) {
 		if ( result[i] == old_char ) {
@@ -145,7 +145,7 @@ const char *string_replace( const char *str, const char old_char, const char new
 	return result;
 }
 
-const char* temp_printf( const char* fmt, ... ) {
+const char *temp_printf( const char *fmt, ... ) {
 	assert( fmt );
 
 	va_list args;
@@ -153,7 +153,7 @@ const char* temp_printf( const char* fmt, ... ) {
 
 	u64 string_length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
 
-	char* out_string = cast( char*, mem_temp_alloc( ( string_length + 1 ) * sizeof( char ) ) );
+	char *out_string = cast( char *, mem_temp_alloc( ( string_length + 1 ) * sizeof( char ) ) );
 
 	vsnprintf( out_string, string_length + 1, fmt, args );
 	out_string[string_length] = 0;

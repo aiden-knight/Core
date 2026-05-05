@@ -109,7 +109,7 @@ static const char *path_join_internalv( const int count, va_list args ) {
 			string_builder_appendf( &builder, PATH_SEPARATOR );
 		}
 
-		const char* part = va_arg( args, const char * );
+		const char *part = va_arg( args, const char * );
 
 		string_builder_appendf( &builder, part );
 	}

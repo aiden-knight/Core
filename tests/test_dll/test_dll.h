@@ -65,7 +65,7 @@ extern "C" {
 	#endif
 #endif
 
-TEST_DLL_API const char* get_dll_name( void );
+TEST_DLL_API const char *get_dll_name( void );
 
 #ifdef __cplusplus
 }

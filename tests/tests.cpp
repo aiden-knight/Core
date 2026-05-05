@@ -1212,7 +1212,7 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	string_builder_appendf( &builder, "a " );
 	string_builder_appendf( &builder, "test" );
 
-	const char* actualString = string_builder_to_string( &builder );
+	const char *actualString = string_builder_to_string( &builder );
 
 	TEMPER_CHECK_TRUE( string_equals( actualString, "this is only a test" ) );
 
@@ -1277,7 +1277,7 @@ TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) 
 		GetDLLNameFunc get_dll_name_func = cast( GetDLLNameFunc, library_get_symbol( library, "get_dll_name" ) );
 		TEMPER_CHECK_TRUE( get_dll_name_func );
 
-		const char* dll_name = get_dll_name_func();
+		const char *dll_name = get_dll_name_func();
 
 		TEMPER_CHECK_TRUE( string_equals( dll_name, TEST_DLL_NAME ) );
 	}
@@ -1372,7 +1372,7 @@ static s32 thread_job_func( void *data ) {
 
 				sleep_ms( 100 );
 
-				const char* threadnumstr = NULL;
+				const char *threadnumstr = NULL;
 				switch ( context->logical_thread_index ) {
 					case 0: threadnumstr = "0"; break;
 					case 1: threadnumstr = "1"; break;

@@ -54,7 +54,7 @@ u64 hash64( const void *data, const u64 length, const u64 seed ) {
 	return XXH64( data, length, seed );
 }
 
-u64 hash_string( const char* string, const u64 seed ) {
+u64 hash_string( const char *string, const u64 seed ) {
 	return hash64( string, strlen( string ), seed );
 }
 

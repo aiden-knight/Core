@@ -87,8 +87,8 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	va_end( args );
 }
 
-const char* string_builder_to_string( StringBuilder *builder ) {
-	char* result = NULL;
+const char *string_builder_to_string( StringBuilder *builder ) {
+	char *result = NULL;
 	u64 total_length = 0;
 	u64 offset = 0;
 
