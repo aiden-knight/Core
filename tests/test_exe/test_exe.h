@@ -28,36 +28,28 @@ SOFTWARE.
 
 #pragma once
 
-#include "int_types.h"
-#include "core_array.h"	// DM!!! is this ok?
-#include "dll_export.h"
+/*
+================================================================================================
 
-struct LinearAllocator;
+	Test EXE
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#endif
+	A minimal helper executable used by the Core process tests.  It lives alongside core-tests
+	in bin/debug (or bin/release) so the test suite can spawn it via process_create() without
+	needing any shell or platform-specific commands.
 
-struct Process;
+	Command-line interface (all flags are optional and may be combined):
 
-enum ProcessFlagBits {
-	PROCESS_FLAG_ASYNC	= 1,
-	PROCESS_FLAG_COMBINE_STDOUT_AND_STDERR,
-};
-typedef u32 ProcessFlags;
+		test_exe [--exit <code>] [--stdout <msg>] [--stderr <msg>]
 
+		--exit   <code>   Return this integer exit code (default: 0).
+		--stdout <msg>    Write msg followed by a newline to stdout.
+		--stderr <msg>    Write msg followed by a newline to stderr.
 
-CORE_API Process	*process_create( LinearAllocator *allocator, Array<const char *> *args, Array<const char *> *environment_variables = NULL, const ProcessFlags flags = 0 );
+================================================================================================
+*/
 
-CORE_API bool8		process_destroy( Process *process );
-
-CORE_API s32		process_join( Process *process );
-
-CORE_API u32		process_read_stdout( Process *process, char *out_buffer, const u64 count );
-
-CORE_API u32		process_read_stderr( Process *process, char *out_buffer, const u64 count );
-
-#ifdef __clang__
-#pragma clang diagnostic pop
+#if defined( _WIN32 )
+	#define TEST_EXE_FILENAME "test_exe.exe"
+#else
+	#define TEST_EXE_FILENAME "test_exe"
 #endif

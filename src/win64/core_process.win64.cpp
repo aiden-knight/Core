@@ -43,7 +43,7 @@ SOFTWARE.
 /*
 ================================================================================================
 
-	Process
+	Windows Process implementation
 
 ================================================================================================
 */
@@ -141,7 +141,7 @@ Process* process_create( LinearAllocator *allocator, Array<const char *> *args, 
 	return process;
 }
 
-void process_destroy( Process* process ) {
+bool8 process_destroy( Process* process ) {
 	assert( process );
 
 	if ( process->stdout_read ) {
@@ -163,6 +163,8 @@ void process_destroy( Process* process ) {
 		CloseHandle( process->event_stdout );
 		process->event_stdout = NULL;
 	}
+
+	return true;
 }
 
 s32 process_join( Process* process ) {

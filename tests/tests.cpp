@@ -27,6 +27,7 @@ SOFTWARE.
 */
 
 #include "test_dll/test_dll.h"
+#include "test_exe/test_exe.h"
 
 #include "../include/int_types.h"
 #include "../include/typecast.inl"
@@ -47,6 +48,7 @@ SOFTWARE.
 #include "../include/core_thread.h"
 #include "../include/core_array.inl"
 #include "../include/paths.h"
+#include "../include/core_process.h"
 
 #define TEMPER_IMPLEMENTATION
 #define TEMPERDEV_ASSERT assert
@@ -1052,7 +1054,7 @@ TEMPER_TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER
 	TEMPER_CHECK_TRUE( string_equals( known_path, cwd ) );
 
 	set_cwd = path_set_current_directory( original_cwd );
-	TEMPER_CHECK_TRUE_M( set_cwd, "Failed to revert test back to the original cwd.  Tests that run after this one may fail." );
+	TEMPER_CHECK_TRUE_M( set_cwd, "Failed to revert test back to the original cwd.  Tests that run after this one may fail.\n" );
 
 	mem_reset_temp_storage();
 }
@@ -1492,7 +1494,162 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-// TODO: DM: 23/12/2025: the API is fine, just write the tests
+static const char *get_test_exe_path( void ) {
+	const char *app_dir = path_remove_file_from_path( path_app_path() );
+	return path_join( app_dir, TEST_EXE_FILENAME );
+}
+
+TEMPER_TEST( test_process_sync_exit_code_zero, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> args = {};
+	args.init( allocator );
+	args.add( get_test_exe_path() );
+
+	Process *process = process_create( allocator, &args, NULL, 0 );
+	TEMPER_CHECK_TRUE_A( process != NULL );
+
+	s32 exit_code = process_join( process );
+	TEMPER_CHECK_TRUE( exit_code == 0 );
+
+	TEMPER_CHECK_TRUE( process_destroy( process ) );
+	process = NULL;
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST( test_process_sync_exit_code_nonzero, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> args = {};
+	args.init( allocator );
+	args.add( get_test_exe_path() );
+	args.add( "--exit" );
+	args.add( "42" );
+
+	Process *process = process_create( allocator, &args );
+	TEMPER_CHECK_TRUE_A( process != NULL );
+
+	u32 bytes_read = 0;
+	char buffer[1024] = {};
+	while ( ( bytes_read = process_read_stdout( process, buffer, count_of( buffer ) - 1 ) ) ) {
+		buffer[bytes_read] = 0;
+		printf( "%s", buffer );
+	}
+
+	s32 exit_code = process_join( process );
+	TEMPER_CHECK_TRUE_M( exit_code == 42, "Exit code was actually %d\n", exit_code );
+
+	TEMPER_CHECK_TRUE( process_destroy( process ) );
+	process = NULL;
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST( test_process_async_exit_code, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> args = {};
+	args.init( allocator );
+	args.add( get_test_exe_path() );
+	args.add( "--exit" );
+	args.add( "0" );
+
+	Process *process = process_create( allocator, &args, NULL, PROCESS_FLAG_ASYNC );
+	TEMPER_CHECK_TRUE_A( process != NULL );
+
+	s32 exit_code = process_join( process );
+	TEMPER_CHECK_TRUE( exit_code == 0 );
+
+	TEMPER_CHECK_TRUE( process_destroy( process ) );
+	process = NULL;
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST( test_process_read_stdout, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> args = {};
+	args.init( allocator );
+	args.add( get_test_exe_path() );
+	args.add( "--stdout" );
+	args.add( "hello" );
+
+	Process *process = process_create( allocator, &args, NULL, PROCESS_FLAG_ASYNC );
+	TEMPER_CHECK_TRUE_A( process != NULL );
+
+	char buffer[1024] = {};
+	u32 bytes_read = process_read_stdout( process, buffer, cast( u32, count_of( buffer ) - 1 ) );
+
+	TEMPER_CHECK_TRUE( bytes_read > 0 );
+	TEMPER_CHECK_TRUE( string_starts_with( buffer, "hello" ) );
+
+	process_join( process );
+
+	TEMPER_CHECK_TRUE( process_destroy( process ) );
+	process = NULL;
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST( test_process_read_stderr, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> args = {};
+	args.init( allocator );
+	args.add( get_test_exe_path() );
+	args.add( "--stderr" );
+	args.add( "hello_stderr" );
+
+	Process *process = process_create( allocator, &args, NULL, PROCESS_FLAG_ASYNC );
+	TEMPER_CHECK_TRUE_A( process != NULL );
+
+	char buffer[1024] = {};
+	u32 bytes_read = process_read_stderr( process, buffer, cast( u32, count_of( buffer ) - 1 ) );
+
+	TEMPER_CHECK_TRUE( bytes_read > 0 );
+	TEMPER_CHECK_TRUE( string_starts_with( buffer, "hello_stderr" ) );
+
+	process_join( process );
+
+	TEMPER_CHECK_TRUE( process_destroy( process ) );
+	process = NULL;
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST( test_process_combine_stdout_and_stderr, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Array<const char *> args = {};
+	args.init( allocator );
+	args.add( get_test_exe_path() );
+	args.add( "--stderr" );
+	args.add( "stderr_output" );
+
+	Process *process = process_create( allocator, &args, NULL, cast( ProcessFlags, PROCESS_FLAG_ASYNC | PROCESS_FLAG_COMBINE_STDOUT_AND_STDERR ) );
+	TEMPER_CHECK_TRUE_A( process != NULL );
+
+	char buffer[256] = {};
+	u32 bytes_read = process_read_stdout( process, buffer, cast( u32, sizeof( buffer ) - 1 ) );
+
+	TEMPER_CHECK_TRUE( bytes_read > 0 );
+	TEMPER_CHECK_TRUE( string_starts_with( buffer, "stderr_output" ) );
+
+	process_join( process );
+
+	TEMPER_CHECK_TRUE( process_destroy( process ) );
+	process = NULL;
+
+	mem_reset_temp_storage();
+}
 
 
 /*

@@ -26,38 +26,33 @@ SOFTWARE.
 ===========================================================================
 */
 
-#pragma once
+#include "test_exe.h"
 
-#include "int_types.h"
-#include "core_array.h"	// DM!!! is this ok?
-#include "dll_export.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <stdbool.h>
 
-struct LinearAllocator;
+int main( int argc, char **argv ) {
+	int exit_code = 0;
 
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wc++98-compat-pedantic"
-#endif
+	for ( int arg_index = 1; arg_index < argc; arg_index++ ) {
+		const char *arg = argv[arg_index];
 
-struct Process;
+		bool has_next_arg = arg_index + 1 < argc;
 
-enum ProcessFlagBits {
-	PROCESS_FLAG_ASYNC	= 1,
-	PROCESS_FLAG_COMBINE_STDOUT_AND_STDERR,
-};
-typedef u32 ProcessFlags;
+		const char *next_arg = ( has_next_arg ) ? argv[arg_index + 1] : NULL;
 
+		if ( strcmp( arg, "--exit" ) == 0 && has_next_arg ) {
+			exit_code = atoi( next_arg );
+		} else if ( strcmp( arg, "--stdout" ) == 0 && has_next_arg ) {
+			printf( "%s\n", next_arg );
+			// fflush( stdout );
+		} else if ( strcmp( arg, "--stderr" ) == 0 && has_next_arg ) {
+			fprintf( stderr, "%s\n", next_arg );
+			// fflush( stderr );
+		}
+	}
 
-CORE_API Process	*process_create( LinearAllocator *allocator, Array<const char *> *args, Array<const char *> *environment_variables = NULL, const ProcessFlags flags = 0 );
-
-CORE_API bool8		process_destroy( Process *process );
-
-CORE_API s32		process_join( Process *process );
-
-CORE_API u32		process_read_stdout( Process *process, char *out_buffer, const u64 count );
-
-CORE_API u32		process_read_stderr( Process *process, char *out_buffer, const u64 count );
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
+	return exit_code;
+}

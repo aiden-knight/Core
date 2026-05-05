@@ -65,6 +65,30 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 
 
 	//
+	// test exe
+	//
+	BuildConfig testEXE = {
+		.name				= "test-exe",
+		.languageVersion	= LANGUAGE_VERSION_C99,
+		.binaryName			= "test_exe",
+		.intermediateFolder	= "intermediate",
+		.sourceFiles		= { "tests/test_exe/test_exe.c" },
+		.warningsAsErrors	= true,
+	};
+
+	if ( HasCommandLineArg( args, "--release" ) ) {
+		testEXE.optimizationLevel = OPTIMIZATION_LEVEL_O3;
+		testEXE.binaryFolder = "bin/release";
+		testEXE.defines.push_back( "NDEBUG" );
+	} else {
+		testEXE.binaryFolder = "bin/debug";
+		testEXE.defines.push_back( "_DEBUG" );
+	}
+
+	AddBuildConfig( options, &testEXE );
+
+
+	//
 	// core
 	//
 	BuildConfig core = {
@@ -137,7 +161,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 	//
 	BuildConfig tests = {
 		.name				= "tests",
-		.dependsOn			= { core, testDLL },
+		.dependsOn			= { core, testDLL, testEXE },
 		.intermediateFolder	= "intermediate",
 		.binaryName			= "core-tests",
 		.sourceFiles		= { "tests/tests.cpp" },
