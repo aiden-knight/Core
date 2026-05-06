@@ -43,9 +43,9 @@ SOFTWARE.
 */
 
 #ifdef _WIN32
-	#define PATH_SEPARATOR	"\\"
+	#define PATH_SEPARATOR	'\\'
 #else
-	#define PATH_SEPARATOR	"/"
+	#define PATH_SEPARATOR	'/'
 #endif
 
 // Returns the absolute path of where the current program is running from.

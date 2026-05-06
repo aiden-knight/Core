@@ -106,7 +106,7 @@ static const char *path_join_internalv( const int count, va_list args ) {
 
 	For ( int, arg_index, 0, count ) {
 		if ( arg_index > 0 ) {
-			string_builder_appendf( &builder, PATH_SEPARATOR );
+			string_builder_appendf( &builder, "%c", PATH_SEPARATOR );
 		}
 
 		const char *part = va_arg( args, const char * );
@@ -130,8 +130,8 @@ char *path_relative_path_to( const char *path_from, const char *path_to ) {
 	assert( path_from );
 	assert( path_to );
 
-	path_from = string_replace( path_from, '\\', '/' );
-	path_to   = string_replace( path_to,   '\\', '/' );
+	path_from = path_fix_slashes( path_from );
+	path_to   = path_fix_slashes( path_to );
 
 	u32 num_same_chars = 0;
 	u32 num_backs = 0;
@@ -140,14 +140,14 @@ char *path_relative_path_to( const char *path_from, const char *path_to ) {
 		num_same_chars += 1;
 	}
 
-	while ( num_same_chars > 0 && path_from[num_same_chars - 1] != '/' ) {
+	while ( num_same_chars > 0 && path_from[num_same_chars - 1] != PATH_SEPARATOR ) {
 		num_same_chars -= 1;
 	}
 
 	const char *path_from_copy = path_from + num_same_chars;
 
 	while ( *path_from_copy ) {
-		if ( *path_from_copy == '/' ) {
+		if ( *path_from_copy == PATH_SEPARATOR ) {
 			num_backs += 1;
 		}
 		path_from_copy += 1;
@@ -157,7 +157,7 @@ char *path_relative_path_to( const char *path_from, const char *path_to ) {
 	string_builder_init( &sb, g_temp_storage );
 
 	For ( u32, back_index, 0, num_backs ) {
-		string_builder_appendf( &sb, "../" );
+		string_builder_appendf( &sb, "..%c", PATH_SEPARATOR );
 	}
 
 	string_builder_appendf( &sb, path_to + num_same_chars );
