@@ -61,16 +61,17 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
 
-#if 0
-	string_builder_appendfv( builder, fmt, args );
-#else
 	StringBuilderBuffer *buffer = cast( StringBuilderBuffer *, linear_allocator_alloc( builder->allocator, sizeof( StringBuilderBuffer ) ) );
 	memset( buffer, 0, sizeof( StringBuilderBuffer ) );
+
+	va_list args_copy;
+	va_copy( args_copy, args );
 
 	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
 
 	buffer->data = cast( char *, linear_allocator_alloc( builder->allocator, ( buffer->length + 1 ) * sizeof( char ), 1 ) );
-	vsnprintf( buffer->data, buffer->length + 1, fmt, args );
+	vsnprintf( buffer->data, buffer->length + 1, fmt, args_copy );
+	va_end( args_copy );
 	buffer->data[buffer->length] = 0;
 
 	// if no head then this is the first element
@@ -82,7 +83,6 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	builder->tail->next = buffer;
 	builder->tail = buffer;
 	builder->tail->next = NULL;
-#endif
 
 	va_end( args );
 }
