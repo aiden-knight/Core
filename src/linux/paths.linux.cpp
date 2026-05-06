@@ -34,7 +34,6 @@ SOFTWARE.
 #include <debug.h>
 #include <paths.h>
 #include <temp_storage.h>
-#include <string_builder.h>
 #include <typecast.inl>
 #include <core_string.h>
 
@@ -122,52 +121,6 @@ const char *path_fix_slashes( const char *path ) {
 	return string_replace( path, '\\', '/' );
 }
 
-char *path_relative_path_to( const char *path_from, const char *path_to ) {
-	assert( path_from );
-	assert( path_to );
-
-	const char *path_from_copy = path_from;
-	const char *path_to_copy = path_to;
-
-	u32 num_same_chars = 0;
-	u32 num_backs = 0;
-
-	while ( path_from_copy[num_same_chars] && path_to_copy[num_same_chars] && path_from_copy[num_same_chars] == path_to_copy[num_same_chars] ) {
-		num_same_chars += 1;
-	}
-
-	path_from_copy = path_from + num_same_chars;
-	path_to_copy = path_to + num_same_chars;
-
-	while ( num_same_chars > 0 && path_from[num_same_chars - 1] != '/' ) {
-		num_same_chars -= 1;
-	}
-
-	// skip the first one of these if there is one
-	if ( *path_from_copy == '/' ) {
-		path_from_copy += 1;
-	}
-
-	while ( *path_from_copy ) {
-		if ( *path_from_copy == '/' ) {
-			num_backs += 1;
-		}
-		path_from_copy += 1;
-	}
-
-	StringBuilder sb = {};
-	string_builder_init( &sb, g_temp_storage );
-
-	For ( u32, back_index, 0, num_backs ) {
-		string_builder_appendf( &sb, "../" );
-	}
-
-	string_builder_appendf( &sb, path_to + num_same_chars );
-
-	char * result = cast( char *, string_builder_to_string( &sb ) );
-
-	return result;
-}
 
 bool8 path_set_current_directory( const char *path ) {
 	if ( chdir( path ) != 0 ) {

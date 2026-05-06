@@ -125,3 +125,42 @@ const char *path_join_internal( const int count, ... ) {
 
 	return result;
 }
+
+char *path_relative_path_to( const char *path_from, const char *path_to ) {
+	assert( path_from );
+	assert( path_to );
+
+	path_from = string_replace( path_from, '\\', '/' );
+	path_to   = string_replace( path_to,   '\\', '/' );
+
+	u32 num_same_chars = 0;
+	u32 num_backs = 0;
+
+	while ( path_from[num_same_chars] && path_to[num_same_chars] && path_from[num_same_chars] == path_to[num_same_chars] ) {
+		num_same_chars += 1;
+	}
+
+	while ( num_same_chars > 0 && path_from[num_same_chars - 1] != '/' ) {
+		num_same_chars -= 1;
+	}
+
+	const char *path_from_copy = path_from + num_same_chars;
+
+	while ( *path_from_copy ) {
+		if ( *path_from_copy == '/' ) {
+			num_backs += 1;
+		}
+		path_from_copy += 1;
+	}
+
+	StringBuilder sb = {};
+	string_builder_init( &sb, g_temp_storage );
+
+	For ( u32, back_index, 0, num_backs ) {
+		string_builder_appendf( &sb, "../" );
+	}
+
+	string_builder_appendf( &sb, path_to + num_same_chars );
+
+	return cast( char *, string_builder_to_string( &sb ) );
+}
