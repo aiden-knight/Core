@@ -87,6 +87,7 @@ void* linear_allocator_alloc( LinearAllocator *allocator, const u64 size_bytes, 
 
 		void *result = virtual_commit( allocator->ptr + allocator->comitted_bytes, new_comitted_bytes - allocator->comitted_bytes );
 		assert( result );
+		unused( result );
 
 		allocator->comitted_bytes = new_comitted_bytes;
 	}
