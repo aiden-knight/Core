@@ -55,11 +55,12 @@ struct File {
 	u64		offset;
 };
 
-enum FileVisitFlags {
+enum FileVisitFlagBits {
 	FILE_VISIT_RECURSIVE	= bit( 0 ),
 	FILE_VISIT_FILES		= bit( 1 ),
 	FILE_VISIT_FOLDERS		= bit( 2 ),
 };
+typedef u32 FileVisitFlags;
 
 enum FileOpenFlagBits {
 	FILE_OPEN_READ	= bit( 0 ),
