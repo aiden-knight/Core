@@ -119,16 +119,7 @@ const char *path_canonicalize( const char *path ) {
 }
 
 const char *path_fix_slashes( const char *path ) {
-	u64 path_length = strlen( path );
-	char *result = temp_c_string( path, path_length );
-
-	For ( u64, char_index, 0, path_length ) {
-		if ( result[char_index] == '\\' ) {
-			result[char_index] = '/';
-		}
-	}
-
-	return result;
+	return string_replace( path, '\\', '/' );
 }
 
 char *path_relative_path_to( const char *path_from, const char *path_to ) {
