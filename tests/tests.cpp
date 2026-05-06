@@ -1170,15 +1170,25 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "cat.jpg" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "./" );
 
 TEMPER_TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, const char *from, const char *to, const char *expected_relative_path ) {
-	const char *actual_relative_path = path_relative_path_to( from, to );
+	// use path_fix_slashes here because Windows can return backslashes in the resultant path (like it should)
+	// but its just easier to specify forward slashes in the test parameters
+	// so convert them internally to what the OS expects
+	const char *actual   = path_fix_slashes( path_relative_path_to( from, to ) );
+	const char *expected = path_fix_slashes( expected_relative_path );
 
-	TEMPER_CHECK_TRUE( string_equals( expected_relative_path, actual_relative_path ) );
+	TEMPER_CHECK_TRUE_M(
+		string_equals( expected, actual ),
+		"Expected relative path of \"%s\", instead got \"%s\".\n",
+		expected, actual
+	);
+
+	mem_reset_temp_storage();
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/diary.txt", "/home/images/cat.jpg", "../images/cat.jpg" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/", "/home/images/", "../images/" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/diary.txt",             "/home/images/cat.jpg",           "../images/cat.jpg" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/",                      "/home/images/",                  "../images/" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/diary.txt", "C:/Users/Tom/Pictures/cats.jpg", "../../Tom/Pictures/cats.jpg" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/", "C:/Users/Tom/Pictures/", "../../Tom/Pictures/" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/",          "C:/Users/Tom/Pictures/",         "../../Tom/Pictures/" );
 
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #ifdef _WIN32
