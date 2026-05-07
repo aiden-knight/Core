@@ -143,6 +143,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 #ifdef _WIN32
 		core.additionalLibs.push_back( "msvcrt" );
 		core.additionalLibs.push_back( "ucrt" );
+		core.additionalLibs.push_back( "user32" );
 #endif
 	} else {
 		core.binaryFolder = "bin/debug";
