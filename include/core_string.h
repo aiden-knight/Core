@@ -54,9 +54,9 @@ struct String {
 CORE_API String		string_set( LinearAllocator *allocator, const char *str );
 CORE_API String		string_set( LinearAllocator *allocator, const char *str, const u64 length );
 
-CORE_API String		string_printf( const char *fmt, ... );
+CORE_API String		string_printf( LinearAllocator *allocator, const char *fmt, ... );
 
-CORE_API String		string_copy( String *src );
+CORE_API String		string_copy( LinearAllocator *allocator, String *src );
 
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
 CORE_API bool8		string_equals( const char *lhs, const char *rhs );
@@ -79,10 +79,9 @@ CORE_API void		string_replace( String *str, const char old_char, const char new_
 CORE_API String		temp_printf( const char *fmt, ... );
 
 
-// DM!!! just use string_set( g_temp_storage ) ?
-
+// TODO: DM: just use string_set( g_temp_storage ) ?
 // Returns a copy of 'from' that has been allocated on temp storage.
-// CORE_API char		*temp_c_string( const char *from );
+CORE_API char		*temp_c_string( const char *from );
 
 // Copies 'length' characters from 'from' and allocates it on temp storage.
-// CORE_API char		*temp_c_string( const char *from, const u64 length );
+CORE_API char		*temp_c_string( const char *from, const u64 length );
