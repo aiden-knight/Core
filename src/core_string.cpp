@@ -78,7 +78,7 @@ void string_printf( String *out_str, const char *fmt, ... ) {
 	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
 
 	string_realloc_internal( out_str, length + 1 );
-	vsnprintf( out_str->data, length, fmt, args );
+	vsnprintf( out_str->data, length + 1, fmt, args );
 	out_str->data[length] = 0;
 }
 
@@ -174,4 +174,3 @@ char *temp_c_string( const char *from, const u64 num_chars ) {
 
 	return result;
 }
-
