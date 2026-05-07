@@ -141,6 +141,8 @@ Process	*process_create( LinearAllocator *allocator, Array<const char *> *args, 
 		}
 
 		env_vars_start = cast( char * const *, &( *environment_variables )[0] );
+	} else {
+		env_vars_start = environ;
 	}
 
 	if ( posix_spawnp( &subprocess->pid, subprocess_name, &spawn_actions, NULL, args_start, env_vars_start ) != 0 ) {
