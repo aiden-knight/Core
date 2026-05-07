@@ -31,6 +31,8 @@ SOFTWARE.
 #include "int_types.h"
 #include "dll_export.h"
 
+struct LinearAllocator;
+
 /*
 ================================================================================================
 
@@ -81,7 +83,7 @@ CORE_API bool8				path_set_current_directory( const char *path );
 
 // DO NOT CALL THIS DIRECTLY.
 // CALL path_join INSTEAD.
-CORE_API const char			*path_join_internal( const int count, ... );
+CORE_API const char			*path_join_internal( LinearAllocator *allocator, const int count, ... );
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wc++98-compat"
@@ -93,6 +95,6 @@ inline int path_va_args_count( Args&&... ) {
 }
 
 // Takes a variable number of strings and separates each one with a slash (back slash on Windows, forward slash on all other platforms).
-#define path_join( ... )	path_join_internal( path_va_args_count( __VA_ARGS__ ), __VA_ARGS__ )
+#define path_join( allocator, ... )	path_join_internal( allocator, path_va_args_count( __VA_ARGS__ ), __VA_ARGS__ )
 
 #pragma clang diagnostic pop
