@@ -1197,9 +1197,11 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	const char *expected_path = "C:/Users/your_mother/videos";
 #endif
 
-	const char *actual_path = path_join( "C:", "Users", "your_mother", "videos" );
+	const char *actual_path = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
 
 	TEMPER_CHECK_TRUE( string_equals( expected_path, actual_path ) );
+
+	mem_reset_temp_storage();
 }
 
 
@@ -1506,7 +1508,7 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 
 static const char *get_test_exe_path( void ) {
 	const char *app_dir = path_remove_file_from_path( path_app_path() );
-	return path_join( app_dir, TEST_EXE_FILENAME );
+	return path_join( g_temp_storage, app_dir, TEST_EXE_FILENAME );
 }
 
 TEMPER_TEST( test_process_sync_exit_code_zero, TEMPER_FLAG_SHOULD_RUN ) {
