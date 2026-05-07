@@ -32,19 +32,30 @@ SOFTWARE.
 #include <temp_storage.h>
 #include <defer.h>
 #include <core_helpers.h>
-
 #include <linear_allocator.h>
 
 #include <stdio.h>
 #include <stdarg.h>
 #include <string.h>
 
-static void string_realloc_internal( String *out_str, const u64 length ) {
-	if ( length > out_str->count ) {
-		char *new_data = cast( char *, linear_allocator_alloc( out_str->allocator, length * sizeof( char ) ) );
-		memcpy( new_data, out_str->data, out_str->count * sizeof( char ) );
-		out_str->data = new_data;
-	}
+static String string_vprintf( LinearAllocator *allocator, const char *fmt, va_list args ) {
+	assert( allocator );
+	assert( fmt );
+
+	String result;
+
+	va_list args_copy;
+	va_start( args_copy, fmt );
+
+	result.length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
+
+	result.data = cast( char *, linear_allocator_alloc( allocator, ( result.length + 1 ) * sizeof( char ) ) );
+	vsnprintf( result.data, result.length + 1, fmt, args_copy );
+	result.data[result.length] = 0;
+
+	va_end( args_copy );
+
+	return result;
 }
 
 /*
@@ -55,52 +66,33 @@ static void string_realloc_internal( String *out_str, const u64 length ) {
 ================================================================================================
 */
 
-void string_init( String *out_str, LinearAllocator *allocator ) {
-	out_str->allocator = allocator;
-	out_str->data = NULL;
-	out_str->count = 0;
+String string_set( LinearAllocator *allocator, const char *str ) {
+	return string_set( allocator, str, strlen( str ) );
 }
 
-void string_zero( String *out_str ) {
-	out_str->allocator = NULL;
-	out_str->data = NULL;
-	out_str->count = 0;
+String string_set( LinearAllocator *allocator, const char *str, const u64 length ) {
+	String result = {
+		.data	= cast( char *, linear_allocator_alloc( allocator, ( length + 1 ) * sizeof( char ) ) ),
+		.count	= length,
+	};
+
+	memcpy( result.data, str, ( length + 1 ) * sizeof( char ) );
+	result.data[length] = 0;
+
+	return result;
 }
 
-void string_printf( String *out_str, const char *fmt, ... ) {
-	assert( out_str );
-	assert( fmt );
-
+String string_printf( LinearAllocator *allocator, const char *fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-
-	va_list args_copy;
-	va_start( args_copy, fmt );
-
-	u64 length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
-
-	string_realloc_internal( out_str, length + 1 );
-	vsnprintf( out_str->data, length + 1, fmt, args_copy );
-	out_str->data[length] = 0;
-
-	va_end( args_copy );
-
+	String result = string_vprintf( allocator, fmt, args );
 	va_end( args );
+
+	return result;
 }
 
-void string_copy( String *dst, String *src ) {
-	string_copy_from_c_string( dst, src->data, src->count );
-}
-
-void string_copy_from_c_string( String *out_str, const char *c_str ) {
-	string_copy_from_c_string( out_str, c_str, strlen( c_str ) );
-}
-
-void string_copy_from_c_string( String *out_str, const char *c_str, const u64 length ) {
-	string_realloc_internal( out_str, length + 1 );
-	memcpy( out_str->data, c_str, length );
-	out_str->data[length] = 0;
-	out_str->count = length;
+String string_copy( String *src ) {
+	return string_set( src->data, src->count );
 }
 
 bool8 string_equals( const char *lhs, const char *rhs ) {
@@ -139,48 +131,34 @@ bool8 string_contains( const char *str, const char *substring ) {
 	return strstr( str, substring ) != NULL;
 }
 
-const char *string_replace( const char *str, const char old_char, const char new_char ) {
-	char *result = temp_c_string( str );
-
-	For ( u32, i, 0, strlen( str ) ) {
-		if ( result[i] == old_char ) {
-			result[i] = new_char;
+void string_replace( String *str, const char old_char, const char new_char ) {
+	For ( u32, char_index, 0, str->count ) {
+		if ( str[char_index] == old_char ) {
+			str[char_index] = new_char;
 		}
 	}
-
-	return result;
 }
 
-const char *temp_printf( const char *fmt, ... ) {
-	assert( fmt );
-
+String temp_printf( const char *fmt, ... ) {
 	va_list args;
 	va_start( args, fmt );
-
-	va_list args_copy;
-	va_start( args_copy, fmt );
-
-	u64 string_length = cast( u64, vsnprintf( NULL, 0, fmt, args ) );
-
-	char *out_string = cast( char *, mem_temp_alloc( ( string_length + 1 ) * sizeof( char ) ) );
-
-	vsnprintf( out_string, string_length + 1, fmt, args_copy );
-	out_string[string_length] = 0;
-
-	va_end( args_copy );
+	String result = string_vprintf( g_temp_storage, *fmt, args );
 	va_end( args );
-
-	return out_string;
-}
-
-char *temp_c_string( const char *from ) {
-	return temp_c_string( from, strlen( from ) );
-}
-
-char *temp_c_string( const char *from, const u64 num_chars ) {
-	char *result = cast( char *, mem_temp_alloc( ( num_chars + 1 ) * sizeof( char ) ) );
-	strncpy( result, from, num_chars * sizeof( char ) );
-	result[num_chars] = 0;
 
 	return result;
 }
+
+
+// DM!!! just use string_set( g_temp_storage ) ?
+
+// char *temp_c_string( const char *from ) {
+// 	return temp_c_string( from, strlen( from ) );
+// }
+
+// char *temp_c_string( const char *from, const u64 num_chars ) {
+// 	char *result = cast( char *, mem_temp_alloc( ( num_chars + 1 ) * sizeof( char ) ) );
+// 	strncpy( result, from, num_chars * sizeof( char ) );
+// 	result[num_chars] = 0;
+
+// 	return result;
+// }
