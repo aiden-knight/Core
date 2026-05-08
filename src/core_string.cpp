@@ -193,6 +193,36 @@ void string_replace( String* str, const char old_char, const char new_char ) {
 	}
 }
 
+bool8 string_find_from_left( const String *str, const char c, u64 *out_index ) {
+	assert( str );
+	assert( out_index );
+
+	char *pos = cast( char *, memchr( str->data, c, str->count ) );
+
+	if ( !pos ) {
+		return false;
+	}
+
+	*out_index = cast( u64, pos ) - cast( u64, str->data );
+
+	return true;
+}
+
+bool8 string_find_from_right( const String *str, const char c, u64 *out_index ) {
+	assert( str );
+	assert( out_index );
+
+	char *pos = cast( char *, memrchr( str->data, c, str->count ) );
+
+	if ( !pos ) {
+		return false;
+	}
+
+	*out_index = cast( u64, pos ) - cast( u64, str->data );
+
+	return true;
+}
+
 String temp_printf( const char *fmt, ... ) {
 	assert( fmt );
 

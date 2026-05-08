@@ -80,6 +80,10 @@ CORE_API bool8		string_contains( const String *str, const String *substring );
 
 CORE_API void		string_replace( String *str, const char old_char, const char new_char );
 
+CORE_API bool8		string_find_from_left( const String *str, const char c, u64 *out_index );
+
+CORE_API bool8		string_find_from_right( const String *str, const char c, u64 *out_index );
+
 // Returns a printf-formatted string with the given format string and var args that's been allocated via temp storage.
 CORE_API String		temp_printf( const char *fmt, ... );
 
