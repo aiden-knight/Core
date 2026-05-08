@@ -106,10 +106,9 @@ const char *path_canonicalize( const char *path ) {
 	return result;
 }
 
-const char *path_fix_slashes( const char *path ) {
-	return string_replace( path, '/', '\\' );
+void path_fix_slashes( String *str ) {
+	return string_replace( str, '/', PATH_SEPARATOR );
 }
-
 
 bool8 path_set_current_directory( const char *path ) {
 	assert( path );

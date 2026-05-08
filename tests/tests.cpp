@@ -278,44 +278,42 @@ TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEMPER_TEST( test_string_zero, TEMPER_FLAG_SHOULD_RUN ) {
-	String msg;
-	string_zero( &msg );
+	String msg = {};
 
-	TEMPER_CHECK_TRUE( msg.count == 0 );
 	TEMPER_CHECK_TRUE( msg.data == NULL );
+	TEMPER_CHECK_TRUE( msg.count == 0 );
 }
 
-TEMPER_TEST_PARAMETRIC( test_string_copy_from_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+TEMPER_TEST_PARAMETRIC( test_string_set_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
-	String msg = {};
-	string_init( &msg, allocator );
-	string_copy_from_c_string( &msg, str );
+	String msg = string_set( allocator, str );
 
 	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "test" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "this is only a test" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy_from_c_string, "." );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "this is only a test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "." );
 
 TEMPER_TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
-	String msg = {};
-	string_init( &msg, allocator );
-	string_copy_from_c_string( &msg, str );
+	String msg = string_set( allocator, str );
+	String actual_copy = string_copy( allocator, &msg );
 
-	String actual_copy = {};
-	string_init( &actual_copy, allocator );
-	string_copy( &actual_copy, &msg );
+	// check msg == str
+	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
+	TEMPER_CHECK_TRUE( msg.count == strlen( str ) );
 
+	// check actual_copy == str
 	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, str ) );
 	TEMPER_CHECK_TRUE( actual_copy.count == strlen( str ) );
 
+	// check actual_copy == msg
 	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, msg.data ) );
 	TEMPER_CHECK_TRUE( actual_copy.count == msg.count );
 }
@@ -362,9 +360,13 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "thi
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "ONLY",    false );
 
 TEMPER_TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char *str, const char replace_old, const char replace_new, const char *expected_result ) {
-	const char *actual_result = string_replace( str, replace_old, replace_new );
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
 
-	TEMPER_CHECK_TRUE( string_equals( actual_result, expected_result ) );
+	String actual_result = string_set( allocator, str );
+	string_replace( &actual_result, replace_old, replace_new );
+
+	TEMPER_CHECK_TRUE( string_equals( actual_result.data, expected_result ) );
 
 	mem_reset_temp_storage();
 }
@@ -1150,15 +1152,20 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "/Program Files (x86)/Stea
 #endif
 
 TEMPER_TEST_PARAMETRIC( test_path_fix_slashes, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String expected_fixed_path = string_set( allocator, path );
 #ifdef __linux__
-	const char *expected_fixed_path = string_replace( path, '\\', '/' );
+	string_replace( &expected_fixed_path, '\\', '/' );
 #else
-	const char *expected_fixed_path = string_replace( path, '/', '\\' );
+	string_replace( &expected_fixed_path, '/', '\\' );
 #endif
 
-	const char *actual_fixed_path = path_fix_slashes( path );
+	String actual_fixed_path = string_set( allocator, path );
+	path_fix_slashes( &actual_fixed_path );
 
-	TEMPER_CHECK_TRUE( string_equals( expected_fixed_path, actual_fixed_path ) );
+	TEMPER_CHECK_TRUE( string_equals( &expected_fixed_path, &actual_fixed_path ) );
 
 	mem_reset_temp_storage();
 }
@@ -1170,17 +1177,19 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "cat.jpg" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "./" );
 
 TEMPER_TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, const char *from, const char *to, const char *expected_relative_path ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String expected = string_set( allocator, expected_relative_path );
+	String actual = string_set( allocator, path_relative_path_to( from, to ) );
+
 	// use path_fix_slashes here because Windows can return backslashes in the resultant path (like it should)
 	// but its just easier to specify forward slashes in the test parameters
 	// so convert them internally to what the OS expects
-	const char *actual   = path_fix_slashes( path_relative_path_to( from, to ) );
-	const char *expected = path_fix_slashes( expected_relative_path );
+	path_fix_slashes( &expected );
+	path_fix_slashes( &actual );
 
-	TEMPER_CHECK_TRUE_M(
-		string_equals( expected, actual ),
-		"Expected relative path of \"%s\", instead got \"%s\".\n",
-		expected, actual
-	);
+	TEMPER_CHECK_TRUE_M( string_equals( &expected, &actual ), "Expected relative path of \"%s\", instead got \"%s\".\n", expected.data, actual.data );
 
 	mem_reset_temp_storage();
 }

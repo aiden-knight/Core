@@ -130,8 +130,8 @@ char *path_relative_path_to( const char *path_from, const char *path_to ) {
 	assert( path_from );
 	assert( path_to );
 
-	path_from = path_fix_slashes( path_from );
-	path_to   = path_fix_slashes( path_to );
+	// path_from = path_fix_slashes( path_from );
+	// path_to   = path_fix_slashes( path_to );
 
 	u32 num_same_chars = 0;
 	u32 num_backs = 0;

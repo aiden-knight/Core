@@ -60,6 +60,7 @@ CORE_API String		string_copy( LinearAllocator *allocator, String *src );
 
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
 CORE_API bool8		string_equals( const char *lhs, const char *rhs );
+CORE_API bool8		string_equals( const String *lhs, const String *rhs );
 
 // Returns true if the first characters of string 'str' are EXACTLY the same as string 'prefix'.  Case sensitive.
 CORE_API bool8		string_starts_with( const char *str, const char *prefix );

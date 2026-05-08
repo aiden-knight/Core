@@ -103,6 +103,13 @@ bool8 string_equals( const char *lhs, const char *rhs ) {
 	return lhs_len == strlen( rhs ) && strncmp( lhs, rhs, lhs_len ) == 0;
 }
 
+bool8 string_equals( const String *lhs, const String *rhs ) {
+	assert( lhs );
+	assert( rhs );
+
+	return string_equals( lhs->data, rhs->data );
+}
+
 bool8 string_starts_with( const char *str, const char *prefix ) {
 	assert( str );
 	assert( prefix );
@@ -131,7 +138,7 @@ bool8 string_contains( const char *str, const char *substring ) {
 	return strstr( str, substring ) != NULL;
 }
 
-void string_replace( String *str, const char old_char, const char new_char ) {
+void string_replace( String* str, const char old_char, const char new_char ) {
 	For ( u32, char_index, 0, str->count ) {
 		if ( str->data[char_index] == old_char ) {
 			str->data[char_index] = new_char;

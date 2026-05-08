@@ -32,6 +32,7 @@ SOFTWARE.
 #include "dll_export.h"
 
 struct LinearAllocator;
+struct String;
 
 /*
 ================================================================================================
@@ -75,7 +76,7 @@ CORE_API bool8				path_is_absolute( const char *path );
 CORE_API const char			*path_canonicalize( const char *path );
 
 // Make sure that any slashes found in 'path' are what the OS expects them to be.
-CORE_API const char			*path_fix_slashes( const char *path );
+CORE_API void				path_fix_slashes( String *str );
 
 CORE_API char				*path_relative_path_to( const char *path_from, const char *path_to );
 
