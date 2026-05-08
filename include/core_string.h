@@ -56,7 +56,7 @@ CORE_API String		string_set( LinearAllocator *allocator, const char *str, const 
 
 CORE_API String		string_printf( LinearAllocator *allocator, const char *fmt, ... );
 
-CORE_API String		string_copy( LinearAllocator *allocator, String *src );
+CORE_API String		string_copy( LinearAllocator *allocator, const String *src );
 
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
 CORE_API bool8		string_equals( const char *lhs, const char *rhs );
@@ -64,23 +64,25 @@ CORE_API bool8		string_equals( const String *lhs, const String *rhs );
 
 // Returns true if the first characters of string 'str' are EXACTLY the same as string 'prefix'.  Case sensitive.
 CORE_API bool8		string_starts_with( const char *str, const char *prefix );
+CORE_API bool8		string_starts_with( const String *str, const String *prefix );
 
-// Returns true if the last character of 'str' is the valueo of 'end'.  Case sensitive.
+// Returns true if the last character of 'str' is the value of 'end'.  Case sensitive.
 CORE_API bool8		string_ends_with( const char *str, const char end );
+CORE_API bool8		string_ends_with( const String *str, const char end );
 
 // Returns true if the last characters of 'str' are EXACTLY the same as string 'suffix'.  Case sensitive.
 CORE_API bool8		string_ends_with( const char *str, const char *suffix );
+CORE_API bool8		string_ends_with( const String *str, const String *suffix );
 
 // Returns true if string 'str' has EXACTLY the contents of 'substring' somewhere in it.  Case sensitive.
 CORE_API bool8		string_contains( const char *str, const char *substring );
+CORE_API bool8		string_contains( const String *str, const String *substring );
 
 CORE_API void		string_replace( String *str, const char old_char, const char new_char );
 
 // Returns a printf-formatted string with the given format string and var args that's been allocated via temp storage.
 CORE_API String		temp_printf( const char *fmt, ... );
 
-
-// TODO: DM: just use string_set( g_temp_storage ) ?
 // Returns a copy of 'from' that has been allocated on temp storage.
 CORE_API char		*temp_c_string( const char *from );
 

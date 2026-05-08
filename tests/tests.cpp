@@ -255,10 +255,12 @@ TEMPER_TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
-	Array<const char *> callstack = get_callstack( allocator );
+	Array<String> callstack = get_callstack( allocator );
+
+	String expected = string_set( allocator, "test_get_callstack" );
 
 	TEMPER_CHECK_TRUE( callstack.count > 0 );
-	TEMPER_CHECK_TRUE( string_contains( callstack[0], "test_get_callstack" ) );
+	TEMPER_CHECK_TRUE( string_contains( &callstack[0], &expected ) );
 }
 
 
@@ -277,13 +279,6 @@ TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( msg.data == NULL );
 }
 
-TEMPER_TEST( test_string_zero, TEMPER_FLAG_SHOULD_RUN ) {
-	String msg = {};
-
-	TEMPER_CHECK_TRUE( msg.data == NULL );
-	TEMPER_CHECK_TRUE( msg.count == 0 );
-}
-
 TEMPER_TEST_PARAMETRIC( test_string_set_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
@@ -291,6 +286,7 @@ TEMPER_TEST_PARAMETRIC( test_string_set_c_string, TEMPER_FLAG_SHOULD_RUN, const 
 	String msg = string_set( allocator, str );
 
 	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
+	TEMPER_CHECK_TRUE( msg.count == strlen( str ) );
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "test" );
@@ -303,19 +299,22 @@ TEMPER_TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *st
 	defer { linear_allocator_destroy( allocator ); };
 
 	String msg = string_set( allocator, str );
-	String actual_copy = string_copy( allocator, &msg );
+	String copy = string_copy( allocator, &msg );
 
 	// check msg == str
 	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
 	TEMPER_CHECK_TRUE( msg.count == strlen( str ) );
 
-	// check actual_copy == str
-	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, str ) );
-	TEMPER_CHECK_TRUE( actual_copy.count == strlen( str ) );
+	// check copy == str
+	TEMPER_CHECK_TRUE( string_equals( copy.data, str ) );
+	TEMPER_CHECK_TRUE( copy.count == strlen( str ) );
 
-	// check actual_copy == msg
-	TEMPER_CHECK_TRUE( string_equals( actual_copy.data, msg.data ) );
-	TEMPER_CHECK_TRUE( actual_copy.count == msg.count );
+	// check copy == msg
+	TEMPER_CHECK_TRUE( string_equals( copy.data, msg.data ) );
+	TEMPER_CHECK_TRUE( copy.count == msg.count );
+
+	// check that the copy allocation is different from the original string allocation
+	TEMPER_CHECK_TRUE( copy.data != msg.data );
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "A" );
@@ -323,22 +322,39 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "This is a test" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "This test . has a dot in it" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "What about \t escape\n characters?" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "      " );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "" );
 
-TEMPER_TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char *str, const char *expected_prefix, const bool8 should_match ) {
-	TEMPER_CHECK_TRUE( string_starts_with( str, expected_prefix ) == should_match );
+TEMPER_TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char *msg, const char *prefix, const bool8 should_match ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String str = string_set( allocator, msg );
+	String expected_prefix = string_set( allocator, prefix );
+
+	TEMPER_CHECK_TRUE( string_starts_with( msg, prefix ) == should_match );
+	TEMPER_CHECK_TRUE( string_starts_with( &str, &expected_prefix ) == should_match );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "T",                  true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This",               true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This ",              true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This is",            true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this",               false );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this is",            false );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this is ",           false );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "w42950tuweiojfgase", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "T",                    true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This",                 true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This ",                true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "This is",              true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this",                 false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this is",              false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "this is ",             false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "w42950tuweiojfgase",   false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "This is only a test", "",                     true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_starts_with, "abc",                 "abcdef",               false );
 
-TEMPER_TEST_PARAMETRIC( test_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char *str, const char *expected_suffix, const bool8 should_match ) {
-	TEMPER_CHECK_TRUE( string_ends_with( str, expected_suffix ) == should_match );
+TEMPER_TEST_PARAMETRIC( test_string_ends_with, TEMPER_FLAG_SHOULD_RUN, const char *msg, const char *suffix, const bool8 should_match ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String str = string_set( allocator, msg );
+	String expected_suffix = string_set( allocator, suffix );
+
+	TEMPER_CHECK_TRUE( string_ends_with( msg, suffix ) == should_match );
+	TEMPER_CHECK_TRUE( string_ends_with( &str, &expected_suffix ) == should_match );
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "t",     true  );
@@ -347,17 +363,45 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", " t
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "T",     false );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "tesT",  false );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", " TEST", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "This is only a test", "",      true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with, "abc",                 "abcdef",false );
 
-TEMPER_TEST_PARAMETRIC( test_string_contains, TEMPER_FLAG_SHOULD_RUN, const char *str, const char *substring, const bool8 should_contain ) {
-	TEMPER_CHECK_TRUE( string_contains( str, substring ) == should_contain );
+TEMPER_TEST_PARAMETRIC( test_string_ends_with_char, TEMPER_FLAG_SHOULD_RUN, const char *msg, const char end, const bool8 should_match ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String str = string_set( allocator, msg );
+
+	TEMPER_CHECK_TRUE( string_ends_with( msg, end ) == should_match );
+	TEMPER_CHECK_TRUE( string_ends_with( &str, end ) == should_match );
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "This is", true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "is only", true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", " a test", true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", " ",       true  );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "this",    false );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "ONLY",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with_char, "test", 't', true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with_char, "test", 's', false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with_char, "test", 'T', false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with_char, "a",    'a', true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_ends_with_char, "",     'x', false );
+
+TEMPER_TEST_PARAMETRIC( test_string_contains, TEMPER_FLAG_SHOULD_RUN, const char *msg, const char *substring, const bool8 should_contain ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String str = string_set( allocator, msg );
+	String sub = string_set( allocator, substring );
+
+	TEMPER_CHECK_TRUE( string_contains( msg, substring ) == should_contain );
+	TEMPER_CHECK_TRUE( string_contains( &str, &sub ) == should_contain );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "This is",             true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "is only",             true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", " a test",             true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", " ",                   true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "This is only a test", true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "",                    true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "this",                false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "ONLY",                false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "abc",                 "abcdef",              false );
 
 TEMPER_TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char *str, const char replace_old, const char replace_new, const char *expected_result ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
@@ -367,13 +411,87 @@ TEMPER_TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char 
 	string_replace( &actual_result, replace_old, replace_new );
 
 	TEMPER_CHECK_TRUE( string_equals( actual_result.data, expected_result ) );
-
-	mem_reset_temp_storage();
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", ' ', '_', "this_is_only_a_test" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 't', 'T', "This is only a TesT" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 'x', "thix ix only a text" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 'z', 'Z', "this is only a test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 't', 't', "this is only a test" );
+
+TEMPER_TEST_PARAMETRIC( test_string_equals, TEMPER_FLAG_SHOULD_RUN, const char *lhs, const char *rhs, const bool8 should_match ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String lhs_str = string_set( allocator, lhs );
+	String rhs_str = string_set( allocator, rhs );
+
+	TEMPER_CHECK_TRUE( string_equals( lhs, rhs ) == should_match );
+	TEMPER_CHECK_TRUE( string_equals( &lhs_str, &rhs_str ) == should_match );
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "test",  "test",    true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "test",  "Test",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "test",  "testing", false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "test",  "tent",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "",      "",        true  );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "",      "test",    false );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "test",  "",        false );
+
+TEMPER_TEST( test_string_printf, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	{
+		String result = string_printf( allocator, "hello %s", "world" );
+		TEMPER_CHECK_TRUE( result.count == 11 );
+		TEMPER_CHECK_TRUE( string_equals( result.data, "hello world" ) );
+	}
+
+	{
+		String result = string_printf( allocator, "%d + %d = %d", 1, 2, 3 );
+		TEMPER_CHECK_TRUE( result.count == 9 );
+		TEMPER_CHECK_TRUE( string_equals( result.data, "1 + 2 = 3" ) );
+	}
+
+	{
+		String result = string_printf( allocator, "no format args" );
+		TEMPER_CHECK_TRUE( result.count == 14 );
+		TEMPER_CHECK_TRUE( string_equals( result.data, "no format args" ) );
+	}
+}
+
+TEMPER_TEST( test_temp_printf, TEMPER_FLAG_SHOULD_RUN ) {
+	{
+		String result = temp_printf( "hello %s", "world" );
+		TEMPER_CHECK_TRUE( result.count == 11 );
+		TEMPER_CHECK_TRUE( string_equals( result.data, "hello world" ) );
+	}
+
+	{
+		String result = temp_printf( "%d + %d = %d", 1, 2, 3 );
+		TEMPER_CHECK_TRUE( result.count == 9 );
+		TEMPER_CHECK_TRUE( string_equals( result.data, "1 + 2 = 3" ) );
+	}
+
+	mem_reset_temp_storage();
+}
+
+TEMPER_TEST_PARAMETRIC( test_temp_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+	char *result = temp_c_string( str );
+	TEMPER_CHECK_TRUE( string_equals( result, str ) );
+	mem_reset_temp_storage();
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_temp_c_string, "hello" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_temp_c_string, "this is only a test" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_temp_c_string, "." );
+
+TEMPER_TEST( test_temp_c_string_with_length, TEMPER_FLAG_SHOULD_RUN ) {
+	char *result = temp_c_string( "hello world", 5 );
+	TEMPER_CHECK_TRUE( string_equals( result, "hello" ) );
+	mem_reset_temp_storage();
+}
 
 
 /*
