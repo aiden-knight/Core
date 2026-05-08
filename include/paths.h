@@ -52,19 +52,19 @@ struct String;
 #endif
 
 // Returns the absolute path of where the current program is running from.
-CORE_API const char			*path_app_path();
+CORE_API String				path_app_path( LinearAllocator *allocator );
 
 // Returns the path that your program is currently running from.
-CORE_API const char			*path_current_working_directory();
+CORE_API String				path_current_working_directory( LinearAllocator *allocator );
 
 // Returns the absolute path of 'file'.
-CORE_API const char			*path_absolute_path( const char *path );
+CORE_API String				path_absolute_path( LinearAllocator *allocator, const char *path );
 
 // Given a file path that also includes a filename, will remove the filename part, leaving just the path.
-CORE_API const char			*path_remove_file_from_path( const char *path );
+CORE_API void				path_remove_file_from_path( String *path );
 
 // Given a file path that also includes a filename, will remove the path part, leaving just the filename.
-CORE_API const char			*path_remove_path_from_file( const char *path );
+CORE_API void				path_remove_path_from_file( String *path );
 
 // Returns the name of a file without its file extension, if there is one.
 CORE_API const char			*path_remove_file_extension( const char *filename );
