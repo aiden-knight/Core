@@ -115,6 +115,7 @@ bool8 string_equals( const char *lhs, const char *rhs ) {
 
 	u64 lhs_len = strlen( lhs );
 	u64 rhs_len = strlen( rhs );
+
 	return ( lhs_len == rhs_len ) && memcmp( lhs, rhs, lhs_len ) == 0;
 }
 
@@ -153,6 +154,7 @@ bool8 string_ends_with( const char *str, const char *suffix ) {
 
 	u64 len = strlen( str );
 	u64 suffix_length = strlen( suffix );
+
 	return ( suffix_length <= len ) && ( memcmp( str + len - suffix_length, suffix, suffix_length ) == 0 );
 }
 
