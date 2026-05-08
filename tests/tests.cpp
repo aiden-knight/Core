@@ -1032,8 +1032,8 @@ TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FLAG_SHOULD_RUN ) {
-	const char *cwd = path_current_working_directory();
+TEMPER_TEST( test_path_get_cwd_matches_absolute_dot, TEMPER_FLAG_SHOULD_RUN ) {
+	const char *cwd = path_get_cwd();
 	const char *absolute_dot = path_absolute_path( "." );
 
 	TEMPER_CHECK_TRUE( string_equals( cwd, absolute_dot ) );
@@ -1041,27 +1041,27 @@ TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FL
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
+TEMPER_TEST_PARAMETRIC( test_path_cwd_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
 	bool8 set_cwd = false;
 
-	const char *original_cwd = path_current_working_directory();
+	const char *original_cwd = path_get_cwd();
 
 	const char *known_path = path_absolute_path( folder );
-	set_cwd = path_set_current_directory( known_path );
+	set_cwd = path_set_cwd( known_path );
 	TEMPER_CHECK_TRUE( set_cwd );
 
-	const char *cwd = path_current_working_directory();
+	const char *cwd = path_get_cwd();
 	TEMPER_CHECK_TRUE( string_equals( known_path, cwd ) );
 
-	set_cwd = path_set_current_directory( original_cwd );
+	set_cwd = path_set_cwd( original_cwd );
 	TEMPER_CHECK_TRUE_M( set_cwd, "Failed to revert test back to the original cwd.  Tests that run after this one may fail.\n" );
 
 	mem_reset_temp_storage();
 }
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get, "bin"            );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get, ".builder"       );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get, "editor_support" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_cwd_set_then_get, "bin"            );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_cwd_set_then_get, ".builder"       );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_cwd_set_then_get, "editor_support" );
 
 TEMPER_TEST_PARAMETRIC( test_path_absolute_path_from_relative, TEMPER_FLAG_SHOULD_RUN, const char *relative_path ) {
 	const char *absolute = path_absolute_path( relative_path );
@@ -1078,7 +1078,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "include" 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "editor_support" );
 
 TEMPER_TEST( test_path_absolute_path_already_absolute, TEMPER_FLAG_SHOULD_RUN ) {
-	const char *cwd = path_current_working_directory();
+	const char *cwd = path_get_cwd();
 	const char *result = path_absolute_path( cwd );
 
 	TEMPER_CHECK_TRUE( string_equals( cwd, result ) );
