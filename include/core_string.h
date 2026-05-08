@@ -51,11 +51,16 @@ struct String {
 	u64				count;
 };
 
+// Allocates a copy of the null-terminated C string 'str' using 'allocator'.
 CORE_API String		string_set( LinearAllocator *allocator, const char *str );
+
+// Allocates a copy of the first 'length' characters of 'str' using 'allocator'.
 CORE_API String		string_set( LinearAllocator *allocator, const char *str, const u64 length );
 
+// Allocates a printf-formatted string using 'allocator'.
 CORE_API String		string_printf( LinearAllocator *allocator, const char *fmt, ... );
 
+// Allocates a copy of 'src' using 'allocator'.
 CORE_API String		string_copy( LinearAllocator *allocator, const String *src );
 
 // Returns true if the contents of string 'lhs' are EXACTLY the same as the contents of string 'rhs'.  Case sensitive.
@@ -78,10 +83,13 @@ CORE_API bool8		string_ends_with( const String *str, const String *suffix );
 CORE_API bool8		string_contains( const char *str, const char *substring );
 CORE_API bool8		string_contains( const String *str, const String *substring );
 
+// Replaces every occurrence of 'old_char' in 'str' with 'new_char'.
 CORE_API void		string_replace( String *str, const char old_char, const char new_char );
 
+// Returns true if character 'c' is found in 'str', searching left to right, and sets 'out_index' to the position of the first occurrence.  Returns false if 'c' cannot be found.
 CORE_API bool8		string_find_from_left( const String *str, const char c, u64 *out_index );
 
+// Returns true if character 'c' is found in 'str', searching right to left, and sets 'out_index' to the position of the last occurrence.  Returns false if 'c' cannot be found.
 CORE_API bool8		string_find_from_right( const String *str, const char c, u64 *out_index );
 
 // Returns a printf-formatted string with the given format string and var args that's been allocated via temp storage.
