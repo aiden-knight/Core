@@ -419,6 +419,48 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 's', 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 'z', 'Z', "this is only a test" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_replace, "this is only a test", 't', 't', "this is only a test" );
 
+TEMPER_TEST_PARAMETRIC( test_string_find_from_left, TEMPER_FLAG_SHOULD_RUN, const char *str, const char c, const bool8 should_find, const u64 expected_index ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String s = string_set( allocator, str );
+	u64 index = 0;
+	bool8 found = string_find_from_left( &s, c, &index );
+
+	TEMPER_CHECK_TRUE( found == should_find );
+	if ( should_find ) {
+		TEMPER_CHECK_TRUE( index == expected_index );
+	}
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_left, "hello", 'h', true,  0 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_left, "hello", 'e', true,  1 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_left, "hello", 'o', true,  4 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_left, "hello", 'l', true,  2 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_left, "hello", 'z', false, 0 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_left, "hello", 'H', false, 0 );
+
+TEMPER_TEST_PARAMETRIC( test_string_find_from_right, TEMPER_FLAG_SHOULD_RUN, const char *str, const char c, const bool8 should_find, const u64 expected_index ) {
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	String s = string_set( allocator, str );
+	u64 index = 0;
+	bool8 found = string_find_from_right( &s, c, &index );
+
+	TEMPER_CHECK_TRUE( found == should_find );
+	if ( should_find ) {
+		TEMPER_CHECK_TRUE( index == expected_index );
+	}
+}
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_right, "hello", 'o', true,  4 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_right, "hello", 'e', true,  1 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_right, "hello", 'h', true,  0 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_right, "hello", 'l', true,  3 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_right, "hello", 'z', false, 0 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_string_find_from_right, "hello", 'H', false, 0 );
+
 TEMPER_TEST_PARAMETRIC( test_string_equals, TEMPER_FLAG_SHOULD_RUN, const char *lhs, const char *rhs, const bool8 should_match ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
@@ -1332,15 +1374,44 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Docume
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/",          "C:/Users/Tom/Pictures/",         "../../Tom/Pictures/" );
 
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
+	// single component - no separator added
+	{
+		const char *result = path_join( g_temp_storage, "foo" );
+		TEMPER_CHECK_TRUE( string_equals( result, "foo" ) );
+	}
+
+	// two components
+	{
 #ifdef _WIN32
-	const char *expected_path = "C:\\Users\\your_mother\\videos";
+		const char *expected = "usr\\bin";
 #else
-	const char *expected_path = "C:/Users/your_mother/videos";
+		const char *expected = "usr/bin";
 #endif
+		const char *result = path_join( g_temp_storage, "usr", "bin" );
+		TEMPER_CHECK_TRUE( string_equals( result, expected ) );
+	}
 
-	const char *actual_path = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
+	// three components
+	{
+#ifdef _WIN32
+		const char *expected = "home\\dan\\docs";
+#else
+		const char *expected = "home/dan/docs";
+#endif
+		const char *result = path_join( g_temp_storage, "home", "dan", "docs" );
+		TEMPER_CHECK_TRUE( string_equals( result, expected ) );
+	}
 
-	TEMPER_CHECK_TRUE( string_equals( expected_path, actual_path ) );
+	// four components
+	{
+#ifdef _WIN32
+		const char *expected = "C:\\Users\\your_mother\\videos";
+#else
+		const char *expected = "C:/Users/your_mother/videos";
+#endif
+		const char *result = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
+		TEMPER_CHECK_TRUE( string_equals( result, expected ) );
+	}
 
 	mem_reset_temp_storage();
 }
