@@ -40,8 +40,8 @@ struct LinearAllocator;
 
 	Container type used to hold a contiguous block of text.
 
-	Unlike std::strings, Core Strings can't be appended or resized.  If you want to do
-	that, use StringBuilder.
+	Unlike std::strings, Core Strings are treated as array views into string data and can't be
+	appended or resized.  If you want to do that, use StringBuilder.
 
 ================================================================================================
 */
