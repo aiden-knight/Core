@@ -136,6 +136,8 @@ char *path_relative_path_to( const char *path_from, const char *path_to ) {
 	assert( path_from );
 	assert( path_to );
 
+	// TODO: DM: 09/05/2026: this wasnt needed on linux but is on windows
+	// why does windows require slashes to be "fixed"?
 	// path_from = path_fix_slashes( path_from );
 	// path_to   = path_fix_slashes( path_to );
 	String path_from2 = string_set( g_temp_storage, path_from );
