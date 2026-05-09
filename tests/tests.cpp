@@ -707,16 +707,17 @@ TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part( combined ) == lo_part );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap **hashmap, const u32 count ) {
+TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator, Hashmap **hashmap, const u32 count ) {
+	TEMPER_CHECK_TRUE( allocator );
+	TEMPER_CHECK_TRUE( !*allocator );
 	TEMPER_CHECK_TRUE( hashmap );
 	TEMPER_CHECK_TRUE( !*hashmap );
 
 	TEMPER_CHECK_TRUE( count );
 
-	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
-	defer { linear_allocator_destroy( allocator ); };
+	*allocator = linear_allocator_create( 1024 * 1024 );
 
-	*hashmap = hashmap_create( allocator, count );
+	*hashmap = hashmap_create( *allocator, count );
 
 	TEMPER_CHECK_TRUE( ( *hashmap )->capacity == count );
 
@@ -912,9 +913,10 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 #endif
 }
 
+static LinearAllocator *g_hashmap_allocator = NULL;
 static Hashmap* g_hashmap = NULL;
 
-TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_create, &g_hashmap, 10 );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_create, &g_hashmap_allocator, &g_hashmap, 10 );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Dan",     27 );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Tom",     27 ); //Don't forget your buddy :) -- never <3
@@ -925,6 +927,8 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_set_and_get_value, g_hashmap, "Grand
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
+
+TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_hashmap_allocator );
 
 TEMPER_TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
