@@ -505,15 +505,15 @@ TEMPER_TEST( test_string_printf, TEMPER_FLAG_SHOULD_RUN ) {
 
 TEMPER_TEST( test_temp_printf, TEMPER_FLAG_SHOULD_RUN ) {
 	{
-		String result = temp_printf( "hello %s", "world" );
-		TEMPER_CHECK_TRUE( result.count == 11 );
-		TEMPER_CHECK_TRUE( string_equals( result.data, "hello world" ) );
+		const char *result = temp_printf( "hello %s", "world" );
+		TEMPER_CHECK_TRUE( string_equals( result, "hello world" ) );
+		TEMPER_CHECK_TRUE( strlen( result ) == 11 );
 	}
 
 	{
-		String result = temp_printf( "%d + %d = %d", 1, 2, 3 );
-		TEMPER_CHECK_TRUE( result.count == 9 );
-		TEMPER_CHECK_TRUE( string_equals( result.data, "1 + 2 = 3" ) );
+		const char *result = temp_printf( "%d + %d = %d", 1, 2, 3 );
+		TEMPER_CHECK_TRUE( string_equals( result, "1 + 2 = 3" ) );
+		TEMPER_CHECK_TRUE( strlen( result ) == 9 );
 	}
 
 	mem_reset_temp_storage();

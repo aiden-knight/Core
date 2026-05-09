@@ -225,7 +225,7 @@ bool8 string_find_from_right( const String *str, const char c, u64 *out_index ) 
 	return true;
 }
 
-String temp_printf( const char *fmt, ... ) {
+const char *temp_printf( const char *fmt, ... ) {
 	assert( fmt );
 
 	va_list args;
@@ -233,7 +233,7 @@ String temp_printf( const char *fmt, ... ) {
 	String result = string_vprintf( g_temp_storage, fmt, args );
 	va_end( args );
 
-	return result;
+	return result.data;
 }
 
 char *temp_c_string( const char *from ) {

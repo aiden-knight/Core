@@ -93,7 +93,7 @@ CORE_API bool8		string_find_from_left( const String *str, const char c, u64 *out
 CORE_API bool8		string_find_from_right( const String *str, const char c, u64 *out_index );
 
 // Returns a printf-formatted string with the given format string and var args that's been allocated via temp storage.
-CORE_API String		temp_printf( const char *fmt, ... );
+CORE_API const char	*temp_printf( const char *fmt, ... );
 
 // Returns a copy of 'from' that has been allocated on temp storage.
 CORE_API char		*temp_c_string( const char *from );
