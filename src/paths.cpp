@@ -85,19 +85,19 @@ void path_remove_path_from_file( String *path ) {
 	path->count -= last_slash_pos;
 }
 
-const char *path_remove_file_extension( const char *filename ) {
-	const char *dot = strrchr( filename, '.' );
-
-	if ( !dot ) {
-		return filename;
+void path_remove_file_extension( String *filename ) {
+	u64 dot_pos = 0;
+	if ( !string_find_from_right( filename, '.', &dot_pos ) ) {
+		return;
 	}
 
-	u64 result_length = cast( u64, dot ) - cast( u64, filename );
+	u64 extension_length = filename->count - dot_pos;
 
-	return temp_c_string( filename, result_length );
+	filename->count -= extension_length;
+	filename->data[filename->count] = 0;
 }
 
-static const char *path_join_internalv( LinearAllocator *allocator, const int count, va_list args ) {
+static String path_join_internalv( LinearAllocator *allocator, const int count, va_list args ) {
 	StringBuilder builder = {};
 	string_builder_init( &builder, allocator );
 
@@ -111,13 +111,20 @@ static const char *path_join_internalv( LinearAllocator *allocator, const int co
 		string_builder_appendf( &builder, "%s", part );
 	}
 
-	return string_builder_to_string( &builder );
+	const char *final_path = string_builder_to_string( &builder );
+
+	String str = {
+		.data	= cast( char *, final_path ),
+		.count	= strlen( final_path ),
+	};
+
+	return str;
 }
 
-const char *path_join_internal( LinearAllocator *allocator, const int count, ... ) {
+String path_join_internal( LinearAllocator *allocator, const int count, ... ) {
 	va_list args;
 	va_start( args, count );
-	const char *result = path_join_internalv( allocator, count, args );
+	String result = path_join_internalv( allocator, count, args );
 	va_end( args );
 
 	return result;

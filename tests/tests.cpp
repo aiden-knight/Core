@@ -1207,7 +1207,7 @@ TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FLAG_SHOULD_RUN ) {
-	String cwd = path_current_working_directory( g_temp_storage );
+	String cwd = path_get_cwd( g_temp_storage );
 	String absolute_dot = path_absolute_path( g_temp_storage, "." );
 
 	TEMPER_CHECK_TRUE( string_equals( &cwd, &absolute_dot ) );
@@ -1218,16 +1218,16 @@ TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FL
 TEMPER_TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
 	bool8 set_cwd = false;
 
-	String original_cwd = path_current_working_directory( g_temp_storage );
+	String original_cwd = path_get_cwd( g_temp_storage );
 
 	String known_path = path_absolute_path( g_temp_storage, folder );
-	set_cwd = path_set_current_directory( known_path.data );
+	set_cwd = path_set_cwd( known_path.data );
 	TEMPER_CHECK_TRUE( set_cwd );
 
-	String cwd = path_current_working_directory( g_temp_storage );
+	String cwd = path_get_cwd( g_temp_storage );
 	TEMPER_CHECK_TRUE( string_equals( &known_path, &cwd ) );
 
-	set_cwd = path_set_current_directory( original_cwd.data );
+	set_cwd = path_set_cwd( original_cwd.data );
 	TEMPER_CHECK_TRUE_M( set_cwd, "Failed to revert test back to the original cwd.  Tests that run after this one may fail.\n" );
 
 	mem_reset_temp_storage();
@@ -1252,7 +1252,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "include" 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "editor_support" );
 
 TEMPER_TEST( test_path_absolute_path_already_absolute, TEMPER_FLAG_SHOULD_RUN ) {
-	String cwd = path_current_working_directory( g_temp_storage );
+	String cwd = path_get_cwd( g_temp_storage );
 	String result = path_absolute_path( g_temp_storage, cwd.data );
 
 	TEMPER_CHECK_TRUE( string_equals( &cwd, &result ) );
@@ -1305,9 +1305,10 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "game.exe",     
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "file",                               "file"         );
 
 TEMPER_TEST_PARAMETRIC( test_path_remove_file_extension, TEMPER_FLAG_SHOULD_RUN, const char *file_with_extension, const char *expected_file_without_extension ) {
-	const char *actual_file_without_extension = path_remove_file_extension( file_with_extension );
+	String actual_file_without_extension = string_set( g_temp_storage, file_with_extension );
+	path_remove_file_extension( &actual_file_without_extension );
 
-	TEMPER_CHECK_TRUE( string_equals( expected_file_without_extension, actual_file_without_extension ) );
+	TEMPER_CHECK_TRUE( string_equals( expected_file_without_extension, actual_file_without_extension.data ) );
 
 	mem_reset_temp_storage();
 }
@@ -1386,8 +1387,8 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Docume
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	// single component - no separator added
 	{
-		const char *result = path_join( g_temp_storage, "foo" );
-		TEMPER_CHECK_TRUE( string_equals( result, "foo" ) );
+		String result = path_join( g_temp_storage, "foo" );
+		TEMPER_CHECK_TRUE( string_equals( result.data, "foo" ) );
 	}
 
 	// two components
@@ -1397,8 +1398,8 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "usr/bin";
 #endif
-		const char *result = path_join( g_temp_storage, "usr", "bin" );
-		TEMPER_CHECK_TRUE( string_equals( result, expected ) );
+		String result = path_join( g_temp_storage, "usr", "bin" );
+		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
 	// three components
@@ -1408,8 +1409,8 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "home/dan/docs";
 #endif
-		const char *result = path_join( g_temp_storage, "home", "dan", "docs" );
-		TEMPER_CHECK_TRUE( string_equals( result, expected ) );
+		String result = path_join( g_temp_storage, "home", "dan", "docs" );
+		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
 	// four components
@@ -1419,8 +1420,8 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "C:/Users/your_mother/videos";
 #endif
-		const char *result = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
-		TEMPER_CHECK_TRUE( string_equals( result, expected ) );
+		String result = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
+		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
 	mem_reset_temp_storage();
@@ -1732,7 +1733,9 @@ static const char *get_test_exe_path( void ) {
 	String app_dir = path_app_path( g_temp_storage );
 	path_remove_file_from_path( &app_dir );
 
-	return path_join( g_temp_storage, app_dir.data, TEST_EXE_FILENAME );
+	String result = path_join( g_temp_storage, app_dir.data, TEST_EXE_FILENAME );
+
+	return result.data;
 }
 
 TEMPER_TEST( test_process_sync_exit_code_zero, TEMPER_FLAG_SHOULD_RUN ) {

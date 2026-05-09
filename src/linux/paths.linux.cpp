@@ -71,7 +71,7 @@ String path_app_path( LinearAllocator *allocator ) {
 	return string_set( allocator, app_path, trunc_cast( u64, length ) );
 }
 
-String path_current_working_directory( LinearAllocator *allocator ) {
+String path_get_cwd( LinearAllocator *allocator ) {
 	assert( allocator );
 
 	char temp[PATH_MAX] = {};
@@ -84,6 +84,19 @@ String path_current_working_directory( LinearAllocator *allocator ) {
 	}
 
 	return string_set( allocator, cwd );
+}
+
+bool8 path_set_cwd( const char *path ) {
+	assert( path );
+
+	if ( chdir( path ) != 0 ) {
+		int err = errno;
+		fatal_error( "Failed to set current directory: %s.\n", strerror( err ) );
+
+		return false;
+	}
+
+	return true;
 }
 
 String path_absolute_path( LinearAllocator *allocator, const char *path ) {
@@ -133,17 +146,6 @@ const char *path_canonicalize( const char *path ) {
 
 void path_fix_slashes( String *str ) {
 	return string_replace( str, '\\', PATH_SEPARATOR );
-}
-
-bool8 path_set_current_directory( const char *path ) {
-	if ( chdir( path ) != 0 ) {
-		int err = errno;
-		fatal_error( "Failed to set current directory: %s.\n", strerror( err ) );
-
-		return false;
-	}
-
-	return true;
 }
 
 #endif // __linux__
