@@ -595,7 +595,7 @@ TEMPER_TEST_PARAMETRIC( hash_string_matches_hash64, TEMPER_FLAG_SHOULD_RUN, cons
 TEMPER_TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 
-	Hasher *hasher = hasher_create( seed );
+	Hasher *hasher = hasher_create( g_temp_storage, seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data, length );
@@ -604,13 +604,15 @@ TEMPER_TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_R
 	hasher_destroy( hasher );
 
 	TEMPER_CHECK_TRUE( result == hash64( data, length, seed ) );
+
+	mem_reset_temp_storage();
 }
 
 TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 	const u64 half   = length / 2;
 
-	Hasher *hasher = hasher_create( seed );
+	Hasher *hasher = hasher_create( g_temp_storage, seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data,        half );
@@ -625,12 +627,14 @@ TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHO
 	hasher_destroy( hasher );
 
 	TEMPER_CHECK_TRUE( multi_chunk == single_chunk );
+
+	mem_reset_temp_storage();
 }
 
 TEMPER_TEST_PARAMETRIC( hasher_reset_gives_same_result, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 
-	Hasher *hasher = hasher_create( seed );
+	Hasher *hasher = hasher_create( g_temp_storage, seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data, length );
@@ -644,6 +648,8 @@ TEMPER_TEST_PARAMETRIC( hasher_reset_gives_same_result, TEMPER_FLAG_SHOULD_RUN, 
 	hasher_destroy( hasher );
 
 	TEMPER_CHECK_TRUE( first_hash == second_hash );
+
+	mem_reset_temp_storage();
 }
 
 TEMPER_INVOKE_PARAMETRIC_TEST( hash_string_equals_hash32, "test_hash_string_value", 0, 163121569U );
@@ -707,7 +713,10 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, Hashmap **h
 
 	TEMPER_CHECK_TRUE( count );
 
-	*hashmap = hashmap_create( count );
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	*hashmap = hashmap_create( allocator, count );
 
 	TEMPER_CHECK_TRUE( ( *hashmap )->capacity == count );
 
@@ -794,7 +803,10 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap *ha
 }
 
 TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation ) {
-	Hashmap* hashmap = hashmap_create( number_of_buckets, utilisation, false );
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Hashmap* hashmap = hashmap_create( allocator, number_of_buckets, utilisation, false );
 	u64 hash_seed = 0x9E3779B97F4A7C15;
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wimplicit-int-float-conversion"
@@ -851,11 +863,8 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 	}
 
 	// get a bunch of random hashes and grab the results
-	LinearAllocator *probe_allocator = linear_allocator_create( 1024 * 1024 );
-	defer { linear_allocator_destroy( probe_allocator ); };
-
 	Array<u32> linear_probe_length = {};
-	linear_probe_length.init( probe_allocator );
+	linear_probe_length.init( allocator );
 
 	linear_probe_length.reserve( intended_fill );
 
@@ -901,8 +910,6 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_
 		utilisation * 100.0f, number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count
 	);
 #endif
-
-	hashmap_destroy( hashmap );
 }
 
 static Hashmap* g_hashmap = NULL;
@@ -920,7 +927,10 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_reset, g_hashmap );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
 
 TEMPER_TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
-	Hashmap* map = hashmap_create( 10, 0.5f, true );
+	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
+	defer { linear_allocator_destroy( allocator ); };
+
+	Hashmap* map = hashmap_create( allocator, 10, 0.5f, true );
 	u64 key = 10;
 	u32 value = 10;
 
