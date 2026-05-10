@@ -1385,8 +1385,12 @@ TEMPER_TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, con
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/diary.txt",             "/home/images/cat.jpg",           "../images/cat.jpg" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs/",                      "/home/images/",                  "../images/" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "/home/docs",                       "/home/images",                   "../images" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "docs",                             "images",                         "../images" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/diary.txt", "C:/Users/Tom/Pictures/cats.jpg", "../../Tom/Pictures/cats.jpg" );
-TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents/",          "C:/Users/Tom/Pictures/",         "../../Tom/Pictures/" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents",           "C:/Users/Tom/Pictures",          "../../Tom/Pictures" );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents",           "C:/Users/Dan",                   ".." );
+TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan",                     "C:/Users/Dan/Documents",         "Documents" );
 
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	// single component - no separator added
