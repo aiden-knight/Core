@@ -38,7 +38,9 @@ SOFTWARE.
 #include <stdarg.h>
 #include <string.h>
 
-static bool8 get_last_slash( String *path, u64 *out_last_slash_pos ) {
+static bool8 get_last_slash( const String *path, u64 *out_last_slash_pos ) {
+	assert( path );
+
 	u64 last_forward_slash = 0;
 	u64 last_back_slash = 0;
 
@@ -61,49 +63,53 @@ static bool8 get_last_slash( String *path, u64 *out_last_slash_pos ) {
 ================================================================================================
 */
 
-bool8 path_remove_file_from_path( String *path ) {
+String path_remove_file_from_path( const String *path ) {
+	assert( path );
+
 	u64 last_slash_pos = 0;
 	if ( !get_last_slash( path, &last_slash_pos ) ) {
-		return false;
+		return *path;
 	}
 
-	u64 file_length = path->count - last_slash_pos;
-
-	path->count -= file_length;
-	path->data[path->count] = 0;
-
-	return file_length > 0;
+	return String {
+		.data	= path->data,
+		.count	= last_slash_pos,
+	};
 }
 
-bool8 path_remove_path_from_file( String *path ) {
+String path_remove_path_from_file( const String *path ) {
+	assert( path );
+
 	u64 last_slash_pos = 0;
 	if ( !get_last_slash( path, &last_slash_pos ) ) {
-		return false;
-	} else {
-		last_slash_pos += 1;	// want to skip past the last slash
+		return *path;
 	}
 
-	path->data += last_slash_pos;
-	path->count -= last_slash_pos;
+	last_slash_pos += 1;
 
-	return last_slash_pos > 0;
+	return {
+		.data	= path->data + last_slash_pos,
+		.count	= path->count - last_slash_pos,
+	};
 }
 
-bool8 path_remove_file_extension( String *filename ) {
+String path_remove_file_extension( const String *filename ) {
+	assert( filename );
+
 	u64 dot_pos = 0;
 	if ( !string_find_from_right( filename, '.', &dot_pos ) ) {
-		return false;
+		return *filename;
 	}
 
-	u64 file_extension_length = filename->count - dot_pos;
-
-	filename->count -= file_extension_length;
-	filename->data[filename->count] = 0;
-
-	return file_extension_length > 0;
+	return {
+		.data	= filename->data,
+		.count	= dot_pos
+	};
 }
 
 static String path_join_internalv( LinearAllocator *allocator, const int count, va_list args ) {
+	assert( allocator );
+
 	StringBuilder builder = {};
 	string_builder_init( &builder, allocator );
 
@@ -128,6 +134,8 @@ static String path_join_internalv( LinearAllocator *allocator, const int count, 
 }
 
 String path_join_internal( LinearAllocator *allocator, const int count, ... ) {
+	assert( allocator );
+
 	va_list args;
 	va_start( args, count );
 	String result = path_join_internalv( allocator, count, args );
@@ -136,14 +144,16 @@ String path_join_internal( LinearAllocator *allocator, const int count, ... ) {
 	return result;
 }
 
-const char *path_relative_path_to( const char *from, const char *to ) {
+const char *path_relative_path_to( LinearAllocator *allocator, const char *from, const char *to ) {
+	assert( allocator );
 	assert( from );
 	assert( to );
 
-	String from_str = string_set( g_temp_storage, from );
-	String to_str = string_set( g_temp_storage, to );
-	path_fix_slashes( &from_str );
-	path_fix_slashes( &to_str );
+	String from_str = string_alloc( g_temp_storage, from );
+	String to_str = string_alloc( g_temp_storage, to );
+
+	from_str = path_fix_slashes( g_temp_storage, &from_str );
+	to_str = path_fix_slashes( g_temp_storage, &to_str );
 
 	// determine the directory part of 'from'
 	// if the last path segment contains a dot then treat it as a filename and strip it
@@ -167,13 +177,15 @@ const char *path_relative_path_to( const char *from, const char *to ) {
 		if ( last_segment_has_dot ) {
 			from_dir = temp_c_string( from_str.data, last_slash_pos + 1 );
 		} else if ( from_str.data[from_str.count - 1] == PATH_SEPARATOR ) {
-			from_dir = from_str.data;
+			from_dir = string_cstr( &from_str );
+			// from_dir = from_str.data;
 		} else {
-			from_dir = temp_printf( "%s%c", from_str.data, PATH_SEPARATOR );
+			from_dir = temp_printf( "%s%c", string_cstr( &from_str ), PATH_SEPARATOR );
+			// from_dir = temp_printf( "%s%c", from_str.data, PATH_SEPARATOR );
 		}
 	}
 
-	const char *to_c = to_str.data;
+	const char *to_c = string_cstr( &to_str );
 
 	// walk both paths simultaneously, recording the end of the last complete
 	// segment that matched (i.e. right after a slash)
@@ -212,7 +224,7 @@ const char *path_relative_path_to( const char *from, const char *to ) {
 	}
 
 	StringBuilder sb = {};
-	string_builder_init( &sb, g_temp_storage );
+	string_builder_init( &sb, allocator );
 
 	For ( u64, back_index, 0, num_backs ) {
 		bool8 is_last = ( back_index == num_backs - 1 );

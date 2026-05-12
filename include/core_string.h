@@ -43,6 +43,12 @@ struct LinearAllocator;
 	Unlike std::strings, Core Strings are treated as array views into string data and can't be
 	appended or resized.  If you want to do that, use StringBuilder.
 
+	Core Strings are not null-terminated.
+
+	A String's count reflects the number of characters that are logically part of the string,
+	and the underlying data buffer may extend beyond the count (e.g. when a String is a
+	substring of a larger allocation).  Do not use `data` directly.
+
 ================================================================================================
 */
 
@@ -51,11 +57,21 @@ struct String {
 	u64				count;
 };
 
+// Sets the contents of the string to the specified string literal.
+// This string will not own the data it holds.
+CORE_API String		string_set( const char *str );
+
+// Sets the contents of the string to the range of specified string literal.
+// This string will not own the data it holds.
+CORE_API String		substring( const char *str, const u64 offset, const u64 count );
+
 // Allocates a copy of the null-terminated C string 'str' using 'allocator'.
-CORE_API String		string_set( LinearAllocator *allocator, const char *str );
+// This string will hold the data it holds.
+CORE_API String		string_alloc( LinearAllocator *allocator, const char *str );
 
 // Allocates a copy of the first 'length' characters of 'str' using 'allocator'.
-CORE_API String		string_set( LinearAllocator *allocator, const char *str, const u64 length );
+// // This string will hold the data it holds.
+CORE_API String		string_alloc( LinearAllocator *allocator, const char *str, const u64 length );
 
 // Allocates a printf-formatted string using 'allocator'.
 CORE_API String		string_printf( LinearAllocator *allocator, const char *fmt, ... );
@@ -86,13 +102,17 @@ CORE_API bool8		string_contains( const String *str, const char c );
 CORE_API bool8		string_contains( const String *str, const String *substring );
 
 // Replaces every occurrence of 'old_char' in 'str' with 'new_char'.
-CORE_API void		string_replace( String *str, const char old_char, const char new_char );
+CORE_API String		string_replace( LinearAllocator *allocator, String *str, const char old_char, const char new_char );
 
 // Returns true if character 'c' is found in 'str', searching left to right, and sets 'out_index' to the position of the first occurrence.  Returns false if 'c' cannot be found.
 CORE_API bool8		string_find_from_left( const String *str, const char c, u64 *out_index );
 
 // Returns true if character 'c' is found in 'str', searching right to left, and sets 'out_index' to the position of the last occurrence.  Returns false if 'c' cannot be found.
 CORE_API bool8		string_find_from_right( const String *str, const char c, u64 *out_index );
+
+// Returns a null-terminated copy of 'str' allocated on temp storage, truncated to 'str->count'.
+// Use this to safely pass a String as a '%s' argument to printf.
+CORE_API const char	*string_cstr( const String *str );
 
 // Returns a printf-formatted string with the given format string and var args that's been allocated via temp storage.
 CORE_API const char	*temp_printf( const char *fmt, ... );

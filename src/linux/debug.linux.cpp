@@ -74,7 +74,7 @@ Array<String> get_callstack( LinearAllocator *allocator ) {
 			}
 		}
 
-		String frame = string_set( allocator, name );
+		String frame = string_alloc( allocator, name );
 
 		free( demangled );
 		demangled = NULL;
