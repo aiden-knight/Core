@@ -34,6 +34,7 @@ SOFTWARE.
 #include <core_string.h>
 #include <string_builder.h>
 #include <core_math.h>
+#include <defer.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -139,6 +140,9 @@ String path_join_internal( LinearAllocator *allocator, const int count, ... ) {
 const char *path_relative_path_to( const char *from, const char *to ) {
 	assert( from );
 	assert( to );
+
+	u64 pos = mem_temp_tell();
+	defer { mem_temp_rewind_to( pos ); };
 
 	String from_str = string_set( g_temp_storage, from );
 	String to_str = string_set( g_temp_storage, to );
