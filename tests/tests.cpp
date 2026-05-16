@@ -1762,9 +1762,9 @@ static s32 thread_temp_storage_func( void *data ) {
 
 	context->tell_after = mem_temp_tell();
 
-	// tell main we've captured our state, then wait before exiting
+	// tell main weve captured our state, then wait before exiting
 	// so main can compare pointers while our temp storage is still alive
-	// (once the thread exits, the OS can reuse the freed allocator address)
+	// once the thread exits, the OS can reuse the freed allocator address
 	semaphore_signal( context->ready_sem );
 	semaphore_wait( context->go_sem );
 
@@ -1793,7 +1793,7 @@ TEST( test_temp_storage_is_thread_local, TEMPER_FLAG_SHOULD_RUN ) {
 		semaphore_wait( &ready_sems[thread_index] );
 	}
 
-	// compare while all threads are still alive so their allocators can't be freed and reused
+	// compare while all threads are still alive so their allocators cant be freed and reused
 	For ( u32, thread_index, 0, count_of( threads ) ) {
 		TempStorageThreadContext *ctx = &contexts[thread_index];
 
