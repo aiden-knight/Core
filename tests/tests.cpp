@@ -595,7 +595,7 @@ TEMPER_TEST_PARAMETRIC( hash_string_matches_hash64, TEMPER_FLAG_SHOULD_RUN, cons
 TEMPER_TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 
-	Hasher *hasher = hasher_create( g_temp_storage, seed );
+	Hasher *hasher = hasher_create( mem_get_temp_storage(), seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data, length );
@@ -612,7 +612,7 @@ TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHO
 	const u64 length = strlen( data );
 	const u64 half   = length / 2;
 
-	Hasher *hasher = hasher_create( g_temp_storage, seed );
+	Hasher *hasher = hasher_create( mem_get_temp_storage(), seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data,        half );
@@ -634,7 +634,7 @@ TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHO
 TEMPER_TEST_PARAMETRIC( hasher_reset_gives_same_result, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 
-	Hasher *hasher = hasher_create( g_temp_storage, seed );
+	Hasher *hasher = hasher_create( mem_get_temp_storage(), seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data, length );
@@ -1195,7 +1195,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_delete, g_test_folder_path );
 */
 
 TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
-	String app_path = path_app_path( g_temp_storage );
+	String app_path = path_app_path( mem_get_temp_storage() );
 
 	TEMPER_CHECK_TRUE( app_path.count != 0 );
 	TEMPER_CHECK_TRUE( app_path.data != NULL );
@@ -1211,8 +1211,8 @@ TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FLAG_SHOULD_RUN ) {
-	String cwd = path_get_cwd( g_temp_storage );
-	String absolute_dot = path_absolute_path( g_temp_storage, "." );
+	String cwd = path_get_cwd( mem_get_temp_storage() );
+	String absolute_dot = path_absolute_path( mem_get_temp_storage(), "." );
 
 	TEMPER_CHECK_TRUE( string_equals( &cwd, &absolute_dot ) );
 
@@ -1222,13 +1222,13 @@ TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FL
 TEMPER_TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
 	bool8 set_cwd = false;
 
-	String original_cwd = path_get_cwd( g_temp_storage );
+	String original_cwd = path_get_cwd( mem_get_temp_storage() );
 
-	String known_path = path_absolute_path( g_temp_storage, folder );
+	String known_path = path_absolute_path( mem_get_temp_storage(), folder );
 	set_cwd = path_set_cwd( known_path.data );
 	TEMPER_CHECK_TRUE( set_cwd );
 
-	String cwd = path_get_cwd( g_temp_storage );
+	String cwd = path_get_cwd( mem_get_temp_storage() );
 	TEMPER_CHECK_TRUE( string_equals( &known_path, &cwd ) );
 
 	set_cwd = path_set_cwd( original_cwd.data );
@@ -1242,7 +1242,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get,
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get, "editor_support" );
 
 TEMPER_TEST_PARAMETRIC( test_path_absolute_path_from_relative, TEMPER_FLAG_SHOULD_RUN, const char *relative_path ) {
-	String absolute = path_absolute_path( g_temp_storage, relative_path );
+	String absolute = path_absolute_path( mem_get_temp_storage(), relative_path );
 
 	TEMPER_CHECK_TRUE( path_is_absolute( absolute.data ) );
 
@@ -1256,8 +1256,8 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "include" 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "editor_support" );
 
 TEMPER_TEST( test_path_absolute_path_already_absolute, TEMPER_FLAG_SHOULD_RUN ) {
-	String cwd = path_get_cwd( g_temp_storage );
-	String result = path_absolute_path( g_temp_storage, cwd.data );
+	String cwd = path_get_cwd( mem_get_temp_storage() );
+	String result = path_absolute_path( mem_get_temp_storage(), cwd.data );
 
 	TEMPER_CHECK_TRUE( string_equals( &cwd, &result ) );
 
@@ -1309,7 +1309,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "game.exe",     
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "file",                               "file"         );
 
 TEMPER_TEST_PARAMETRIC( test_path_remove_file_extension, TEMPER_FLAG_SHOULD_RUN, const char *file_with_extension, const char *expected_file_without_extension ) {
-	String actual_file_without_extension = string_set( g_temp_storage, file_with_extension );
+	String actual_file_without_extension = string_set( mem_get_temp_storage(), file_with_extension );
 	path_remove_file_extension( &actual_file_without_extension );
 
 	TEMPER_CHECK_TRUE( string_equals( expected_file_without_extension, actual_file_without_extension.data ) );
@@ -1395,7 +1395,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan",     
 TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	// single component - no separator added
 	{
-		String result = path_join( g_temp_storage, "foo" );
+		String result = path_join( mem_get_temp_storage(), "foo" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, "foo" ) );
 	}
 
@@ -1406,7 +1406,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "usr/bin";
 #endif
-		String result = path_join( g_temp_storage, "usr", "bin" );
+		String result = path_join( mem_get_temp_storage(), "usr", "bin" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
@@ -1417,7 +1417,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "home/dan/docs";
 #endif
-		String result = path_join( g_temp_storage, "home", "dan", "docs" );
+		String result = path_join( mem_get_temp_storage(), "home", "dan", "docs" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
@@ -1428,7 +1428,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "C:/Users/your_mother/videos";
 #endif
-		String result = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
+		String result = path_join( mem_get_temp_storage(), "C:", "Users", "your_mother", "videos" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
@@ -1446,7 +1446,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 
 TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	StringBuilder builder = {};
-	string_builder_init( &builder, g_temp_storage );
+	string_builder_init( &builder, mem_get_temp_storage() );
 
 	TEMPER_CHECK_TRUE( builder.head == NULL );
 	TEMPER_CHECK_TRUE( builder.tail == NULL );
@@ -1602,7 +1602,7 @@ static void add_thread_job( ThreadPool *thread_pool, const char *msg ) {
 	semaphore_signal( &thread_pool->sema );
 }
 
-static s32 thread_job_func( void *data ) {
+static s32 test_thread_pool_job_func( void *data ) {
 	ThreadContext *context = cast( ThreadContext *, data );
 
 	ThreadPool *thread_pool = context->thread_pool;
@@ -1663,7 +1663,7 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 		contexts[thread_index].thread_pool = &thread_pool;
 		contexts[thread_index].logical_thread_index = thread_index;
 
-		thread_pool.threads[thread_index] = thread_create( thread_job_func, &contexts[thread_index] );
+		thread_pool.threads[thread_index] = thread_create( test_thread_pool_job_func, &contexts[thread_index] );
 
 		TEMPER_CHECK_TRUE( thread_pool.threads[thread_index].ptr != NULL );
 	}
@@ -1728,6 +1728,85 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread_pool.sema.ptr == NULL );
 }
 
+struct TempStorageThreadContext {
+	u32				num_ints_to_alloc;
+	LinearAllocator	*storage_ptr;
+	u64				tell_before;
+	u64				tell_after;
+	Semaphore		*ready_sem;
+	Semaphore		*go_sem;
+};
+
+static s32 thread_temp_storage_func( void *data ) {
+	TempStorageThreadContext *context = cast( TempStorageThreadContext *, data );
+
+	context->storage_ptr = mem_get_temp_storage();
+	context->tell_before = mem_temp_tell();
+
+	For ( u32, i, 0, context->num_ints_to_alloc ) {
+		mem_temp_alloc( sizeof( u32 ) );
+	}
+
+	context->tell_after = mem_temp_tell();
+
+	// tell main we've captured our state, then wait before exiting
+	// so main can compare pointers while our temp storage is still alive
+	// (once the thread exits, the OS can reuse the freed allocator address)
+	semaphore_signal( context->ready_sem );
+	semaphore_wait( context->go_sem );
+
+	return 0;
+}
+
+TEMPER_TEST( test_temp_storage_is_thread_local, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *main_storage = mem_get_temp_storage();
+
+	Semaphore ready_sems[4] = {};
+	Semaphore go_sems[4] = {};
+	TempStorageThreadContext contexts[4] = {};
+	Thread threads[4] = {};
+
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		semaphore_create( &ready_sems[thread_index] );
+		semaphore_create( &go_sems[thread_index] );
+		contexts[thread_index].num_ints_to_alloc = thread_index + 1;
+		contexts[thread_index].ready_sem = &ready_sems[thread_index];
+		contexts[thread_index].go_sem = &go_sems[thread_index];
+		threads[thread_index] = thread_create( thread_temp_storage_func, &contexts[thread_index] );
+	}
+
+	// wait until all threads have captured their storage pointer
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		semaphore_wait( &ready_sems[thread_index] );
+	}
+
+	// compare while all threads are still alive so their allocators can't be freed and reused
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		TempStorageThreadContext *ctx = &contexts[thread_index];
+
+		TEMPER_CHECK_TRUE( ctx->storage_ptr != NULL );
+		TEMPER_CHECK_TRUE( ctx->storage_ptr != main_storage );
+		TEMPER_CHECK_TRUE( ctx->tell_after > ctx->tell_before );
+
+		For ( u32, other_thread_index, 0, count_of( threads ) ) {
+			if ( other_thread_index != thread_index ) {
+				TEMPER_CHECK_TRUE( ctx->storage_ptr != contexts[other_thread_index].storage_ptr );
+			}
+		}
+	}
+
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		semaphore_signal( &go_sems[thread_index] );
+	}
+
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		thread_wait( &threads[thread_index] );
+		thread_destroy( &threads[thread_index] );
+		semaphore_destroy( &ready_sems[thread_index] );
+		semaphore_destroy( &go_sems[thread_index] );
+	}
+}
+
 
 /*
 ================================================================================================
@@ -1738,10 +1817,10 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 static const char *get_test_exe_path( void ) {
-	String app_dir = path_app_path( g_temp_storage );
+	String app_dir = path_app_path( mem_get_temp_storage() );
 	path_remove_file_from_path( &app_dir );
 
-	String result = path_join( g_temp_storage, app_dir.data, TEST_EXE_FILENAME );
+	String result = path_join( mem_get_temp_storage(), app_dir.data, TEST_EXE_FILENAME );
 
 	return result.data;
 }
