@@ -1383,7 +1383,7 @@ TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, const char
 	defer { linear_allocator_destroy( allocator ); };
 
 	String expected = string_set( allocator, expected_relative_path );
-	String actual = string_set( allocator, path_relative_path_to( from, to ) );
+	String actual = string_set( allocator, path_relative_path_to( allocator, from, to ) );
 
 	// use path_fix_slashes here because Windows can return backslashes in the resultant path (like it should)
 	// but its just easier to specify forward slashes in the test parameters
