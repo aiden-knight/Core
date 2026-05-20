@@ -60,6 +60,7 @@ struct String {
 // Sets the contents of the string to the specified string literal.
 // This string will not own the data it holds.
 CORE_API String		string_set( const char *str );
+CORE_API String		string_set( const char *str, const u64 count );
 
 // Sets the contents of the string to the range of specified string literal.
 // This string will not own the data it holds.

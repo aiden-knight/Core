@@ -72,9 +72,15 @@ static String string_vprintf( LinearAllocator *allocator, const char *fmt, va_li
 String string_set( const char *str ) {
 	assert( str );
 
+	return string_set( str, strlen( str ) );
+}
+
+String string_set( const char *str, const u64 count ) {
+	assert( str );
+
 	return String {
 		.data	= cast( char *, str ),
-		.count	= strlen( str ),
+		.count	= count,
 	};
 }
 
