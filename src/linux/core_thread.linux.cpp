@@ -34,6 +34,8 @@ SOFTWARE.
 #include <debug.h>
 #include <defer.h>
 #include <typecast.inl>
+#include <temp_storage.h>
+#include <linear_allocator.h>
 
 #include <pthread.h>
 #include <semaphore.h>
@@ -44,8 +46,9 @@ SOFTWARE.
 #include <malloc.h>
 
 struct ThreadBootstrapData {
-	ThreadFunc	thread_func;
-	void		*data;
+	ThreadFunc		thread_func;
+	void			*data;
+	u64				temp_storage_size;
 };
 
 static void *thread_bootstrap( void *data ) {
@@ -54,6 +57,9 @@ static void *thread_bootstrap( void *data ) {
 	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, data );
 
 	assert( bootstrap_data );
+
+	mem_init_temp_storage( bootstrap_data->temp_storage_size );
+	defer { mem_shutdown_temp_storage(); };
 
 	s32 exit_code = bootstrap_data->thread_func( bootstrap_data->data );
 
@@ -80,6 +86,7 @@ Thread		thread_create( ThreadFunc thread_func, void *data ) {
 	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, malloc( sizeof( ThreadBootstrapData ) ) );
 	bootstrap_data->thread_func = thread_func;
 	bootstrap_data->data = data;
+	bootstrap_data->temp_storage_size = mem_get_temp_storage()->reserved_bytes;
 
 	if ( pthread_create( &thread_linux, &attribs, &thread_bootstrap, bootstrap_data ) != 0 ) {
 		int err = errno;

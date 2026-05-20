@@ -34,6 +34,7 @@ SOFTWARE.
 #include <core_string.h>
 #include <string_builder.h>
 #include <core_math.h>
+#include <defer.h>
 
 #include <stdarg.h>
 #include <string.h>
@@ -145,15 +146,16 @@ String path_join_internal( LinearAllocator *allocator, const int count, ... ) {
 }
 
 const char *path_relative_path_to( LinearAllocator *allocator, const char *from, const char *to ) {
-	assert( allocator );
 	assert( from );
 	assert( to );
 
-	String from_str = string_alloc( g_temp_storage, from );
-	String to_str = string_alloc( g_temp_storage, to );
+	u64 pos = mem_temp_tell();
+	defer { mem_temp_rewind_to( pos ); };
 
-	from_str = path_fix_slashes( g_temp_storage, &from_str );
-	to_str = path_fix_slashes( g_temp_storage, &to_str );
+	String from_str = string_set( from );
+	String to_str = string_set( to );
+	from_str = path_fix_slashes( &from_str );
+	to_str = path_fix_slashes( &to_str );
 
 	// determine the directory part of 'from'
 	// if the last path segment contains a dot then treat it as a filename and strip it

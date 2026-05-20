@@ -59,6 +59,19 @@ SOFTWARE.
 
 #define PRINT_HASHMAP_PROBE_RESULTS 0
 
+// temp storage is thread local and test runs in its own thread
+// so each test needs to initialize their own version of temp storage
+static void init_test_thread() {
+	mem_init_temp_storage( MEM_KILOBYTES( 64 ) );
+}
+
+static void shutdown_test_thread() {
+	mem_shutdown_temp_storage();
+}
+
+#define TEST( test_name, run_flag )					TEMPER_TEST_C( test_name, init_test_thread, shutdown_test_thread, run_flag )
+
+#define TEST_PARAMETRIC( test_name, run_flag, ... )	TEMPER_TEST_PARAMETRIC_C( test_name, init_test_thread, shutdown_test_thread, run_flag, __VA_ARGS__ )
 
 /*
 ================================================================================================
@@ -68,7 +81,7 @@ SOFTWARE.
 ================================================================================================
 */
 
-TEMPER_TEST( number_types_sizes, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( number_types_sizes, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( sizeof( s8 )  == 1 );
 	TEMPER_CHECK_TRUE( sizeof( s16 ) == 2 );
 	TEMPER_CHECK_TRUE( sizeof( s32 ) == 4 );
@@ -83,7 +96,7 @@ TEMPER_TEST( number_types_sizes, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( sizeof( float64 ) == 8 );
 }
 
-TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( S8_MIN  == ( -127 - 1 ) );
 	TEMPER_CHECK_TRUE( S16_MIN == ( -32767 - 1 ) );
 	TEMPER_CHECK_TRUE( S32_MIN == ( -2147483647 - 1 ) );
@@ -113,7 +126,7 @@ TEMPER_TEST( number_types_ranges, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST( test_align_up, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_align_up, TEMPER_FLAG_SHOULD_RUN ) {
 	// already aligned - should return same value
 	TEMPER_CHECK_TRUE( align_up(  0, 8 ) ==  0 );
 	TEMPER_CHECK_TRUE( align_up(  8, 8 ) ==  8 );
@@ -147,7 +160,7 @@ struct Thing {
 	const char	*msg;
 };
 
-TEMPER_TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator, const u64 reserved_bytes ) {
+TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator, const u64 reserved_bytes ) {
 	*allocator = linear_allocator_create( reserved_bytes );
 
 	TEMPER_CHECK_TRUE( *allocator != NULL );
@@ -158,7 +171,7 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_create, TEMPER_FLAG_SHOULD_RUN, Li
 	TEMPER_CHECK_TRUE( ( *allocator )->virtual_memory_page_size > 0 );
 }
 
-TEMPER_TEST_PARAMETRIC( test_linear_allocator_alloc, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const Thing thing ) {
+TEST_PARAMETRIC( test_linear_allocator_alloc, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const Thing thing ) {
 	u64 offset_before = linear_allocator_tell( allocator );
 	TEMPER_CHECK_TRUE( offset_before == allocator->offset );
 
@@ -172,7 +185,7 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_alloc, TEMPER_FLAG_SHOULD_RUN, Lin
 	TEMPER_CHECK_TRUE( string_equals( ptr->msg, thing.msg ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator ) {
+TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator ) {
 	u8 *ptr_before = allocator->ptr;
 	u64 reserved_bytes_before = allocator->reserved_bytes;
 	u64 comitted_bytes_before = allocator->comitted_bytes;
@@ -187,7 +200,7 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_reset, TEMPER_FLAG_SHOULD_RUN, Lin
 	TEMPER_CHECK_TRUE( allocator->virtual_memory_page_size == virtual_memory_page_size_before );
 }
 
-TEMPER_TEST_PARAMETRIC( test_linear_allocator_rewind_to, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const u64 alloc_size ) {
+TEST_PARAMETRIC( test_linear_allocator_rewind_to, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const u64 alloc_size ) {
 	u64 offset_before = allocator->offset;
 
 	linear_allocator_alloc( allocator, alloc_size );
@@ -197,7 +210,7 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_rewind_to, TEMPER_FLAG_SHOULD_RUN,
 	TEMPER_CHECK_TRUE( allocator->offset == offset_before );
 }
 
-TEMPER_TEST_PARAMETRIC( test_linear_allocator_rewind_by, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const u64 alloc_size ) {
+TEST_PARAMETRIC( test_linear_allocator_rewind_by, TEMPER_FLAG_SHOULD_RUN, LinearAllocator *allocator, const u64 alloc_size ) {
 	u64 offset_before = allocator->offset;
 
 	linear_allocator_alloc( allocator, alloc_size );
@@ -209,7 +222,7 @@ TEMPER_TEST_PARAMETRIC( test_linear_allocator_rewind_by, TEMPER_FLAG_SHOULD_RUN,
 	TEMPER_CHECK_TRUE( allocator->offset == offset_before );
 }
 
-TEMPER_TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator ) {
+TEST_PARAMETRIC( test_linear_allocator_destroy, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator ) {
 	TEMPER_CHECK_TRUE( *allocator != NULL );
 
 	linear_allocator_destroy( *allocator );
@@ -251,7 +264,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_test_linear_all
 ================================================================================================
 */
 
-TEMPER_TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -272,7 +285,7 @@ TEMPER_TEST( test_get_callstack, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 	String msg = {};
 
 	TEMPER_CHECK_TRUE( msg.count == 0 );
@@ -336,7 +349,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "What about \t escape\n charact
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "      " );
 // TEMPER_INVOKE_PARAMETRIC_TEST( test_string_copy, "" );
 
-TEMPER_TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char *msg, const char *prefix, const bool8 should_match ) {
+TEST_PARAMETRIC( test_string_starts_with, TEMPER_FLAG_SHOULD_RUN, const char *msg, const char *prefix, const bool8 should_match ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -406,7 +419,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "thi
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "This is only a test", "ONLY",                false );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_contains, "abc",                 "abcdef",              false );
 
-TEMPER_TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char *str, const char replace_old, const char replace_new, const char *expected_result ) {
+TEST_PARAMETRIC( test_string_replace, TEMPER_FLAG_SHOULD_RUN, const char *str, const char replace_old, const char replace_new, const char *expected_result ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -474,7 +487,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "",      "",        true  );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "",      "test",    false );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_equals, "test",  "",        false );
 
-TEMPER_TEST( test_string_printf, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_string_printf, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -497,7 +510,7 @@ TEMPER_TEST( test_string_printf, TEMPER_FLAG_SHOULD_RUN ) {
 	}
 }
 
-TEMPER_TEST( test_temp_printf, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_temp_printf, TEMPER_FLAG_SHOULD_RUN ) {
 	{
 		const char *result = temp_printf( "hello %s", "world" );
 		TEMPER_CHECK_TRUE( string_equals( result, "hello world" ) );
@@ -513,7 +526,7 @@ TEMPER_TEST( test_temp_printf, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( test_temp_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+TEST_PARAMETRIC( test_temp_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	char *result = temp_c_string( str );
 	TEMPER_CHECK_TRUE( string_equals( result, str ) );
 	mem_reset_temp_storage();
@@ -523,7 +536,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_temp_c_string, "hello" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_temp_c_string, "this is only a test" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_temp_c_string, "." );
 
-TEMPER_TEST( test_temp_c_string_with_length, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_temp_c_string_with_length, TEMPER_FLAG_SHOULD_RUN ) {
 	char *result = temp_c_string( "hello world", 5 );
 	TEMPER_CHECK_TRUE( string_equals( result, "hello" ) );
 	mem_reset_temp_storage();
@@ -538,58 +551,58 @@ TEMPER_TEST( test_temp_c_string_with_length, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST_PARAMETRIC( hash_string_equals_hash32, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed, const u32 expected_hash ) {
+TEST_PARAMETRIC( hash_string_equals_hash32, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed, const u32 expected_hash ) {
 	const u64 string_length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash32( string, string_length, seed ) == expected_hash );
 }
 
-TEMPER_TEST_PARAMETRIC( hash_string_equals_hash64, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed, const u64 expected_hash ) {
+TEST_PARAMETRIC( hash_string_equals_hash64, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed, const u64 expected_hash ) {
 	const u64 string_length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash64( string, string_length, seed ) == expected_hash );
 }
 
-TEMPER_TEST_PARAMETRIC( hash32_is_deterministic, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed ) {
+TEST_PARAMETRIC( hash32_is_deterministic, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed ) {
 	const u64 length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash32( string, length, seed ) == hash32( string, length, seed ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hash64_is_deterministic, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed ) {
+TEST_PARAMETRIC( hash64_is_deterministic, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed ) {
 	const u64 length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash64( string, length, seed ) == hash64( string, length, seed ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hash32_seed_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed_a, const u32 seed_b ) {
+TEST_PARAMETRIC( hash32_seed_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *string, const u32 seed_a, const u32 seed_b ) {
 	const u64 length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash32( string, length, seed_a ) != hash32( string, length, seed_b ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hash64_seed_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed_a, const u64 seed_b ) {
+TEST_PARAMETRIC( hash64_seed_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed_a, const u64 seed_b ) {
 	const u64 length = strlen( string );
 
 	TEMPER_CHECK_TRUE( hash64( string, length, seed_a ) != hash64( string, length, seed_b ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hash32_length_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 length_a, const u64 length_b ) {
+TEST_PARAMETRIC( hash32_length_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 length_a, const u64 length_b ) {
 	TEMPER_CHECK_TRUE( hash32( data, length_a, 0 ) != hash32( data, length_b, 0 ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hash64_length_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 length_a, const u64 length_b ) {
+TEST_PARAMETRIC( hash64_length_changes_output, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 length_a, const u64 length_b ) {
 	TEMPER_CHECK_TRUE( hash64( data, length_a, 0 ) != hash64( data, length_b, 0 ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hash_string_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed ) {
+TEST_PARAMETRIC( hash_string_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *string, const u64 seed ) {
 	TEMPER_CHECK_TRUE( hash_string( string, seed ) == hash64( string, strlen( string ), seed ) );
 }
 
-TEMPER_TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
+TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 
-	Hasher *hasher = hasher_create( g_temp_storage, seed );
+	Hasher *hasher = hasher_create( mem_get_temp_storage(), seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data, length );
@@ -602,11 +615,11 @@ TEMPER_TEST_PARAMETRIC( hasher_single_chunk_matches_hash64, TEMPER_FLAG_SHOULD_R
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
+TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 	const u64 half   = length / 2;
 
-	Hasher *hasher = hasher_create( g_temp_storage, seed );
+	Hasher *hasher = hasher_create( mem_get_temp_storage(), seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data,        half );
@@ -625,10 +638,10 @@ TEMPER_TEST_PARAMETRIC( hasher_multi_chunk_matches_single_chunk, TEMPER_FLAG_SHO
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( hasher_reset_gives_same_result, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
+TEST_PARAMETRIC( hasher_reset_gives_same_result, TEMPER_FLAG_SHOULD_RUN, const char *data, const u64 seed ) {
 	const u64 length = strlen( data );
 
-	Hasher *hasher = hasher_create( g_temp_storage, seed );
+	Hasher *hasher = hasher_create( mem_get_temp_storage(), seed );
 	TEMPER_CHECK_TRUE_A( hasher );
 
 	hasher_hash( hasher, data, length );
@@ -691,7 +704,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( hasher_reset_gives_same_result, "Hello, world!", 
 ================================================================================================
 */
 
-TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
 	u32 lo_part = 0xDEADBEEF;
 	u32 hi_part = 0xBAADF00D;
 
@@ -701,7 +714,7 @@ TEMPER_TEST( test_hashmap_combine, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE_A( hashmap_internal_get_lo_part( combined ) == lo_part );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator, Hashmap **hashmap, const u32 count ) {
+TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, LinearAllocator **allocator, Hashmap **hashmap, const u32 count ) {
 	TEMPER_CHECK_TRUE( allocator );
 	TEMPER_CHECK_TRUE( !*allocator );
 	TEMPER_CHECK_TRUE( hashmap );
@@ -722,7 +735,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_create, TEMPER_FLAG_SHOULD_RUN, LinearAlloc
 	}
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap, const char *name, const u32 age ) {
+TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap, const char *name, const u32 age ) {
 	//LogVerbosity previous_log_verbosity = get_log_verbosity();
 	//set_log_verbosity( LOG_VERBOSITY_ERROR ); //Hiding warnings from getting values that don't exist as this is intentionally checking this behaviour
 
@@ -740,7 +753,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_set_and_get_value, TEMPER_FLAG_SHOULD_RUN, 
 	//set_log_verbosity( previous_log_verbosity );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap ) {
+TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	u32 old_count = hashmap->capacity;
@@ -759,7 +772,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_reset, TEMPER_FLAG_SHOULD_RUN, Hashmap *has
 	TEMPER_CHECK_TRUE_A(hashmap->tombstone_count == 0U);
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap ) {
+TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap *hashmap ) {
 	TEMPER_CHECK_TRUE( hashmap );
 
 	hashmap_reset( hashmap );
@@ -797,7 +810,7 @@ TEMPER_TEST_PARAMETRIC( test_hashmap_remove, TEMPER_FLAG_SHOULD_RUN, Hashmap *ha
 	TEMPER_CHECK_TRUE_A( hashmap_internal_combine_at_index( hashmap, 1 ) == third_key );
 }
 
-TEMPER_TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation ) {
+TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u32 number_of_buckets, float utilisation ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -924,7 +937,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_remove, g_hashmap );
 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_linear_allocator_destroy, &g_hashmap_allocator );
 
-TEMPER_TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_hashmap_growing, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -961,7 +974,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_hashmap_linear_probe_telemetry, 10000, 0.1f 
 ================================================================================================
 */
 
-TEMPER_TEST_PARAMETRIC( test_file_exists, TEMPER_FLAG_SHOULD_RUN, const char *filename, const bool8 expected ) {
+TEST_PARAMETRIC( test_file_exists, TEMPER_FLAG_SHOULD_RUN, const char *filename, const bool8 expected ) {
 	TEMPER_CHECK_TRUE( file_exists( filename ) == expected );
 }
 
@@ -989,64 +1002,64 @@ static void count_visited_files( const FileInfo *file_info, void *user_data ) {
 	*count += 1;
 }
 
-TEMPER_TEST_PARAMETRIC( test_folder_create, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+TEST_PARAMETRIC( test_folder_create, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
 	TEMPER_CHECK_TRUE_A( folder_create_if_it_doesnt_exist( path ) );
 	TEMPER_CHECK_TRUE( folder_exists( path ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_folder_delete, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+TEST_PARAMETRIC( test_folder_delete, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
 	TEMPER_CHECK_TRUE_A( folder_delete( path ) );
 	TEMPER_CHECK_TRUE( !folder_exists( path ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_open, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
+TEST_PARAMETRIC( test_file_open, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
 	*file = file_open( filename, FILE_OPEN_READ );
 	TEMPER_CHECK_TRUE_A( file->handle != INVALID_FILE_HANDLE );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_close, TEMPER_FLAG_SHOULD_RUN, File *file ) {
+TEST_PARAMETRIC( test_file_close, TEMPER_FLAG_SHOULD_RUN, File *file ) {
 	TEMPER_CHECK_TRUE( file_close( file ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_open_or_create, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
+TEST_PARAMETRIC( test_file_open_or_create, TEMPER_FLAG_SHOULD_RUN, File *file, const char *filename ) {
 	*file = file_open_or_create( filename );
 	TEMPER_CHECK_TRUE_A( file->handle != INVALID_FILE_HANDLE );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_write, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
+TEST_PARAMETRIC( test_file_write, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
 	TEMPER_CHECK_TRUE_A( file_write( file, content ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_write_buffer, TEMPER_FLAG_SHOULD_RUN, File *file, const void *data, const u64 size ) {
+TEST_PARAMETRIC( test_file_write_buffer, TEMPER_FLAG_SHOULD_RUN, File *file, const void *data, const u64 size ) {
 	TEMPER_CHECK_TRUE_A( file_write( file, data, size ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_write_at_offset, TEMPER_FLAG_SHOULD_RUN, File *file, const void *data, const u64 offset, const u64 size ) {
+TEST_PARAMETRIC( test_file_write_at_offset, TEMPER_FLAG_SHOULD_RUN, File *file, const void *data, const u64 offset, const u64 size ) {
 	TEMPER_CHECK_TRUE_A( file_write( file, data, offset, size ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_write_line, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
+TEST_PARAMETRIC( test_file_write_line, TEMPER_FLAG_SHOULD_RUN, File *file, const char *content ) {
 	TEMPER_CHECK_TRUE_A( file_write_line( file, content ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_write_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const void *data, const u64 size ) {
+TEST_PARAMETRIC( test_file_write_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const void *data, const u64 size ) {
 	TEMPER_CHECK_TRUE_A( file_write_entire( filename, data, size ) );
 	TEMPER_CHECK_TRUE( file_exists( filename ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_get_size, TEMPER_FLAG_SHOULD_RUN, const char *filename, const u64 expected_size ) {
+TEST_PARAMETRIC( test_file_get_size, TEMPER_FLAG_SHOULD_RUN, const char *filename, const u64 expected_size ) {
 	u64 size = 0;
 	TEMPER_CHECK_TRUE_A( file_get_size( filename, &size ) );
 	TEMPER_CHECK_TRUE( size == expected_size );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_get_last_write_time, TEMPER_FLAG_SHOULD_RUN, const char *filename ) {
+TEST_PARAMETRIC( test_file_get_last_write_time, TEMPER_FLAG_SHOULD_RUN, const char *filename ) {
 	u64 write_time = 0;
 	TEMPER_CHECK_TRUE_A( file_get_last_write_time( filename, &write_time ) );
 	TEMPER_CHECK_TRUE( write_time != 0 );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_read, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 offset, const u64 size, const char *expected ) {
+TEST_PARAMETRIC( test_file_read, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 offset, const u64 size, const char *expected ) {
 	char *buffer = cast( char *, mem_temp_alloc( ( size + 1 ) * sizeof( char ) ) );
 	buffer[size] = 0;
 
@@ -1056,7 +1069,7 @@ TEMPER_TEST_PARAMETRIC( test_file_read, TEMPER_FLAG_SHOULD_RUN, File *file, cons
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_read_sequential, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 size, const char *expected ) {
+TEST_PARAMETRIC( test_file_read_sequential, TEMPER_FLAG_SHOULD_RUN, File *file, const u64 size, const char *expected ) {
 	char *buffer = cast( char *, mem_temp_alloc( ( size + 1 ) * sizeof( char ) ) );
 	buffer[size] = 0;
 
@@ -1066,7 +1079,7 @@ TEMPER_TEST_PARAMETRIC( test_file_read_sequential, TEMPER_FLAG_SHOULD_RUN, File 
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_read_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const char *expected, const u64 expected_length ) {
+TEST_PARAMETRIC( test_file_read_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const char *expected, const u64 expected_length ) {
 	char *buffer = NULL;
 	u64 length = 0;
 
@@ -1078,25 +1091,25 @@ TEMPER_TEST_PARAMETRIC( test_file_read_entire, TEMPER_FLAG_SHOULD_RUN, const cha
 	TEMPER_CHECK_TRUE( buffer == NULL );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_copy, TEMPER_FLAG_SHOULD_RUN, const char *src, const char *dst ) {
+TEST_PARAMETRIC( test_file_copy, TEMPER_FLAG_SHOULD_RUN, const char *src, const char *dst ) {
 	TEMPER_CHECK_TRUE_A( file_copy( src, dst ) );
 	TEMPER_CHECK_TRUE( file_exists( dst ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_get_all_files_in_folder, TEMPER_FLAG_SHOULD_RUN, const char *path, const FileVisitFlags visit_flags, const u32 expected_count ) {
+TEST_PARAMETRIC( test_file_get_all_files_in_folder, TEMPER_FLAG_SHOULD_RUN, const char *path, const FileVisitFlags visit_flags, const u32 expected_count ) {
 	u32 count = 0;
 	TEMPER_CHECK_TRUE_A( file_get_all_files_in_folder( path, visit_flags, count_visited_files, &count ) );
 	TEMPER_CHECK_TRUE( count == expected_count );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_rename, TEMPER_FLAG_SHOULD_RUN, File *file, const char *old_path, const char *new_path ) {
+TEST_PARAMETRIC( test_file_rename, TEMPER_FLAG_SHOULD_RUN, File *file, const char *old_path, const char *new_path ) {
 	TEMPER_CHECK_TRUE_A( file_close( file ) );
 	TEMPER_CHECK_TRUE_A( file_rename( old_path, new_path ) );
 	TEMPER_CHECK_TRUE( file_exists( new_path ) );
 	TEMPER_CHECK_TRUE( !file_exists( old_path ) );
 }
 
-TEMPER_TEST_PARAMETRIC( test_file_delete, TEMPER_FLAG_SHOULD_RUN, const char *filename ) {
+TEST_PARAMETRIC( test_file_delete, TEMPER_FLAG_SHOULD_RUN, const char *filename ) {
 	TEMPER_CHECK_TRUE_A( file_delete( filename ) );
 	TEMPER_CHECK_TRUE( !file_exists( filename ) );
 }
@@ -1188,8 +1201,8 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_folder_delete, g_test_folder_path );
 ================================================================================================
 */
 
-TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
-	String app_path = path_app_path( g_temp_storage );
+TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
+	String app_path = path_app_path( mem_get_temp_storage() );
 
 	TEMPER_CHECK_TRUE( app_path.count != 0 );
 	TEMPER_CHECK_TRUE( app_path.data != NULL );
@@ -1204,25 +1217,25 @@ TEMPER_TEST( test_path_app_path, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FLAG_SHOULD_RUN ) {
-	String cwd = path_get_cwd( g_temp_storage );
-	String absolute_dot = path_absolute_path( g_temp_storage, "." );
+TEST( test_path_current_working_directory_matches_absolute_dot, TEMPER_FLAG_SHOULD_RUN ) {
+	String cwd = path_get_cwd( mem_get_temp_storage() );
+	String absolute_dot = path_absolute_path( mem_get_temp_storage(), "." );
 
 	TEMPER_CHECK_TRUE( string_equals( &cwd, &absolute_dot ) );
 
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
+TEST_PARAMETRIC( test_path_current_working_directory_set_then_get, TEMPER_FLAG_SHOULD_RUN, const char *folder ) {
 	bool8 set_cwd = false;
 
-	String original_cwd = path_get_cwd( g_temp_storage );
+	String original_cwd = path_get_cwd( mem_get_temp_storage() );
 
-	String known_path = path_absolute_path( g_temp_storage, folder );
+	String known_path = path_absolute_path( mem_get_temp_storage(), folder );
 	set_cwd = path_set_cwd( string_cstr( &known_path ) );
 	TEMPER_CHECK_TRUE( set_cwd );
 
-	String cwd = path_get_cwd( g_temp_storage );
+	String cwd = path_get_cwd( mem_get_temp_storage() );
 	TEMPER_CHECK_TRUE( string_equals( &known_path, &cwd ) );
 
 	set_cwd = path_set_cwd( string_cstr( &original_cwd ) );
@@ -1235,8 +1248,8 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get,
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get, ".builder"       );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_current_working_directory_set_then_get, "editor_support" );
 
-TEMPER_TEST_PARAMETRIC( test_path_absolute_path_from_relative, TEMPER_FLAG_SHOULD_RUN, const char *relative_path ) {
-	String absolute = path_absolute_path( g_temp_storage, relative_path );
+TEST_PARAMETRIC( test_path_absolute_path_from_relative, TEMPER_FLAG_SHOULD_RUN, const char *relative_path ) {
+	String absolute = path_absolute_path( mem_get_temp_storage(), relative_path );
 
 	TEMPER_CHECK_TRUE( path_is_absolute( absolute.data ) );
 
@@ -1250,15 +1263,15 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "include" 
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "editor_support" );
 
 TEMPER_TEST( test_path_absolute_path_already_absolute, TEMPER_FLAG_SHOULD_RUN ) {
-	String cwd = path_get_cwd( g_temp_storage );
-	String result = path_absolute_path( g_temp_storage, string_cstr( &cwd ) );
+	String cwd = path_get_cwd( mem_get_temp_storage() );
+	String result = path_absolute_path( mem_get_temp_storage(), string_cstr( &cwd ) );
 
 	TEMPER_CHECK_TRUE( string_equals( &cwd, &result ) );
 
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST_PARAMETRIC( test_path_remove_file_from_path, TEMPER_FLAG_SHOULD_RUN, const char *path, const char *expected_path_without_file ) {
+TEST_PARAMETRIC( test_path_remove_file_from_path, TEMPER_FLAG_SHOULD_RUN, const char *path, const char *expected_path_without_file ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1314,7 +1327,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "doom/src/r_bsp.
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "home/program.d/settings.cfg", "home/program.d/settings" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_file_extension, "docs/diary",                  "docs/diary"              );
 
-TEMPER_TEST_PARAMETRIC( test_path_is_absolute, TEMPER_FLAG_SHOULD_RUN, const char *path, const bool8 should_be_absolute ) {
+TEST_PARAMETRIC( test_path_is_absolute, TEMPER_FLAG_SHOULD_RUN, const char *path, const bool8 should_be_absolute ) {
 	TEMPER_CHECK_TRUE( path_is_absolute( path ) == should_be_absolute );
 }
 
@@ -1332,7 +1345,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "./Program Files (x86)/Ste
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_is_absolute, "/Program Files (x86)/Steam/steamapps/common",   false );
 #endif
 
-TEMPER_TEST_PARAMETRIC( test_path_fix_slashes, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
+TEST_PARAMETRIC( test_path_fix_slashes, TEMPER_FLAG_SHOULD_RUN, const char *path ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1357,7 +1370,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "/usr/bin/program" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "cat.jpg" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_fix_slashes, "./" );
 
-TEMPER_TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, const char *from, const char *to, const char *expected_relative_path ) {
+TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, const char *from, const char *to, const char *expected_relative_path ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1384,10 +1397,10 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Docume
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan/Documents",           "C:/Users/Dan",                   ".." );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_get_relative_path, "C:/Users/Dan",                     "C:/Users/Dan/Documents",         "Documents" );
 
-TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 	// single component - no separator added
 	{
-		String result = path_join( g_temp_storage, "foo" );
+		String result = path_join( mem_get_temp_storage(), "foo" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, "foo" ) );
 	}
 
@@ -1398,7 +1411,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "usr/bin";
 #endif
-		String result = path_join( g_temp_storage, "usr", "bin" );
+		String result = path_join( mem_get_temp_storage(), "usr", "bin" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
@@ -1409,7 +1422,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "home/dan/docs";
 #endif
-		String result = path_join( g_temp_storage, "home", "dan", "docs" );
+		String result = path_join( mem_get_temp_storage(), "home", "dan", "docs" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
@@ -1420,7 +1433,7 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 #else
 		const char *expected = "C:/Users/your_mother/videos";
 #endif
-		String result = path_join( g_temp_storage, "C:", "Users", "your_mother", "videos" );
+		String result = path_join( mem_get_temp_storage(), "C:", "Users", "your_mother", "videos" );
 		TEMPER_CHECK_TRUE( string_equals( result.data, expected ) );
 	}
 
@@ -1436,9 +1449,9 @@ TEMPER_TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	StringBuilder builder = {};
-	string_builder_init( &builder, g_temp_storage );
+	string_builder_init( &builder, mem_get_temp_storage() );
 
 	TEMPER_CHECK_TRUE( builder.head == NULL );
 	TEMPER_CHECK_TRUE( builder.tail == NULL );
@@ -1468,7 +1481,7 @@ TEMPER_TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 // TODO: 23/12/2025: need tests that actually make sure the min and max values are actually hit when generating random numbers
 // how do we test that?
 
-TEMPER_TEST_PARAMETRIC( random_float32_within_range, TEMPER_FLAG_SHOULD_RUN, const float32 low, const float32 high ) {
+TEST_PARAMETRIC( random_float32_within_range, TEMPER_FLAG_SHOULD_RUN, const float32 low, const float32 high ) {
 	For ( u32, i, 0, 1000000 ) {
 		float32 random_float = random_float32( low, high );
 
@@ -1496,7 +1509,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( random_float32_within_range, 0.0f, FLOAT32_MAX );
 ================================================================================================
 */
 
-TEMPER_TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( load_library_get_symbol_and_unload_again, TEMPER_FLAG_SHOULD_RUN ) {
 	// load
 #if defined( _WIN32 )
 	const char *filename = "test_dll.dll";
@@ -1550,7 +1563,7 @@ static s32 thread_basic_test_func( void* data ) {
 	return 69;
 }
 
-TEMPER_TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_thread_create_and_destroy, TEMPER_FLAG_SHOULD_RUN ) {
 	Thread thread = thread_create( thread_basic_test_func, NULL );
 
 	TEMPER_CHECK_TRUE( thread.ptr != NULL );
@@ -1594,7 +1607,7 @@ static void add_thread_job( ThreadPool *thread_pool, const char *msg ) {
 	semaphore_signal( &thread_pool->sema );
 }
 
-static s32 thread_job_func( void *data ) {
+static s32 test_thread_pool_job_func( void *data ) {
 	ThreadContext *context = cast( ThreadContext *, data );
 
 	ThreadPool *thread_pool = context->thread_pool;
@@ -1642,7 +1655,7 @@ static s32 thread_job_func( void *data ) {
 	return 42;
 }
 
-TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	ThreadPool thread_pool = {};
 	thread_pool.running = true;
 	semaphore_create( &thread_pool.sema );
@@ -1655,7 +1668,7 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 		contexts[thread_index].thread_pool = &thread_pool;
 		contexts[thread_index].logical_thread_index = thread_index;
 
-		thread_pool.threads[thread_index] = thread_create( thread_job_func, &contexts[thread_index] );
+		thread_pool.threads[thread_index] = thread_create( test_thread_pool_job_func, &contexts[thread_index] );
 
 		TEMPER_CHECK_TRUE( thread_pool.threads[thread_index].ptr != NULL );
 	}
@@ -1720,6 +1733,85 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( thread_pool.sema.ptr == NULL );
 }
 
+struct TempStorageThreadContext {
+	u32				num_ints_to_alloc;
+	LinearAllocator	*storage_ptr;
+	u64				tell_before;
+	u64				tell_after;
+	Semaphore		*ready_sem;
+	Semaphore		*go_sem;
+};
+
+static s32 thread_temp_storage_func( void *data ) {
+	TempStorageThreadContext *context = cast( TempStorageThreadContext *, data );
+
+	context->storage_ptr = mem_get_temp_storage();
+	context->tell_before = mem_temp_tell();
+
+	For ( u32, i, 0, context->num_ints_to_alloc ) {
+		mem_temp_alloc( sizeof( u32 ) );
+	}
+
+	context->tell_after = mem_temp_tell();
+
+	// tell main weve captured our state, then wait before exiting
+	// so main can compare pointers while our temp storage is still alive
+	// once the thread exits, the OS can reuse the freed allocator address
+	semaphore_signal( context->ready_sem );
+	semaphore_wait( context->go_sem );
+
+	return 0;
+}
+
+TEST( test_temp_storage_is_thread_local, TEMPER_FLAG_SHOULD_RUN ) {
+	LinearAllocator *main_storage = mem_get_temp_storage();
+
+	Semaphore ready_sems[4] = {};
+	Semaphore go_sems[4] = {};
+	TempStorageThreadContext contexts[4] = {};
+	Thread threads[4] = {};
+
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		semaphore_create( &ready_sems[thread_index] );
+		semaphore_create( &go_sems[thread_index] );
+		contexts[thread_index].num_ints_to_alloc = thread_index + 1;
+		contexts[thread_index].ready_sem = &ready_sems[thread_index];
+		contexts[thread_index].go_sem = &go_sems[thread_index];
+		threads[thread_index] = thread_create( thread_temp_storage_func, &contexts[thread_index] );
+	}
+
+	// wait until all threads have captured their storage pointer
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		semaphore_wait( &ready_sems[thread_index] );
+	}
+
+	// compare while all threads are still alive so their allocators cant be freed and reused
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		TempStorageThreadContext *ctx = &contexts[thread_index];
+
+		TEMPER_CHECK_TRUE( ctx->storage_ptr != NULL );
+		TEMPER_CHECK_TRUE( ctx->storage_ptr != main_storage );
+		TEMPER_CHECK_TRUE( ctx->tell_after > ctx->tell_before );
+
+		For ( u32, other_thread_index, 0, count_of( threads ) ) {
+			if ( other_thread_index != thread_index ) {
+				TEMPER_CHECK_TRUE( ctx->storage_ptr != contexts[other_thread_index].storage_ptr );
+			}
+		}
+	}
+
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		semaphore_signal( &go_sems[thread_index] );
+	}
+
+	For ( u32, thread_index, 0, count_of( threads ) ) {
+		thread_wait( &threads[thread_index] );
+		thread_destroy( &threads[thread_index] );
+		semaphore_destroy( &ready_sems[thread_index] );
+		semaphore_destroy( &go_sems[thread_index] );
+	}
+}
+
 
 /*
 ================================================================================================
@@ -1730,15 +1822,15 @@ TEMPER_TEST( test_thread_pool, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 static const char *get_test_exe_path( void ) {
-	String app_dir = path_app_path( g_temp_storage );
+	String app_dir = path_app_path( mem_get_temp_storage() );
 	app_dir = path_remove_file_from_path( &app_dir );
 
-	String result = path_join( g_temp_storage, string_cstr( &app_dir ), TEST_EXE_FILENAME );
+	String result = path_join( mem_get_temp_storage(), string_cstr( &app_dir ), TEST_EXE_FILENAME );
 
 	return result.data;
 }
 
-TEMPER_TEST( test_process_sync_exit_code_zero, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_process_sync_exit_code_zero, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1758,7 +1850,7 @@ TEMPER_TEST( test_process_sync_exit_code_zero, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_process_sync_exit_code_nonzero, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_process_sync_exit_code_nonzero, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1780,7 +1872,7 @@ TEMPER_TEST( test_process_sync_exit_code_nonzero, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_process_async_exit_code, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_process_async_exit_code, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1802,7 +1894,7 @@ TEMPER_TEST( test_process_async_exit_code, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_process_read_stdout, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_process_read_stdout, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1829,7 +1921,7 @@ TEMPER_TEST( test_process_read_stdout, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_process_read_stderr, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_process_read_stderr, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1856,7 +1948,7 @@ TEMPER_TEST( test_process_read_stderr, TEMPER_FLAG_SHOULD_RUN ) {
 	mem_reset_temp_storage();
 }
 
-TEMPER_TEST( test_process_combine_stdout_and_stderr, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_process_combine_stdout_and_stderr, TEMPER_FLAG_SHOULD_RUN ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1894,7 +1986,7 @@ TEMPER_TEST( test_process_combine_stdout_and_stderr, TEMPER_FLAG_SHOULD_RUN ) {
 ================================================================================================
 */
 
-TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_seconds();
 
 	sleep_ms( 1000 );
@@ -1905,7 +1997,7 @@ TEMPER_TEST( test_timer_seconds, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( ( end - start ) <  1.1 );
 }
 
-TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_ms();
 
 	sleep_ms( 1000 );
@@ -1916,7 +2008,7 @@ TEMPER_TEST( test_timer_milliseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( ( end - start ) <  1100.0 );
 }
 
-TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_us();
 
 	sleep_ms( 1000 );
@@ -1927,7 +2019,7 @@ TEMPER_TEST( test_timer_microseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( ( end - start ) <  1100000.0 );
 }
 
-TEMPER_TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_timer_nanoseconds, TEMPER_FLAG_SHOULD_RUN ) {
 	float64 start = time_ns();
 
 	sleep_ms( 1000 );

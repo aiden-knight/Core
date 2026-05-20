@@ -29,9 +29,12 @@ SOFTWARE.
 
 #include <core_thread.h>
 
-#include <debug.h>
-#include <typecast.inl>
 #include <core_helpers.h>
+#include <debug.h>
+#include <defer.h>
+#include <typecast.inl>
+#include <temp_storage.h>
+#include <linear_allocator.h>
 
 #include <Windows.h>
 
@@ -41,6 +44,7 @@ SOFTWARE.
 struct ThreadBootstrapData {
 	ThreadFunc	thread_func;
 	void		*data;
+	u64			temp_storage_size;
 };
 
 static DWORD thread_bootstrap( void *data ) {
@@ -49,6 +53,9 @@ static DWORD thread_bootstrap( void *data ) {
 	ThreadBootstrapData *bootstrap_data = cast( ThreadBootstrapData *, data );
 
 	assert( bootstrap_data->thread_func );
+
+	mem_init_temp_storage( bootstrap_data->temp_storage_size );
+	defer { mem_shutdown_temp_storage(); };
 
 	s32 exit_code = bootstrap_data->thread_func( bootstrap_data->data );
 
@@ -70,6 +77,7 @@ Thread thread_create( ThreadFunc thread_func, void *data ) {
 	ThreadBootstrapData *bootstrap = cast( ThreadBootstrapData *, malloc( sizeof( ThreadBootstrapData ) ) );
 	bootstrap->thread_func = thread_func;
 	bootstrap->data = data;
+	bootstrap->temp_storage_size = mem_get_temp_storage()->reserved_bytes;
 
 	DWORD creation_flags = 0;
 

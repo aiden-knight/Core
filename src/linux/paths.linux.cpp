@@ -74,8 +74,7 @@ String path_app_path( LinearAllocator *allocator ) {
 String path_get_cwd( LinearAllocator *allocator ) {
 	assert( allocator );
 
-	char temp[PATH_MAX] = {};
-	const char *cwd = getcwd( temp, PATH_MAX );
+	const char *cwd = getcwd( NULL, PATH_MAX );
 
 	if ( !cwd ) {
 		int err = errno;
@@ -125,8 +124,8 @@ bool8 path_is_absolute( const char *path ) {
 const char *path_canonicalize( const char *path ) {
 	assert( path );
 
-	u64 temp_pos = linear_allocator_tell( g_temp_storage );
-	defer { linear_allocator_rewind_to( g_temp_storage, temp_pos ); };
+	u64 temp_pos = linear_allocator_tell( mem_get_temp_storage() );
+	defer { linear_allocator_rewind_to( mem_get_temp_storage(), temp_pos ); };
 
 	char *path_copy = temp_c_string( path, PATH_MAX * sizeof( char ) );
 
