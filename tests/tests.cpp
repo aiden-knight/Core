@@ -292,7 +292,7 @@ TEST( test_string_defaults, TEMPER_FLAG_SHOULD_RUN ) {
 	TEMPER_CHECK_TRUE( msg.data == NULL );
 }
 
-TEMPER_TEST_PARAMETRIC( test_string_set_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+TEST_PARAMETRIC( test_string_set_c_string, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	String msg = string_set( str );
 
 	TEMPER_CHECK_TRUE( string_equals( msg.data, str ) );
@@ -304,7 +304,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "this is only a test" )
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_set_c_string, "." );
 
-TEMPER_TEST_PARAMETRIC( test_string_alloc, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+TEST_PARAMETRIC( test_string_alloc, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -319,7 +319,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_string_alloc, "this is only a test" );
 // TEMPER_INVOKE_PARAMETRIC_TEST( test_string_alloc, "" );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_string_alloc, "." );
 
-TEMPER_TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
+TEST_PARAMETRIC( test_string_copy, TEMPER_FLAG_SHOULD_RUN, const char *str ) {
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
@@ -1262,7 +1262,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "src"     
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "include"        );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_absolute_path_from_relative, "editor_support" );
 
-TEMPER_TEST( test_path_absolute_path_already_absolute, TEMPER_FLAG_SHOULD_RUN ) {
+TEST( test_path_absolute_path_already_absolute, TEMPER_FLAG_SHOULD_RUN ) {
 	String cwd = path_get_cwd( mem_get_temp_storage() );
 	String result = path_absolute_path( mem_get_temp_storage(), string_cstr( &cwd ) );
 
@@ -1309,7 +1309,7 @@ TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "./script.sh",  
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "game.exe",                           "game.exe"     );
 TEMPER_INVOKE_PARAMETRIC_TEST( test_path_remove_path_from_file, "file",                               "file"         );
 
-TEMPER_TEST_PARAMETRIC( test_path_remove_file_extension, TEMPER_FLAG_SHOULD_RUN, const char *file_with_extension, const char *expected_file_without_extension ) {
+TEST_PARAMETRIC( test_path_remove_file_extension, TEMPER_FLAG_SHOULD_RUN, const char *file_with_extension, const char *expected_file_without_extension ) {
 	String expected = string_set( expected_file_without_extension );
 
 	String actual_file_without_extension = string_set( file_with_extension );
@@ -1375,7 +1375,7 @@ TEST_PARAMETRIC( test_path_get_relative_path, TEMPER_FLAG_SHOULD_RUN, const char
 	defer { linear_allocator_destroy( allocator ); };
 
 	String expected = string_set( expected_relative_path );
-	String actual = string_set( path_relative_path_to( allocator, from, to ) );
+	String actual = path_relative_path_to( allocator, from, to );
 
 	// use path_fix_slashes here because Windows can return backslashes in the resultant path (like it should)
 	// but its just easier to specify forward slashes in the test parameters
