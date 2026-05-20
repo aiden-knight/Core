@@ -1,6 +1,6 @@
 [
 	{
-		"label": "Debug: core-tests (debug)",
+		"label": "core-tests (debug)",
 		"adapter": "CodeLLDB",
 		"program": "${ZED_WORKTREE_ROOT}/bin/debug/core-tests",
 		"cwd": "${ZED_WORKTREE_ROOT}",
@@ -9,7 +9,7 @@
 	},
 
 	{
-		"label": "Debug: core-tests (release)",
+		"label": "core-tests (release)",
 		"adapter": "CodeLLDB",
 		"program": "${ZED_WORKTREE_ROOT}/bin/release/core-tests",
 		"cwd": "${ZED_WORKTREE_ROOT}",
