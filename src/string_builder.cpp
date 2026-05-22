@@ -32,7 +32,8 @@ SOFTWARE.
 #include <debug.h>
 #include <typecast.inl>
 
-#include <stdio.h>
+#include "stb_local.h"
+
 #include <stdarg.h>
 #include <memory.h>
 #include <string.h>
@@ -67,10 +68,10 @@ void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {
 	va_list args_copy;
 	va_copy( args_copy, args );
 
-	buffer->length = trunc_cast( u32, vsnprintf( NULL, 0, fmt, args ) );
+	buffer->length = trunc_cast( u32, stbsp_vsnprintf( NULL, 0, fmt, args ) );
 
-	buffer->data = cast( char *, linear_allocator_alloc( builder->allocator, ( buffer->length + 1 ) * sizeof( char ), 1 ) );
-	vsnprintf( buffer->data, buffer->length + 1, fmt, args_copy );
+	buffer->data = cast( char *, linear_allocator_alloc( builder->allocator, buffer->length + 1, 1 ) );
+	stbsp_vsnprintf( buffer->data, cast( int, buffer->length + 1 ), fmt, args_copy );
 	va_end( args_copy );
 	buffer->data[buffer->length] = 0;
 

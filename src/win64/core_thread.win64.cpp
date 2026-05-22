@@ -38,7 +38,6 @@ SOFTWARE.
 
 #include <Windows.h>
 
-#include <stdio.h>
 #include <malloc.h>
 
 struct ThreadBootstrapData {

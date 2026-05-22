@@ -41,7 +41,6 @@ SOFTWARE.
 #include <semaphore.h>
 #include <errno.h>
 
-#include <stdio.h>
 #include <string.h>
 #include <malloc.h>
 

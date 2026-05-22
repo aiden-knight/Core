@@ -35,7 +35,6 @@ SOFTWARE.
 #include <debug.h>
 #include <os.h>
 
-#include <stdio.h>
 #include <malloc.h>
 #include <memory.h>
 

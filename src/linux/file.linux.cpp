@@ -44,8 +44,6 @@ SOFTWARE.
 #include <dirent.h>
 #include <errno.h>
 
-#include <stdio.h>
-
 /*
 ================================================================================================
 
@@ -221,7 +219,7 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 
 		if ( !dir ) {
 			int err = errno;
-			printf( "Can't open dir \"%s\": %s\n", directory, strerror( err ) );
+			print( "Can't open dir \"%s\": %s\n", directory, strerror( err ) );
 			return false;
 		}
 

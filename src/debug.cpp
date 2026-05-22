@@ -50,7 +50,7 @@ static void print_varargs( FILE *file, const char *fmt, va_list args ) {
 	int length = stbsp_vsnprintf( NULL, 0, fmt, args );
 
 	char *msg = cast( char *, mem_temp_alloc( cast( u64, length + 1 ) ) );
-	stbsp_vsnprintf( msg, length, fmt, args_copy );
+	stbsp_vsnprintf( msg, length + 1, fmt, args_copy );
 	msg[length] = 0;
 
 	fputs( msg, file );
@@ -98,7 +98,7 @@ void error( const char *fmt, ... ) {
 void fatal_error( const char *fmt, ... ) {
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
 
-	printf( "FATAL ERROR: " );
+	print( "FATAL ERROR: " );
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
 
@@ -114,6 +114,6 @@ void dump_callstack() {
 	Array<String> callstack = get_callstack( mem_get_temp_storage() );
 
 	For ( u64, frame_index, 0, callstack.count ) {
-		print( "[%" PRIu64 "]: %s\n", frame_index, callstack[frame_index].data );
+		print( "[%" PRIu64 "]: %S\n", frame_index, &callstack[frame_index] );
 	}
 }

@@ -122,11 +122,11 @@ void assert_internal( const char *file, const int line, const char *fmt, ... ) {
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_RED );
 
-	printf( "ASSERT FAILURE: %s line %d: ", file, line );
+	print( "ASSERT FAILURE: %s line %d: ", file, line );
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_YELLOW );
 
-	printf( "%s\n", buffer );
+	print( "%s\n", buffer );
 
 	set_console_text_color( CONSOLE_TEXT_COLOR_DEFAULT );
 

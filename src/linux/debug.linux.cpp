@@ -37,7 +37,6 @@ SOFTWARE.
 #include <temp_storage.h>
 #include <defer.h>
 
-#include <stdio.h>
 #include <malloc.h>
 #include <errno.h>
 #include <execinfo.h>
@@ -99,7 +98,7 @@ void set_console_text_color( const ConsoleTextColor color ) {
 
 	assert( color_linux != NULL );
 
-	printf( "%s", color_linux );
+	print( "%s", color_linux );
 }
 
 s32 get_last_error_code() {

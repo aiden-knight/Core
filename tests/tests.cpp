@@ -913,7 +913,7 @@ TEST_PARAMETRIC( test_hashmap_linear_probe_telemetry, TEMPER_FLAG_SHOULD_RUN, u3
 	none_zero_mean = none_zero_mean / cast( float32, linear_probe_length.count - num_zero_probes );
 
 #if PRINT_HASHMAP_PROBE_RESULTS
-	printf(
+	print(
 		"\n===\nPROBE RESULTS for %f pc utilization on %u buckets:\naverage probe length was %f, average of non zero was %f, biggest was %u. Num that were zero: %u\n Tombstone:Used: %u:%u\n",
 		utilisation * 100.0f, number_of_buckets, mean, none_zero_mean, biggest, num_zero_probes, hashmap->tombstone_count, hashmap->usage_count
 	);
@@ -1465,6 +1465,23 @@ TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 	const char *actualString = string_builder_to_string( &builder );
 
 	TEMPER_CHECK_TRUE( string_equals( actualString, "this is only a test" ) );
+
+	mem_reset_temp_storage();
+}
+
+TEST( string_builder_appendf_string, TEMPER_FLAG_SHOULD_RUN ) {
+	StringBuilder builder = {};
+	string_builder_init( &builder, mem_get_temp_storage() );
+
+	String first = string_set( "World" );
+	String second = string_set( "Core" );
+
+	string_builder_appendf( &builder, "Hello, %S!", &first );
+	string_builder_appendf( &builder, " From %S.", &second );
+
+	const char *result = string_builder_to_string( &builder );
+
+	TEMPER_CHECK_TRUE( string_equals( result, "Hello, World! From Core." ) );
 
 	mem_reset_temp_storage();
 }
@@ -2041,7 +2058,7 @@ static void on_before_test( const temperTestInfo_t* test_info ) {
 	const int dot_length = pad_length_max - cast( int, strlen( test_info->testNameStr ) );
 	//assert( dot_length );	// DM!!! assert!
 
-	printf( "%s %*.*s ", test_info->testNameStr, dot_length, dot_length, TEST_PADDING );
+	print( "%s %*.*s ", test_info->testNameStr, dot_length, dot_length, TEST_PADDING );
 }
 
 static void on_after_test( const temperTestInfo_t* test_info ) {
@@ -2049,20 +2066,20 @@ static void on_after_test( const temperTestInfo_t* test_info ) {
 
 	if ( test_info->testingFlag == TEMPER_FLAG_SHOULD_SKIP ) {
 		TemperSetTextColorInternal( TEMPERDEV_COLOR_YELLOW );
-		printf( "SKIPPED\n" );
+		print( "SKIPPED\n" );
 		TemperSetTextColorInternal( TEMPERDEV_COLOR_DEFAULT );
 	} else {
 		if ( g_temperTestContext.currentTestErrorCount == 0 ) {
 			TemperSetTextColorInternal( TEMPERDEV_COLOR_GREEN );
-			printf( "OK" );
+			print( "OK" );
 			TemperSetTextColorInternal( TEMPERDEV_COLOR_DEFAULT );
 		} else {
 			TemperSetTextColorInternal( TEMPERDEV_COLOR_RED );
-			printf( "FAILED" );
+			print( "FAILED" );
 			TemperSetTextColorInternal( TEMPERDEV_COLOR_DEFAULT );
 		}
 
-		printf( " (%f %s)\n", test_info->testTimeTaken, TemperGetTimeUnitStringInternal( g_temperTestContext.timeUnit ) );
+		print( " (%f %s)\n", test_info->testTimeTaken, TemperGetTimeUnitStringInternal( g_temperTestContext.timeUnit ) );
 	}
 }
 
