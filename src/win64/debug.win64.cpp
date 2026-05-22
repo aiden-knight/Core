@@ -74,9 +74,9 @@ Array<String> get_callstack( LinearAllocator *allocator ) {
 
 		DWORD64 displacement = 0;
 		if ( SymFromAddr( process, address, &displacement, symbol ) ) {
-			callstack.add( string_set( allocator, symbol->Name ) );
+			callstack.add( string_alloc( allocator, symbol->Name ) );
 		} else {
-			callstack.add( string_set( allocator, "???" ) );
+			callstack.add( string_alloc( allocator, "???" ) );
 		}
 	}
 
