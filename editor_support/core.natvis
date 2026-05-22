@@ -13,4 +13,8 @@
 		</Expand>
 	</Type>
 
+	<Type Name="String">
+		<DisplayString>{data,[count]s8}</DisplayString>
+	</Type>
+
 </AutoVisualizer>
