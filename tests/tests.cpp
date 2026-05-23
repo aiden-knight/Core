@@ -1473,11 +1473,8 @@ TEST( string_builder_appendf_string, TEMPER_FLAG_SHOULD_RUN ) {
 	StringBuilder builder = {};
 	string_builder_init( &builder, mem_get_temp_storage() );
 
-	String first = string_set( "World" );
-	String second = string_set( "Core" );
-
-	string_builder_appendf( &builder, "Hello, %S!", &first );
-	string_builder_appendf( &builder, " From %S.", &second );
+	string_builder_appendf( &builder, "Hello, %S!", string_set( "World" ) );
+	string_builder_appendf( &builder, " From %S.", string_set( "Core" ) );
 
 	const char *result = string_builder_to_string( &builder );
 

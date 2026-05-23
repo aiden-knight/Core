@@ -90,7 +90,7 @@ CORE_API s32			get_last_error_code();
 CORE_API void			set_console_text_color( const ConsoleTextColor color );
 
 // Prints the format string to the console.
-// %S is a special override that allows Core Strings to be printed (pass by pointer).
+// %S is a special override that allows Core Strings to be printed (pass by value).
 CORE_API void			print( const char *fmt, ... );
 
 // Prints "WARNING: " followed by the specified format string to the console.

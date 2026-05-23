@@ -120,6 +120,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 			"-Wno-padded",
 			"-Wno-float-equal",
 			"-Wno-sign-compare",
+			"-Wno-class-varargs",
 		},
 		.warningsAsErrors				= true,
 #ifdef __linux__
@@ -183,6 +184,7 @@ BUILDER_CALLBACK void SetBuilderOptions( BuilderOptions *options, CommandLineArg
 			"-Wno-unsafe-buffer-usage-in-libc-call",
 			"-Wno-double-promotion",
 			"-Wno-unsafe-buffer-usage",
+			"-Wno-class-varargs",
 #ifdef __linux__
 			"-Wno-padded",
 #endif

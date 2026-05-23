@@ -114,6 +114,6 @@ void dump_callstack() {
 	Array<String> callstack = get_callstack( mem_get_temp_storage() );
 
 	For ( u64, frame_index, 0, callstack.count ) {
-		print( "[%" PRIu64 "]: %S\n", frame_index, &callstack[frame_index] );
+		print( "[%" PRIu64 "]: %S\n", frame_index, callstack[frame_index] );
 	}
 }
