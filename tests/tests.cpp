@@ -1080,15 +1080,15 @@ TEST_PARAMETRIC( test_file_read_sequential, TEMPER_FLAG_SHOULD_RUN, File *file, 
 }
 
 TEST_PARAMETRIC( test_file_read_entire, TEMPER_FLAG_SHOULD_RUN, const char *filename, const char *expected, const u64 expected_length ) {
-	char *buffer = NULL;
-	u64 length = 0;
+	String buffer = {};
 
-	TEMPER_CHECK_TRUE_A( file_read_entire( filename, &buffer, &length ) );
-	TEMPER_CHECK_TRUE( length == expected_length );
-	TEMPER_CHECK_TRUE( string_equals( buffer, expected ) );
+	TEMPER_CHECK_TRUE_A( file_read_entire( filename, &buffer ) );
+	TEMPER_CHECK_TRUE( buffer.count == expected_length );
+	TEMPER_CHECK_TRUE( string_equals( buffer.data, expected ) );
 
 	file_free_buffer( &buffer );
-	TEMPER_CHECK_TRUE( buffer == NULL );
+	TEMPER_CHECK_TRUE( buffer.data == NULL );
+	TEMPER_CHECK_TRUE( buffer.count == 0 );
 }
 
 TEST_PARAMETRIC( test_file_copy, TEMPER_FLAG_SHOULD_RUN, const char *src, const char *dst ) {
@@ -1450,8 +1450,7 @@ TEST( test_path_join, TEMPER_FLAG_SHOULD_RUN ) {
 */
 
 TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
-	StringBuilder builder = {};
-	string_builder_init( &builder, mem_get_temp_storage() );
+	StringBuilder builder = string_builder_create( mem_get_temp_storage() );
 
 	TEMPER_CHECK_TRUE( builder.head == NULL );
 	TEMPER_CHECK_TRUE( builder.tail == NULL );
@@ -1470,8 +1469,7 @@ TEST( string_builder, TEMPER_FLAG_SHOULD_RUN ) {
 }
 
 TEST( string_builder_appendf_string, TEMPER_FLAG_SHOULD_RUN ) {
-	StringBuilder builder = {};
-	string_builder_init( &builder, mem_get_temp_storage() );
+	StringBuilder builder = string_builder_create( mem_get_temp_storage() );
 
 	string_builder_appendf( &builder, "Hello, %S!", string_set( "World" ) );
 	string_builder_appendf( &builder, " From %S.", string_set( "Core" ) );
@@ -1650,11 +1648,11 @@ static s32 test_thread_pool_job_func( void *data ) {
 				strcat( msg, ": " );
 				strcat( msg, job->msg );
 
-#ifdef _WIN32
-				OutputDebugString( msg );
-#else
+// #ifdef _WIN32
+// 				OutputDebugString( msg );
+// #else
 				puts( msg );
-#endif
+// #endif
 
 				atomic_increment( &job->completed );
 				atomic_increment( &thread_pool->num_completed_jobs );

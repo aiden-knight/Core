@@ -46,13 +46,14 @@ SOFTWARE.
 ================================================================================================
 */
 
-void string_builder_init( StringBuilder *builder, LinearAllocator *allocator ) {
-	assert( builder );
+StringBuilder string_builder_create( LinearAllocator *allocator ) {
 	assert( allocator );
 
-	builder->allocator = allocator;
-	builder->head = NULL;
-	builder->tail = NULL;
+	return {
+		.allocator	= allocator,
+		.head		= NULL,
+		.tail		= NULL,
+	};
 }
 
 void string_builder_appendf( StringBuilder *builder, const char *fmt, ... ) {

@@ -46,7 +46,7 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <string.h>
-#include <malloc.h>
+#include <malloc.h>	// alloca
 
 Array<String> get_callstack( LinearAllocator *allocator ) {
 	Array<String> callstack;

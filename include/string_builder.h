@@ -68,7 +68,7 @@ struct StringBuilder {
 	StringBuilderBuffer	*tail;
 };
 
-CORE_API void			string_builder_init( StringBuilder *builder, LinearAllocator *allocator );
+CORE_API StringBuilder	string_builder_create( LinearAllocator *allocator );
 
 CORE_API void			string_builder_appendf( StringBuilder *builder, const char *fmt, ... );
 

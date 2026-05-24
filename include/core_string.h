@@ -40,10 +40,17 @@ struct LinearAllocator;
 
 	Container type used to hold a contiguous block of text.
 
-	Unlike std::strings, Core Strings are treated as array views into string data and can't be
-	appended or resized.  If you want to do that, use StringBuilder.
+	Core Strings are not null-terminated.  They are string views into string data and cannot be
+	appended or resized (like how std::strings can).  If you want to do that, use StringBuilder.
 
-	Core Strings are not null-terminated.
+	Core Strings do not own the memory that they hold.  They are either read only strings or
+	the memory was given to them from some memory allocation call.
+
+	Strings set from a string literal point into read-only memory and cannot not be directly
+	mutated.
+
+	Strings that are allocated are still string views, but their characters can be mutated
+	directly.
 
 	A String's count reflects the number of characters that are logically part of the string,
 	and the underlying data buffer may extend beyond the count (e.g. when a String is a

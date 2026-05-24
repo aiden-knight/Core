@@ -111,8 +111,7 @@ String path_remove_file_extension( const String *filename ) {
 static String path_join_internalv( LinearAllocator *allocator, const int count, va_list args ) {
 	assert( allocator );
 
-	StringBuilder builder = {};
-	string_builder_init( &builder, allocator );
+	StringBuilder builder = string_builder_create( allocator );
 
 	For ( int, arg_index, 0, count ) {
 		if ( arg_index > 0 ) {
@@ -225,8 +224,7 @@ String path_relative_path_to( LinearAllocator *allocator, const char *from, cons
 		}
 	}
 
-	StringBuilder sb = {};
-	string_builder_init( &sb, allocator );
+	StringBuilder sb = string_builder_create( allocator );
 
 	u64 result_length = 0;
 
