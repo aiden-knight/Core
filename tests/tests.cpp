@@ -2051,7 +2051,7 @@ static void on_before_test( const temperTestInfo_t* test_info ) {
 	const int pad_length_max = cast( int, strlen( TEST_PADDING ) );
 
 	const int dot_length = pad_length_max - cast( int, strlen( test_info->testNameStr ) );
-	//assert( dot_length );	// DM!!! assert!
+	assert( dot_length );
 
 	print( "%s %*.*s ", test_info->testNameStr, dot_length, dot_length, TEST_PADDING );
 }
