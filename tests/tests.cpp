@@ -1275,7 +1275,6 @@ TEST_PARAMETRIC( test_path_remove_file_from_path, TEMPER_FLAG_SHOULD_RUN, const 
 	LinearAllocator *allocator = linear_allocator_create( 1024 * 1024 );
 	defer { linear_allocator_destroy( allocator ); };
 
-	// TODO: DM: 08/05/2026: is this correct?
 	String expected = string_set( expected_path_without_file );
 
 	String path_str = string_set( path );
