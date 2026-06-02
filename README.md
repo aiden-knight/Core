@@ -1,10 +1,10 @@
 # Core
 
-## WARNING: This project is in heavy, active development.  I am still figuring things out.  Everything is subject to change.
+## WARNING: This project is in heavy, active development.  I am still figuring things out, and everything is subject to change.
 
-Core is a set containers and OS wrapper functions for C++.
+Core is my set of containers and OS wrapper functions for C++ made to my taste.
 
-Currently, it only supports Windows and Linux.
+Currently it only supports Windows and Linux.
 
 Core has:
 * Virtual-memory backed linear allocator.
