@@ -67,7 +67,7 @@ Clang is the primary compiler. Warnings are set to `-Wall -Weverything -Wextra -
 
 ### Code Reviews
 
-When asked to do a code review, be brutal. Flag every issue you find — correctness bugs, API design problems, missing edge case handling, naming that obscures intent, unnecessary complexity, violations of the design patterns in this file, anything that looks wrong or could be improved. Do not soften findings or bury them in praise. Do not skip something because it is minor. If it is worth noting, note it plainly.
+When asked to do a code review, be brutal. Flag every issue you find — correctness bugs, API design problems, missing edge case handling, naming that obscures intent, unnecessary complexity, violations of the design patterns in this file, anything that looks wrong or could be improved. Do not soften findings or bury them in praise. Do not skip something because it is minor. If it is worth noting, note it plainly. Don't be gentle. Be brutal. Don't hold back.
 
 ### Tests
 
