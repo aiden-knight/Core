@@ -260,26 +260,25 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 	assert( path );
 	assert( visit_callback );
 
-	Array<const char *> directories;
+	// AK: ideally we would take a String as a parameter, should we change this function and add a deprecated overload that does:
+	// bool8 file_get_all_files_in_folder( const char *path... ) { file_get_all_files_in_folder( string_set(path)... ) }
+	String path_string = string_set( path );
+	if ( !string_ends_with( &path_string, '\\' ) && !string_ends_with( &path_string, '/' ) ) {
+		path_string = string_printf( mem_get_temp_storage(), "%s%c", path_string.data, PATH_SEPARATOR );
+	}
+
+	Array<String> directories;
 	directories.init( mem_get_temp_storage() );
-	directories.add( path );
+	directories.add( path_string );
 
 	u32 dir_index = 0;
 
 	while ( dir_index < directories.count ) {
-		const char *dir = directories[dir_index];
+		const char* dir = string_cstr( &directories[dir_index] );
 
 		dir_index += 1;
 
-		String search_path = {};
-		if ( string_ends_with( dir, "/" ) ) {
-			search_path = string_printf( mem_get_temp_storage(), "%s*", dir );
-		} else {
-			// TODO: DM: 10/05/2026: really, this wants to be done via path_join
-			// but theres a few things that rely on this behaviour
-			// so changing this will cause side effects in various places/codebases that use core
-			search_path = string_printf( mem_get_temp_storage(), "%s%c*", dir, '/' );
-		}
+		String search_path = string_printf( mem_get_temp_storage(), "%s*", dir );
 
 		WIN32_FIND_DATA find_data = {};
 		HANDLE handle = FindFirstFile( search_path.data, &find_data );
@@ -289,15 +288,21 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 		}
 
 		while ( 1 ) {
+			bool8 is_directory = cast( bool8, find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY );
 			// TODO: DM: 10/05/2026: really, this wants to be done via path_join
 			// but theres a few things that rely on this behaviour
 			// so changing this will cause side effects in various places/codebases that use core
-			String full_filename = string_printf( mem_get_temp_storage(), "%s/%s", dir, find_data.cFileName );
+			String full_filename;
+			if ( is_directory ) {
+				full_filename = string_printf( mem_get_temp_storage(), "%s%s\\", dir, find_data.cFileName );
+			} else {
+				full_filename = string_printf( mem_get_temp_storage(), "%s%s", dir, find_data.cFileName );
+			}
 
 			FileInfo file_info = {
 				.size_bytes			= ( trunc_cast( u64, find_data.nFileSizeHigh ) << 32 ) | find_data.nFileSizeLow,
 				.last_write_time	= ( trunc_cast( u64, find_data.ftLastWriteTime.dwHighDateTime ) << 32 ) | find_data.ftLastWriteTime.dwLowDateTime,
-				.is_directory		= cast( bool8, find_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY ),
+				.is_directory		= is_directory,
 				.filename			= find_data.cFileName,
 				.full_filename		= full_filename.data,
 			};
@@ -309,7 +314,8 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 					}
 
 					if ( visit_flags & FILE_VISIT_RECURSIVE ) {
-						directories.add( file_info.full_filename );
+						// AK: This could break if the way the full filename is created changes
+						directories.add( string_set( file_info.full_filename ) );
 					}
 				}
 			} else if ( visit_flags & FILE_VISIT_FILES ) {
