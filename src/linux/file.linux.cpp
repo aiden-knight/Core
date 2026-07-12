@@ -43,6 +43,7 @@ SOFTWARE.
 #include <sys/types.h>
 #include <dirent.h>
 #include <errno.h>
+#include <cstdio>
 
 /*
 ================================================================================================
@@ -109,14 +110,14 @@ bool8 file_copy( const char *original_path, const char *new_path ) {
 	assert( original_path );
 	assert( new_path );
 
-	char *buffer = NULL;
+	String buffer = {};
 	if ( !file_read_entire( original_path, &buffer ) ) {
 		return false;
 	}
 
 	defer { file_free_buffer( &buffer ); };
 
-	if ( !file_write_entire( new_path, buffer, strlen( buffer ) ) ) {
+	if ( !file_write_entire( new_path, buffer.data, buffer.count ) ) {
 		return false;
 	}
 
