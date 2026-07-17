@@ -292,6 +292,10 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 			// TODO: DM: 10/05/2026: really, this wants to be done via path_join
 			// but theres a few things that rely on this behaviour
 			// so changing this will cause side effects in various places/codebases that use core
+			// TODO: AK: 17/07/2026: currently we add a trailing slash to the end of all paths as
+			// the file globbing in builder relies on there not being new double slashes in the outputted
+			// path portion of the full filename, we should evaluate whether we want this or if it is just
+			// here because builder 'demanded' it (my bad gang)
 			String full_filename;
 			if ( is_directory ) {
 				full_filename = string_printf( mem_get_temp_storage(), "%s%s\\", dir, find_data.cFileName );
