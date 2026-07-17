@@ -314,8 +314,7 @@ bool8 file_get_all_files_in_folder( const char *path, const FileVisitFlags visit
 					}
 
 					if ( visit_flags & FILE_VISIT_RECURSIVE ) {
-						// AK: This could break if the way the full filename is created changes
-						directories.add( string_set( file_info.full_filename ) );
+						directories.add( full_filename );
 					}
 				}
 			} else if ( visit_flags & FILE_VISIT_FILES ) {
